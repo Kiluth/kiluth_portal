@@ -1,0 +1,19 @@
+{
+ "channel": "Email",
+ "doctype": "Notification",
+ "document_type": "Equipment Return",
+ "enabled": 1,
+ "event": "Submit",
+ "is_standard": 1,
+ "message": "<p>Equipment has been returned.</p>\n<ul>\n  <li><b>Return:</b> {{ doc.name }}</li>\n  <li><b>Returned by:</b> {{ doc.employee_name or doc.employee }}</li>\n  <li><b>Return date:</b> {{ doc.return_date }}</li>\n  <li><b>Items returned:</b> {{ doc.assets_returned|length }}</li>\n</ul>\n<p>Review condition photos and note any damage before closing the loan.</p>\n<p>{{ frappe.utils.get_link_to_form(doc.doctype, doc.name, 'Open return') }}</p>",
+ "module": "Kiluth HR",
+ "name": "Equipment Return HR Alert",
+ "recipients": [
+  {
+   "receiver_by_role": "HR Manager"
+  }
+ ],
+ "send_system_notification": 1,
+ "send_to_all_assignees": 0,
+ "subject": "Equipment returned by {{ doc.employee_name or doc.employee }}: {{ doc.name }}"
+}

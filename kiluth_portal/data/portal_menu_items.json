@@ -1,0 +1,572 @@
+[
+  {
+    "id": "material-request",
+    "title": "Material Request",
+    "description": "Request tools, software, or hardware needed for your work.",
+    "icon": "fa-user-cog",
+    "iconColor": "text-warning",
+    "category": "HR",
+    "order": 1,
+    "links": [
+      {
+        "label": "View list",
+        "url": "/app/material-request",
+        "target": "_blank"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/material-request/new",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "request-leave",
+    "title": "Request Leave",
+    "description": "Apply for leave.",
+    "icon": "fa-calendar-check",
+    "iconColor": "text-primary",
+    "category": "HR",
+    "order": 2,
+    "links": [
+      {
+        "label": "Open Form",
+        "url": "/request-leave",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "timesheet",
+    "title": "Timesheet",
+    "description": "Log work hours against projects and tasks.",
+    "icon": "fa-clock",
+    "iconColor": "text-secondary",
+    "category": "HR",
+    "order": 3,
+    "links": [
+      {
+        "label": "Open Form",
+        "url": "/timesheet",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "new-employee-application",
+    "title": "New Employee Application",
+    "description": "View and create new employee onboarding applications (NEA).",
+    "icon": "fa-user-plus",
+    "iconColor": "text-primary",
+    "category": "HR",
+    "order": 4,
+    "links": [
+      {
+        "label": "View list",
+        "url": "/app/new-employee-application",
+        "target": "_blank"
+      },
+      {
+        "label": "Create new",
+        "url": "/new-employee/new",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "equipment-loan-agreement",
+    "title": "Equipment Loan Agreement",
+    "description": "Borrow company equipment under agreed terms.",
+    "icon": "fa-laptop-medical",
+    "iconColor": "text-info",
+    "category": "equipment",
+    "order": 5,
+    "links": [
+      {
+        "label": "Open Form",
+        "url": "/equipment-loan-agreement",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "equipment-return",
+    "title": "Equipment Return",
+    "description": "Return company equipment.",
+    "icon": "fa-undo",
+    "iconColor": "text-danger",
+    "category": "equipment",
+    "order": 6,
+    "links": [
+      {
+        "label": "Open Form",
+        "url": "/equipment-return",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "expense-claim",
+    "title": "Expense Claim",
+    "description": "Submit expenses and attach receipts for approval.",
+    "icon": "fa-file-invoice-dollar",
+    "iconColor": "text-success",
+    "category": "finance",
+    "order": 7,
+    "links": [
+      {
+        "label": "View list",
+        "url": "/app/expense-claim",
+        "target": "_blank"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/expense-claim/new",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "problem-report",
+    "title": "Problem Report",
+    "description": "Report workplace issues, HR concerns, or office problems that need attention.",
+    "icon": "fa-exclamation-triangle",
+    "iconColor": "text-warning",
+    "category": "support",
+    "order": 10,
+    "links": [
+      {
+        "label": "View list",
+        "url": "/app/issue?issue_type=HR+-+Problem+Report",
+        "target": "_blank"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/issue/new?issue_type=HR+-+Problem+Report",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "leads",
+    "title": "Leads",
+    "description": "View and manage incoming leads, or submit a new lead.",
+    "icon": "fa-list",
+    "iconColor": "text-primary",
+    "category": "sales",
+    "order": 11,
+    "links": [
+      {
+        "label": "View leads",
+        "url": "/app/lead",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/lead/new",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "opportunities",
+    "title": "Opportunities",
+    "description": "View and manage sales opportunities.",
+    "icon": "fa-bullseye",
+    "iconColor": "text-primary",
+    "category": "sales",
+    "order": 12,
+    "links": [
+      {
+        "label": "View opportunities",
+        "url": "/app/opportunity",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/opportunity/new",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "customers",
+    "title": "Customers",
+    "description": "View and manage customers.",
+    "icon": "fa-users",
+    "iconColor": "text-warning",
+    "category": "sales",
+    "order": 13,
+    "links": [
+      {
+        "label": "View customers",
+        "url": "/app/customer",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/customer/new",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "quotations",
+    "title": "Quotations",
+    "description": "Create and manage quotations.",
+    "icon": "fa-file-alt",
+    "iconColor": "text-info",
+    "category": "sales",
+    "order": 14,
+    "links": [
+      {
+        "label": "View quotations",
+        "url": "/app/quotation",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/quotation/new",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "sales-orders",
+    "title": "Sales Orders",
+    "description": "View and manage sales orders. Created when client accepts a quotation.",
+    "icon": "fa-shopping-cart",
+    "iconColor": "text-info",
+    "category": "sales",
+    "order": 15,
+    "links": [
+      {
+        "label": "View orders",
+        "url": "/app/sales-order",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/sales-order/new",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "sales-invoices",
+    "title": "Sales Invoices",
+    "description": "Issue invoices, confirm payment, or create a new invoice.",
+    "icon": "fa-file-invoice",
+    "iconColor": "text-success",
+    "category": "sales",
+    "order": 16,
+    "links": [
+      {
+        "label": "View invoices",
+        "url": "/app/sales-invoice",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/sales-invoice/new",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "payment-entries",
+    "title": "Payment Entries",
+    "description": "Record and view payment receipts.",
+    "icon": "fa-money-check-alt",
+    "iconColor": "text-success",
+    "category": "sales",
+    "order": 17,
+    "links": [
+      {
+        "label": "View entries",
+        "url": "/app/payment-entry",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/payment-entry/new",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "projects",
+    "title": "Projects",
+    "description": "View all projects.",
+    "icon": "fa-project-diagram",
+    "iconColor": "text-primary",
+    "category": "sales",
+    "order": 18,
+    "links": [
+      {
+        "label": "View projects",
+        "url": "/app/project",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "resources-registry",
+    "title": "Resources Registry",
+    "description": "Servers, domains, MA. Register and track expiry.",
+    "icon": "fa-server",
+    "iconColor": "text-info",
+    "category": "sales",
+    "order": 19,
+    "links": [
+      {
+        "label": "View resources",
+        "url": "/app/resource",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Create new",
+        "url": "/app/resource/new",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "shared-drive",
+    "title": "Shared Drive",
+    "description": "Company shared drive. More resources, files, and documents (e.g. organization profile, internal docs) are available here.",
+    "icon": "fa-cloud",
+    "iconColor": "text-primary",
+    "category": "company",
+    "order": 20,
+    "links": [
+      {
+        "label": "Open Shared Drive",
+        "url": "https://drive.google.com/drive/u/1/shared-drives",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "holiday-list",
+    "title": "Holiday List",
+    "description": "View official company holidays by year.",
+    "icon": "fa-calendar-day",
+    "iconColor": "text-success",
+    "category": "company",
+    "order": 21,
+    "links": [
+      {
+        "label": "View List",
+        "url": "/holidays",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "kiluth-docs",
+    "title": "Kiluth Docs",
+    "description": "Official Kiluth operational documentation.",
+    "icon": "fa-building",
+    "iconColor": "text-primary",
+    "category": "company",
+    "order": 22,
+    "links": [
+      {
+        "label": "Open docs",
+        "url": "https://docs.kiluth.com/",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "kiluth-chat",
+    "title": "Kiluth Chat",
+    "description": "Assistant chatbot powered by Kiluth AI. Ask operational questions, manage Asana tasks, and more.",
+    "icon": "fa-comments",
+    "iconColor": "text-primary",
+    "category": "company",
+    "order": 23,
+    "links": [
+      {
+        "label": "Open Chat",
+        "url": "https://chat.kiluth.com",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "apple-business-pass",
+    "title": "Apple Business Pass",
+    "description": "Apple Business account pass for convenient payments and special corporate benefits.",
+    "icon": "fa-mobile-alt",
+    "iconColor": "text-dark",
+    "category": "company",
+    "order": 24,
+    "links": [
+      {
+        "label": "Add to Apple Wallet",
+        "url": "https://kiluth.com/apple-business-pass.pkpass",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "View Image (WebP)",
+        "url": "https://kiluth.com/apple-business-pass.webp",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "View Image (JPEG)",
+        "url": "https://kiluth.com/apple-business-pass.jpeg",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "approved-fonts",
+    "title": "Approved Fonts",
+    "description": "Official Kiluth brand font pack (ZIP)",
+    "icon": "fa-font",
+    "iconColor": "text-warning",
+    "category": "branding",
+    "order": 25,
+    "links": [
+      {
+        "label": "Download ZIP",
+        "url": "https://kiluth.com/kiluth-approved-fonts.zip",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "logo",
+    "title": "Logo",
+    "description": "Official Kiluth logo files in black and white versions.",
+    "icon": "fa-image",
+    "iconColor": "text-primary",
+    "category": "branding",
+    "order": 26,
+    "links": [
+      {
+        "label": "Black (SVG)",
+        "url": "https://www.kiluth.com/logo-black.svg",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "White (SVG)",
+        "url": "https://www.kiluth.com/logo-white.svg",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Black (PNG)",
+        "url": "https://www.kiluth.com/logo-black.png",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "White (PNG)",
+        "url": "https://www.kiluth.com/logo-white.png",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "company-certificates",
+    "title": "Company Certificates",
+    "description": "Official business registration and juristic person certificates issued by the Department of Business Development (DBD), Thailand.",
+    "icon": "fa-certificate",
+    "iconColor": "text-secondary",
+    "category": "legal",
+    "order": 27,
+    "links": [
+      {
+        "label": "Company Registration",
+        "url": "https://edbr.dbd.go.th/PreviewDocCertQrCodePage?reqDocNo=1000168100300384",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      },
+      {
+        "label": "Juristic Person",
+        "url": "https://ebiz.dbd.go.th/eservice-inquiry/Preview2?ref=E6810041920007856",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "tax-id-card",
+    "title": "Tax ID Card",
+    "description": "Company tax ID and address card for requesting tax invoices.",
+    "icon": "fa-id-card",
+    "iconColor": "text-secondary",
+    "category": "legal",
+    "order": 28,
+    "links": [
+      {
+        "label": "View PDF",
+        "url": "https://kiluth.com/tax-id-card.pdf",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  },
+  {
+    "id": "convert-document",
+    "title": "Convert Document",
+    "description": "Convert markdown files into Kiluth-styled HTML or PDF documents.",
+    "icon": "fa-file-export",
+    "iconColor": "text-dark",
+    "category": "tools",
+    "order": 28,
+    "links": [
+      {
+        "label": "Open",
+        "url": "/convert-document",
+        "target": "_blank"
+      }
+    ]
+  },
+  {
+    "id": "coolify",
+    "title": "Coolify",
+    "description": "Self-hosted deployment platform for applications and services",
+    "icon": "fa-rocket",
+    "iconColor": "text-success",
+    "category": "tools",
+    "order": 29,
+    "links": [
+      {
+        "label": "Access Platform",
+        "url": "https://coolify.kiluth.com",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
+  }
+]

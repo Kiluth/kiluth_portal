@@ -1,0 +1,20 @@
+{
+ "channel": "Email",
+ "condition": "doc.issue_type == 'HR - Problem Report'",
+ "doctype": "Notification",
+ "document_type": "Issue",
+ "enabled": 1,
+ "event": "New",
+ "is_standard": 1,
+ "message": "<p>A new HR problem report has been submitted.</p>\n<ul>\n  <li><b>Issue:</b> {{ doc.name }}</li>\n  <li><b>Subject:</b> {{ doc.subject }}</li>\n  <li><b>Priority:</b> {{ doc.priority or '—' }}</li>\n  <li><b>Raised by:</b> {{ doc.raised_by or doc.owner }}</li>\n</ul>\n<p>{{ doc.description or '' }}</p>\n<p>{{ frappe.utils.get_link_to_form(doc.doctype, doc.name, 'Open issue') }}</p>",
+ "module": "Kiluth HR",
+ "name": "Issue HR Problem Report",
+ "recipients": [
+  {
+   "receiver_by_role": "HR Manager"
+  }
+ ],
+ "send_system_notification": 1,
+ "send_to_all_assignees": 0,
+ "subject": "HR Problem Report: {{ doc.subject }}"
+}

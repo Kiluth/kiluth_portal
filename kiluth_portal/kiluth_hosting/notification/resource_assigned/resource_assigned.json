@@ -1,0 +1,29 @@
+{
+ "channel": "Email",
+ "doctype": "Notification",
+ "document_type": "Resource",
+ "enabled": 1,
+ "event": "New",
+ "is_standard": 1,
+ "message": "<p>\nA new resource has been created by <b>{{ doc.created_by }}</b> and assigned to <b>{{ doc.tracked_by }}</b>.\nPlease review the details below:\n</p>\n\n<table style=\"border-collapse:collapse; margin-top:10px;\">\n  <tr><td style=\"padding:6px 10px; font-weight:bold;\">Resource Type</td><td style=\"padding:6px 10px;\">{{ doc.resource_type }}</td></tr>\n  <tr><td style=\"padding:6px 10px; font-weight:bold;\">Customer</td><td style=\"padding:6px 10px;\">{{ doc.customer or \"-\" }}</td></tr>\n  <tr><td style=\"padding:6px 10px; font-weight:bold;\">Project</td><td style=\"padding:6px 10px;\">{{ doc.project or \"-\" }}</td></tr>\n  <tr><td style=\"padding:6px 10px; font-weight:bold;\">Environment</td><td style=\"padding:6px 10px;\">{{ doc.environment or \"-\" }}</td></tr>\n  <tr><td style=\"padding:6px 10px; font-weight:bold;\">Provider</td><td style=\"padding:6px 10px;\">{{ doc.provider or \"-\" }}</td></tr>\n  <tr><td style=\"padding:6px 10px; font-weight:bold;\">Created Date</td><td style=\"padding:6px 10px;\">{{ doc.created_date or \"-\" }}</td></tr>\n  <tr><td style=\"padding:6px 10px; font-weight:bold;\">Expiry Date</td><td style=\"padding:6px 10px;\"><b>{{ doc.expiry_date or \"-\" }}</b></td></tr>\n</table>\n\n{% if doc.description %}\n<p style=\"margin-top:12px;\"><b>Description</b><br>{{ doc.description }}</p>\n{% endif %}\n\n<p style=\"margin-top:16px;\">\nPlease take note of the expiry date and manage this resource accordingly.\n</p>\n\n<p><strong>View Resource:</strong> <a href=\"https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}\">https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}</a></p>",
+ "module": "Kiluth Hosting",
+ "name": "Resource Assigned",
+ "send_system_notification": 1,
+ "subject": "Resource {{ doc.name }} has been assigned",
+ "days_in_advance": 1,
+ "date_changed": "expiry_date",
+ "recipients": [
+  {
+   "receiver_by_document_field": "tracked_by"
+  },
+  {
+   "receiver_by_role": "System Manager"
+  },
+  {
+   "receiver_by_document_field": "created_by"
+  },
+  {
+   "receiver_by_document_field": "owner"
+  }
+ ]
+}

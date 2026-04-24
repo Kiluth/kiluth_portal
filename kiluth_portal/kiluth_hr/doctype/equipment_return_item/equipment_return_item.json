@@ -1,0 +1,80 @@
+{
+ "actions": [],
+ "creation": "2026-04-20 00:00:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "asset",
+  "asset_name",
+  "serial_number",
+  "condition_on_return",
+  "photo",
+  "accessories_missing",
+  "damage_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "asset",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Asset",
+   "options": "Asset",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "asset.asset_name",
+   "fieldname": "asset_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Asset Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "asset.custom_serial_number",
+   "fieldname": "serial_number",
+   "fieldtype": "Data",
+   "label": "Serial Number",
+   "read_only": 1
+  },
+  {
+   "default": "Good",
+   "fieldname": "condition_on_return",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Condition on Return",
+   "options": "Excellent\nGood\nFair\nPoor\nDamaged",
+   "reqd": 1
+  },
+  {
+   "description": "Evidence photo of the asset at return (required for damage disputes)",
+   "fieldname": "photo",
+   "fieldtype": "Attach Image",
+   "label": "Photo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "accessories_missing",
+   "fieldtype": "Data",
+   "label": "Accessories Missing"
+  },
+  {
+   "fieldname": "damage_details",
+   "fieldtype": "Small Text",
+   "label": "Damage Details"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-20 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Kiluth HR",
+ "name": "Equipment Return Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

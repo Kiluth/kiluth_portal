@@ -1,0 +1,241 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "RESOURCE-.#####",
+ "creation": "2026-04-20 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "classification_section",
+  "resource_type",
+  "customer",
+  "column_break_classification",
+  "project",
+  "description",
+  "identification_section",
+  "identifier",
+  "column_break_identification",
+  "status",
+  "dates_section",
+  "created_date",
+  "issued_date",
+  "column_break_dates",
+  "expiry_date",
+  "pricing_section",
+  "cost",
+  "charge",
+  "column_break_pricing",
+  "ma_period_months",
+  "provisioning_section",
+  "provider",
+  "environment",
+  "column_break_provisioning",
+  "created_by",
+  "issued_by",
+  "tracked_by",
+  "remarks_section",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "classification_section",
+   "fieldtype": "Section Break",
+   "label": "Classification"
+  },
+  {
+   "fieldname": "resource_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Resource Type",
+   "options": "Resource Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_classification",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "identification_section",
+   "fieldtype": "Section Break",
+   "label": "Identification"
+  },
+  {
+   "description": "IP for Server, domain name for Domain name, Project ID for MA",
+   "fieldname": "identifier",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Identifier"
+  },
+  {
+   "fieldname": "column_break_identification",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Active",
+   "description": "Auto-set to Expired on save if expiry_date has passed",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nPlanned\nActive\nExpired\nArchived\nDeleted"
+  },
+  {
+   "fieldname": "dates_section",
+   "fieldtype": "Section Break",
+   "label": "Dates"
+  },
+  {
+   "description": "Anchor date for the resource (real-life provisioning date, not ERPNext entry date)",
+   "fieldname": "created_date",
+   "fieldtype": "Date",
+   "label": "Created Date",
+   "reqd": 1
+  },
+  {
+   "description": "When the resource was issued to the client (optional)",
+   "fieldname": "issued_date",
+   "fieldtype": "Date",
+   "label": "Issue Date"
+  },
+  {
+   "fieldname": "column_break_dates",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Drives the 30/15/5/3/1-day expiry notifications",
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Expiry Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "pricing_section",
+   "fieldtype": "Section Break",
+   "label": "Pricing"
+  },
+  {
+   "description": "Kiluth's actual expense. Free-text to allow subscription rates like \"200 THB/month\" as well as fixed amounts. Auto-filled for MA (25% of project cost / 12 * months).",
+   "fieldname": "cost",
+   "fieldtype": "Data",
+   "label": "Cost"
+  },
+  {
+   "description": "Amount billed to client. Free-text (same reasoning as Cost). \"0\" during warranty.",
+   "fieldname": "charge",
+   "fieldtype": "Data",
+   "label": "Charge"
+  },
+  {
+   "fieldname": "column_break_pricing",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.resource_type==\"MA\"",
+   "description": "Length of the MA period (drives cost auto-calc for MA resources)",
+   "fieldname": "ma_period_months",
+   "fieldtype": "Int",
+   "label": "MA Period (Months)"
+  },
+  {
+   "fieldname": "provisioning_section",
+   "fieldtype": "Section Break",
+   "label": "Provisioning"
+  },
+  {
+   "description": "Vendor or \"Kiluth\" if self-provisioned",
+   "fieldname": "provider",
+   "fieldtype": "Data",
+   "label": "Provider"
+  },
+  {
+   "fieldname": "environment",
+   "fieldtype": "Select",
+   "label": "Environment",
+   "options": "\nDEV\nUAT/Demo\nStaging\nProduction\nOther"
+  },
+  {
+   "fieldname": "column_break_provisioning",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Who provisioned this in real life",
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created By",
+   "options": "User"
+  },
+  {
+   "description": "Who issued this to the client",
+   "fieldname": "issued_by",
+   "fieldtype": "Link",
+   "label": "Issued By",
+   "options": "User"
+  },
+  {
+   "description": "Receives the expiry reminder notifications",
+   "fieldname": "tracked_by",
+   "fieldtype": "Link",
+   "label": "Tracked By",
+   "options": "User"
+  },
+  {
+   "fieldname": "remarks_section",
+   "fieldtype": "Section Break",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-20 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Kiluth Hosting",
+ "name": "Resource",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "expiry_date",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

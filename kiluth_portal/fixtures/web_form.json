@@ -1,0 +1,122 @@
+[
+ {
+  "doctype": "Web Form",
+  "name": "timesheet",
+  "title": "Timesheet",
+  "route": "timesheet",
+  "doc_type": "Timesheet",
+  "module": "Kiluth HR",
+  "published": 1,
+  "login_required": 1,
+  "allow_multiple": 0,
+  "button_label": "Save",
+  "is_standard": 0,
+  "web_form_fields": [
+   {"doctype": "Web Form Field", "fieldname": "time_logs", "fieldtype": "Table",       "label": "Time Sheets", "options": "Timesheet Detail", "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "note",      "fieldtype": "Text Editor", "label": "Note"}
+  ]
+ },
+ {
+  "doctype": "Web Form",
+  "name": "request-leave",
+  "title": "Request Leave",
+  "route": "request-leave",
+  "doc_type": "Leave Application",
+  "module": "Kiluth HR",
+  "published": 1,
+  "login_required": 1,
+  "allow_multiple": 1,
+  "button_label": "Save",
+  "is_standard": 0,
+  "web_form_fields": [
+   {"doctype": "Web Form Field", "fieldname": "leave_type",    "fieldtype": "Link",       "label": "Leave Type",    "options": "Leave Type", "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "from_date",     "fieldtype": "Date",       "label": "From Date",     "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "to_date",       "fieldtype": "Date",       "label": "To Date",       "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "half_day",      "fieldtype": "Check",      "label": "Half Day",      "default": "0"},
+   {"doctype": "Web Form Field", "fieldname": "half_day_date", "fieldtype": "Date",       "label": "Half Day Date", "depends_on": "eval:doc.half_day"},
+   {"doctype": "Web Form Field", "fieldname": "description",   "fieldtype": "Small Text", "label": "Reason"}
+  ]
+ },
+ {
+  "doctype": "Web Form",
+  "name": "equipment-return",
+  "title": "Equipment Return",
+  "route": "equipment-return",
+  "doc_type": "Equipment Return",
+  "module": "Kiluth HR",
+  "published": 1,
+  "login_required": 1,
+  "allow_multiple": 1,
+  "button_label": "Save",
+  "is_standard": 0,
+  "web_form_fields": [
+   {"doctype": "Web Form Field", "fieldname": "assets_returned",           "fieldtype": "Table",      "label": "Assets Returned",           "options": "Equipment Return Item", "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "all_accessories_returned",  "fieldtype": "Check",      "label": "All Accessories Returned?", "default": "0"},
+   {"doctype": "Web Form Field", "fieldname": "damage_details",            "fieldtype": "Small Text", "label": "Damage Details"},
+   {"doctype": "Web Form Field", "fieldname": "remarks",                   "fieldtype": "Small Text", "label": "Remarks"},
+   {"doctype": "Web Form Field", "fieldname": "return_date",               "fieldtype": "Date",       "label": "Return Date",               "default": "Today", "read_only": 1, "reqd": 1}
+  ]
+ },
+ {
+  "doctype": "Web Form",
+  "name": "equipment-loan-agreement",
+  "title": "Equipment Loan Agreement",
+  "route": "equipment-loan-agreement",
+  "doc_type": "Equipment Loan Agreement",
+  "module": "Kiluth HR",
+  "published": 1,
+  "login_required": 1,
+  "allow_multiple": 1,
+  "button_label": "Save",
+  "is_standard": 0,
+  "introduction_text": "<div class=\"ql-editor read-mode\"><p><strong>Equipment Loan Agreement</strong></p><p><br></p><p>EN: <a href=\"https://docs.kiluth.com/en/hr/equipment-loan-agreement\" rel=\"noopener noreferrer\">https://docs.kiluth.com/en/hr/equipment-loan-agreement/</a></p><p>TH: <a href=\"https://docs.kiluth.com/th/hr/equipment-loan-agreement\" rel=\"noopener noreferrer\">https://docs.kiluth.com/th/hr/equipment-loan-agreement/</a> </p></div>",
+  "web_form_fields": [
+   {"doctype": "Web Form Field", "fieldname": "assets",                "fieldtype": "Table", "label": "Assets",                "options": "Equipment Loan Asset", "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "i_agree_to_the_terms",  "fieldtype": "Check", "label": "I agree to the terms",  "default": "0", "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "date_signed",           "fieldtype": "Date",  "label": "Date Signed",           "default": "Today", "read_only": 1, "reqd": 1}
+  ]
+ },
+ {
+  "doctype": "Web Form",
+  "name": "new-employee-application",
+  "title": "New Employee Application",
+  "route": "new-employee",
+  "doc_type": "New Employee Application",
+  "module": "Kiluth HR",
+  "published": 1,
+  "login_required": 0,
+  "anonymous": 0,
+  "allow_edit": 0,
+  "allow_multiple": 1,
+  "allow_delete": 0,
+  "allow_print": 0,
+  "allow_incomplete": 0,
+  "show_sidebar": 0,
+  "show_attachments": 0,
+  "allow_comments": 0,
+  "is_standard": 0,
+  "button_label": "Submit",
+  "success_title": "Thank you!",
+  "introduction_text": "Welcome to Kiluth! Please complete this form so HR can prepare for your onboarding. Fields marked with * are required.",
+  "web_form_fields": [
+   {"doctype": "Web Form Field", "fieldname": "sb_personal",              "fieldtype": "Section Break", "label": "Personal Information"},
+   {"doctype": "Web Form Field", "fieldname": "first_name",               "fieldtype": "Data",          "label": "First Name",              "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "last_name",                "fieldtype": "Data",          "label": "Last Name",               "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "cb1",                      "fieldtype": "Column Break"},
+   {"doctype": "Web Form Field", "fieldname": "gender",                   "fieldtype": "Link",          "label": "Gender",                   "options": "Gender",    "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "date_of_birth",            "fieldtype": "Date",          "label": "Date of Birth",            "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "sb_contact",               "fieldtype": "Section Break", "label": "Contact"},
+   {"doctype": "Web Form Field", "fieldname": "personal_email",           "fieldtype": "Data",          "label": "Personal Email",           "options": "Email",     "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "cell_number",              "fieldtype": "Data",          "label": "Mobile Number",            "options": "Phone",     "reqd": 1},
+   {"doctype": "Web Form Field", "fieldname": "sb_job",                   "fieldtype": "Section Break", "label": "Job"},
+   {"doctype": "Web Form Field", "fieldname": "department",               "fieldtype": "Link",          "label": "Department",               "options": "Department"},
+   {"doctype": "Web Form Field", "fieldname": "date_of_joining",          "fieldtype": "Date",          "label": "Date of Joining",          "reqd": 1, "description": "Your first day at Kiluth"},
+   {"doctype": "Web Form Field", "fieldname": "sb_bank",                  "fieldtype": "Section Break", "label": "Bank (for payroll)"},
+   {"doctype": "Web Form Field", "fieldname": "bank_name",                "fieldtype": "Data",          "label": "Bank Name"},
+   {"doctype": "Web Form Field", "fieldname": "bank_ac_no",               "fieldtype": "Data",          "label": "Bank Account Number"},
+   {"doctype": "Web Form Field", "fieldname": "sb_em",                    "fieldtype": "Section Break", "label": "Emergency Contact"},
+   {"doctype": "Web Form Field", "fieldname": "person_to_be_contacted",   "fieldtype": "Data",          "label": "Emergency Contact Name"},
+   {"doctype": "Web Form Field", "fieldname": "emergency_phone_number",   "fieldtype": "Data",          "label": "Emergency Contact Phone",  "options": "Phone"}
+  ]
+ }
+]

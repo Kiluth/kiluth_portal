@@ -1,0 +1,19 @@
+{
+ "channel": "Email",
+ "doctype": "Notification",
+ "document_type": "New Employee Application",
+ "enabled": 1,
+ "event": "New",
+ "is_standard": 1,
+ "message": "<p>A new employee information form has been submitted. Review the applicant's details before continuing onboarding.</p>\n<ul>\n  <li><b>Applicant:</b> {{ doc.first_name }} {{ doc.last_name }}{% if doc.nickname %} ({{ doc.nickname }}){% endif %}</li>\n  <li><b>Start date:</b> {{ doc.start_date }}</li>\n  <li><b>Department:</b> {{ doc.department or '—' }}</li>\n  <li><b>Job title:</b> {{ doc.job_title or '—' }}</li>\n</ul>\n<p>{{ frappe.utils.get_link_to_form(doc.doctype, doc.name, 'Review application') }}</p>",
+ "module": "Kiluth HR",
+ "name": "New Employee Application HR Alert",
+ "recipients": [
+  {
+   "receiver_by_role": "HR Manager"
+  }
+ ],
+ "send_system_notification": 1,
+ "send_to_all_assignees": 0,
+ "subject": "New Employee Application: {{ doc.first_name }} {{ doc.last_name }}"
+}

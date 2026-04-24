@@ -1,0 +1,29 @@
+{
+ "channel": "Email",
+ "doctype": "Notification",
+ "document_type": "Resource",
+ "enabled": 1,
+ "event": "Days After",
+ "is_standard": 1,
+ "message": "<p>\nThe resource <strong>{{ doc.name }}</strong> ({{ doc.resource_type }}) expired on {{ doc.expiry_date }}.\n</p>\n\n<p>\nPlease confirm whether renewal is required. If you have already renewed, please update the expiry date in the resource record.\n</p>\n\n<p><strong>View Resource:</strong> <a href=\"https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}\">https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}</a></p>",
+ "module": "Kiluth Hosting",
+ "name": "Resource Expired",
+ "send_system_notification": 1,
+ "subject": "Resource {{ doc.name }} has expired",
+ "days_in_advance": 1,
+ "date_changed": "expiry_date",
+ "recipients": [
+  {
+   "receiver_by_document_field": "created_by"
+  },
+  {
+   "receiver_by_document_field": "tracked_by"
+  },
+  {
+   "receiver_by_document_field": "owner"
+  },
+  {
+   "receiver_by_role": "System Manager"
+  }
+ ]
+}

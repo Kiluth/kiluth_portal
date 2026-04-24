@@ -1,0 +1,7 @@
+[
+ {
+  "doctype": "Issue Type",
+  "name": "HR - Problem Report",
+  "description": "Kiluth HR-related issues submitted via the Problem Report web form. HR Manager is alerted on creation."
+ }
+]

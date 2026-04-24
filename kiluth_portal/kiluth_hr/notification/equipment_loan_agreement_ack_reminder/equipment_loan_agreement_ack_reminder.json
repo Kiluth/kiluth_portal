@@ -1,0 +1,22 @@
+{
+ "channel": "Email",
+ "condition": "doc.docstatus == 0 and not doc.i_agree_to_the_terms",
+ "date_changed": "creation",
+ "days_in_advance": 1,
+ "doctype": "Notification",
+ "document_type": "Equipment Loan Agreement",
+ "enabled": 1,
+ "event": "Days After",
+ "is_standard": 1,
+ "message": "<p>Hi {{ doc.employee_name or doc.employee }},</p>\n<p>This is a reminder that HR is waiting on your acknowledgment of Equipment Loan Agreement <b>{{ doc.name }}</b>. Custody of the listed assets cannot be transferred until you acknowledge.</p>\n<p>{{ frappe.utils.get_link_to_form(doc.doctype, doc.name, 'Review & acknowledge') }}</p>\n<p style=\"color:#888;font-size:0.9em\">Acknowledging takes one click on the form. If you have questions about the terms, reply to this email and HR will help.</p>",
+ "module": "Kiluth HR",
+ "name": "Equipment Loan Agreement Ack Reminder",
+ "recipients": [
+  {
+   "receiver_by_document_field": "employee.user_id"
+  }
+ ],
+ "send_system_notification": 1,
+ "send_to_all_assignees": 0,
+ "subject": "Reminder: acknowledge your Equipment Loan Agreement ({{ doc.name }})"
+}

@@ -1,0 +1,29 @@
+{
+ "channel": "Email",
+ "doctype": "Notification",
+ "document_type": "Resource",
+ "enabled": 1,
+ "event": "Days Before",
+ "is_standard": 1,
+ "message": "<p>\nThis is a reminder that the following resource is scheduled to expire in 1 day.\n</p>\n\n<table style=\"border-collapse: collapse; margin-top: 10px;\">\n  <tr><td style=\"padding: 6px 10px; font-weight: bold;\">Resource:</td><td style=\"padding: 6px 10px;\">{{ doc.name }}</td></tr>\n  <tr><td style=\"padding: 6px 10px; font-weight: bold;\">Resource Type:</td><td style=\"padding: 6px 10px;\">{{ doc.resource_type }}</td></tr>\n  <tr><td style=\"padding: 6px 10px; font-weight: bold;\">Customer:</td><td style=\"padding: 6px 10px;\">{{ doc.customer or \"-\" }}</td></tr>\n  <tr><td style=\"padding: 6px 10px; font-weight: bold;\">Expiry Date:</td><td style=\"padding: 6px 10px;\">{{ doc.expiry_date }}</td></tr>\n</table>\n\n<p style=\"margin-top: 15px;\">\nPlease take the necessary action to renew or replace this resource before the expiry date to avoid any disruption.\n</p>\n\n<p>If you have already taken action, please disregard this message.</p>\n\n<p><strong>View Resource:</strong> <a href=\"https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}\">https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}</a></p>",
+ "module": "Kiluth Hosting",
+ "name": "Resource Expires in 1 Day",
+ "send_system_notification": 1,
+ "subject": "Resource {{ doc.name }} will expire in 1 day",
+ "days_in_advance": 1,
+ "date_changed": "expiry_date",
+ "recipients": [
+  {
+   "receiver_by_document_field": "created_by"
+  },
+  {
+   "receiver_by_document_field": "tracked_by"
+  },
+  {
+   "receiver_by_document_field": "owner"
+  },
+  {
+   "receiver_by_role": "System Manager"
+  }
+ ]
+}

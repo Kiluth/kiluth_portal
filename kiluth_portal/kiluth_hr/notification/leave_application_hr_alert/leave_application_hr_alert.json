@@ -1,0 +1,19 @@
+{
+ "channel": "Email",
+ "doctype": "Notification",
+ "document_type": "Leave Application",
+ "enabled": 1,
+ "event": "New",
+ "is_standard": 1,
+ "message": "<p>A new leave application has been submitted.</p>\n<ul>\n  <li><b>Employee:</b> {{ doc.employee_name or doc.employee }}</li>\n  <li><b>Leave type:</b> {{ doc.leave_type }}</li>\n  <li><b>From:</b> {{ doc.from_date }}</li>\n  <li><b>To:</b> {{ doc.to_date }}</li>\n  <li><b>Total days:</b> {{ doc.total_leave_days }}</li>\n  <li><b>Reason:</b> {{ doc.description or '—' }}</li>\n</ul>\n<p>{{ frappe.utils.get_link_to_form(doc.doctype, doc.name, 'Open leave application') }}</p>",
+ "module": "Kiluth HR",
+ "name": "Leave Application HR Alert",
+ "recipients": [
+  {
+   "receiver_by_role": "HR Manager"
+  }
+ ],
+ "send_system_notification": 1,
+ "send_to_all_assignees": 0,
+ "subject": "Leave application from {{ doc.employee_name or doc.employee }}: {{ doc.from_date }} → {{ doc.to_date }}"
+}

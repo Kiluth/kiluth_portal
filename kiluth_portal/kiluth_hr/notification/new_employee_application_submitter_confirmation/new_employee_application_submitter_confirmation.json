@@ -1,0 +1,20 @@
+{
+ "channel": "Email",
+ "condition": "doc.personal_email",
+ "doctype": "Notification",
+ "document_type": "New Employee Application",
+ "enabled": 1,
+ "event": "New",
+ "is_standard": 1,
+ "message": "<p>Hi {{ doc.first_name }},</p>\n<p>Thanks for completing the New Employee Information Form at Kiluth. HR has received your submission and will be in touch shortly with the next steps.</p>\n<p><b>Reference:</b> {{ doc.name }}</p>\n<p>If any details need correcting, reply to this email and we'll update them.</p>\n<p>— Kiluth HR</p>",
+ "module": "Kiluth HR",
+ "name": "New Employee Application Submitter Confirmation",
+ "recipients": [
+  {
+   "receiver_by_document_field": "personal_email"
+  }
+ ],
+ "send_system_notification": 0,
+ "send_to_all_assignees": 0,
+ "subject": "Kiluth — application received ({{ doc.name }})"
+}

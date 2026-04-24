@@ -1,0 +1,21 @@
+{
+ "channel": "Email",
+ "condition": "doc.status in ('Approved', 'Rejected')",
+ "doctype": "Notification",
+ "document_type": "Leave Application",
+ "enabled": 1,
+ "event": "Value Change",
+ "is_standard": 1,
+ "message": "<p>Hi {{ doc.employee_name or doc.employee }},</p>\n<p>Your leave application has been <b>{{ doc.status }}</b>.</p>\n<ul>\n  <li><b>Leave type:</b> {{ doc.leave_type }}</li>\n  <li><b>From:</b> {{ doc.from_date }}</li>\n  <li><b>To:</b> {{ doc.to_date }}</li>\n  <li><b>Total days:</b> {{ doc.total_leave_days }}</li>\n</ul>\n<p>{{ frappe.utils.get_link_to_form(doc.doctype, doc.name, 'Open application') }}</p>\n<p>— Kiluth HR</p>",
+ "module": "Kiluth HR",
+ "name": "Leave Application Status Change",
+ "recipients": [
+  {
+   "receiver_by_document_field": "employee"
+  }
+ ],
+ "send_system_notification": 1,
+ "send_to_all_assignees": 0,
+ "subject": "Your leave application is {{ doc.status }}: {{ doc.name }}",
+ "value_changed": "status"
+}

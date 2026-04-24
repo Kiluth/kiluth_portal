@@ -1,0 +1,22 @@
+{
+ "channel": "Email",
+ "doctype": "Notification",
+ "document_type": "Material Request",
+ "enabled": 1,
+ "event": "Submit",
+ "is_standard": 1,
+ "message": "<p>A new Material Request has been submitted.</p>\n<ul>\n  <li><b>Request:</b> {{ doc.name }}</li>\n  <li><b>Purpose:</b> {{ doc.material_request_type }}</li>\n  <li><b>Requested by:</b> {{ doc.owner }}</li>\n  <li><b>Required by:</b> {{ doc.schedule_date or '—' }}</li>\n  <li><b>Items ({{ doc.items|length }}):</b>\n    <ul>\n      {% for item in doc.items %}<li>{{ item.qty }} × {{ item.item_name or item.item_code }}{% if item.description %} — {{ item.description }}{% endif %}</li>{% endfor %}\n    </ul>\n  </li>\n</ul>\n<p>{{ frappe.utils.get_link_to_form(doc.doctype, doc.name, 'Open request') }}</p>",
+ "module": "Kiluth HR",
+ "name": "Material Request HR Alert",
+ "recipients": [
+  {
+   "receiver_by_role": "HR Manager"
+  },
+  {
+   "receiver_by_role": "Purchase Manager"
+  }
+ ],
+ "send_system_notification": 1,
+ "send_to_all_assignees": 0,
+ "subject": "New Material Request: {{ doc.name }} ({{ doc.items|length }} item{{ 's' if doc.items|length != 1 else '' }})"
+}
