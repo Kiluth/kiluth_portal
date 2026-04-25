@@ -60,6 +60,13 @@ doc_events = {
     "Timesheet": {
         "before_insert": "kiluth_portal.utils.employee.autofill_employee",
     },
+    # Gate User creation to the kiluth.com domain — needed because Website
+    # Settings has signup enabled (so Google SSO auto-provisions Kiluth staff
+    # without HR having to pre-create each User record). The hook bounces any
+    # email not ending in @kiluth.com.
+    "User": {
+        "before_insert": "kiluth_portal.utils.auth.restrict_signup_to_kiluth_domain",
+    },
 }
 
 
