@@ -1,9 +1,9 @@
 [project]
 name = "kiluth_portal"
 authors = [
-    { name = "Kiluth LTD.", email = "poom.pengcharoen@gmail.com"}
+    { name = "Kiluth LTD.", email = "technology@kiluth.com"}
 ]
-description = "Kiluth-specific customizations for ERPNext: custom doctypes, hooks, fixtures"
+description = "Kiluth's custom Frappe app for portal.kiluth.com — custom doctypes, hooks, fixtures, and the tiled portal landing page"
 requires-python = ">=3.14"
 readme = "README.md"
 dynamic = ["version"]

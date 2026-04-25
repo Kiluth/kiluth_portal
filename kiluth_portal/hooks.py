@@ -1,8 +1,8 @@
 app_name = "kiluth_portal"
-app_title = "Kiluth Customizations"
+app_title = "Kiluth Portal"
 app_publisher = "Kiluth LTD."
-app_description = "Kiluth-specific customizations for ERPNext: custom doctypes, hooks, fixtures"
-app_email = "poom.pengcharoen@gmail.com"
+app_description = "Kiluth's custom Frappe app for portal.kiluth.com — custom doctypes, hooks, fixtures, and the tiled portal landing page"
+app_email = "technology@kiluth.com"
 app_license = "mit"
 
 
