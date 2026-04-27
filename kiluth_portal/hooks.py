@@ -70,6 +70,14 @@ doc_events = {
 }
 
 
+# Post-login landing page
+# -----------------------
+# Override Frappe's default redirect (desk users go to /app) so every login
+# lands on the Kiluth portal page (Web Page named "portal", route "welcome").
+# Frappe's `get_default_path` calls this hook before falling back to /app.
+get_website_user_home_page = "kiluth_portal.utils.auth.get_user_home_page"
+
+
 # Fixtures
 # --------
 # Records exported by `bench export-fixtures --app kiluth_portal` and
