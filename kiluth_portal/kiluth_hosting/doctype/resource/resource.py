@@ -1,8 +1,18 @@
 import frappe
 from frappe.model.document import Document
-from frappe.utils import flt, getdate, nowdate
+from frappe.utils import flt, nowdate
 
 MA_MARGIN = 0.25
+
+
+def compute_resource_status(created_date, expiry_date, today_str):
+	if not created_date or not expiry_date:
+		return "Draft"
+	if str(created_date) > today_str:
+		return "Planned"
+	if str(expiry_date) <= today_str:
+		return "Expired"
+	return "Active"
 
 
 class Resource(Document):
@@ -23,9 +33,6 @@ class Resource(Document):
 		self.cost = str(flt(estimated) * MA_MARGIN / 12 * flt(self.ma_period_months))
 
 	def _auto_set_status(self):
-		if self.status not in ("Active", "Expired"):
+		if self.status in ("Archived", "Deleted"):
 			return
-		if not self.expiry_date:
-			return
-
-		self.status = "Expired" if getdate(self.expiry_date) < getdate(nowdate()) else "Active"
+		self.status = compute_resource_status(self.created_date, self.expiry_date, nowdate())

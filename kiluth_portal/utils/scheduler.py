@@ -12,6 +12,8 @@ bulk version.
 import frappe
 from frappe.utils import today
 
+from kiluth_portal.kiluth_hosting.doctype.resource.resource import compute_resource_status
+
 
 def recalc_resource_status():
 	resources = frappe.get_all(
@@ -23,14 +25,7 @@ def recalc_resource_status():
 	updated = 0
 
 	for r in resources:
-		if not r.created_date or not r.expiry_date:
-			new_status = "Draft"
-		elif str(r.created_date) > today_str:
-			new_status = "Planned"
-		elif str(r.expiry_date) <= today_str:
-			new_status = "Expired"
-		else:
-			new_status = "Active"
+		new_status = compute_resource_status(r.created_date, r.expiry_date, today_str)
 
 		if new_status != r.status:
 			frappe.db.set_value(
