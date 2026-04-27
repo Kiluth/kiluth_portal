@@ -82,27 +82,42 @@ def get_user_home_page(user):
 	return DEFAULT_HOME_PAGE
 
 
-_STALE_REDIRECTS = ("/desk", "/desk/", "/app", "/app/")
+_STALE_REDIRECTS = ("/desk", "/app")
+
+
+def _is_stale_desk_redirect(value: str | None) -> bool:
+	"""True if `value` points back at the Frappe desk and should be discarded."""
+	if not value:
+		return False
+	target = value.lower().rstrip("/")
+	return any(target.endswith(p) for p in _STALE_REDIRECTS)
 
 
 @frappe.whitelist(allow_guest=True)
 def login_via_google(code: str, state: str):
-	"""Wrap Frappe's Google OAuth callback so stale /desk redirects don't win.
+	"""Wrap Frappe's Google OAuth callback so logged-in users land on /welcome.
 
-	Scenario the wrapper exists to fix: a user lands on `/login?redirect-to=/desk`
-	(e.g. from a saved bookmark or because their session expired while on the
-	desk). The login page bakes that redirect_to into the OAuth state. After
-	Google authenticates, Frappe's `redirect_post_login` honors the explicit
-	redirect_to and sends them back to the desk — bypassing
-	`get_website_user_home_page` and the `desktop:home_page` site default.
+	Two problems we work around here:
 
-	We decode the state, drop redirect_to if it's a desk-or-app URL, and
-	delegate to Frappe's normal flow with the cleaned state. Any other
-	redirect_to (e.g. a deep link to a Web Page) is preserved.
+	1. Stale `/desk` baked into state. When a user reaches /login from /desk
+	   (saved bookmark, expired session), the login page bakes that path into
+	   the OAuth state's `redirect_to`. After auth, Frappe's
+	   `redirect_post_login` honors that and sends them back to the desk.
 
-	Wired via `override_whitelisted_methods` in hooks.py — any GET to
-	`/api/method/frappe.integrations.oauth2_logins.login_via_google` lands
-	here instead of the upstream function.
+	2. Frappe's fallback when `redirect_to` is missing also goes to /desk
+	   (or /apps, depending on installed apps). The `get_website_user_home_page`
+	   hook is only consulted by `frappe.website.utils.get_home_page()`, which
+	   is used as a *secondary* fallback in `redirect_post_login` and only for
+	   non-desk users — so for our typical System User population, the hook
+	   never fires. The actual `get_default_path` lives in `frappe.apps` and
+	   checks installed apps + User.default_app, with no hook surface.
+
+	Fix: force `redirect_to = DEFAULT_HOME_PAGE` into the state before the
+	upstream flow runs, *unless* the user already specified a real deep link
+	(e.g. /portal/foo). That way `redirect_post_login` finds a redirect_to
+	value and uses it directly — no get_default_path lookup.
+
+	Wired via `override_whitelisted_methods` in hooks.py.
 	"""
 	from frappe.integrations.oauth2_logins import decoder_compat
 	from frappe.utils.oauth import login_via_oauth2
@@ -113,9 +128,9 @@ def login_via_google(code: str, state: str):
 		# malformed state — let upstream handle (likely a 4xx)
 		return login_via_oauth2("google", code, state, decoder=decoder_compat)
 
-	target = (decoded.get("redirect_to") or "").lower().rstrip("/")
-	if target.endswith(_STALE_REDIRECTS) or target.endswith("/desk") or target.endswith("/app"):
-		decoded["redirect_to"] = None
+	current = decoded.get("redirect_to")
+	if _is_stale_desk_redirect(current) or not current:
+		decoded["redirect_to"] = DEFAULT_HOME_PAGE
 		state = base64.b64encode(json.dumps(decoded).encode("utf-8")).decode("utf-8")
 
 	return login_via_oauth2("google", code, state, decoder=decoder_compat)
