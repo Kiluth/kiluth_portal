@@ -78,6 +78,16 @@ doc_events = {
 get_website_user_home_page = "kiluth_portal.utils.auth.get_user_home_page"
 
 
+# OAuth callback override
+# -----------------------
+# Wrap Frappe's Google login callback so a stale `redirect_to=/desk` baked
+# into the OAuth state (from /login?redirect-to=/desk) doesn't trump the
+# home-page hook above. See utils/auth.py:login_via_google for the rationale.
+override_whitelisted_methods = {
+    "frappe.integrations.oauth2_logins.login_via_google": "kiluth_portal.utils.auth.login_via_google",
+}
+
+
 # Fixtures
 # --------
 # Records exported by `bench export-fixtures --app kiluth_portal` and
