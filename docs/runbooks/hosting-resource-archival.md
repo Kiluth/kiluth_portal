@@ -16,9 +16,10 @@ Before touching anything in DigitalOcean:
 
 1. **Confirm non-renewal** with the project's PM and the customer. If renewal is even possibly on the table, leave the resource as `Expired` and revisit later.
 2. **Confirm the IP** in the registry matches the droplet you're about to destroy. The Resource record's `identifier` field holds the IP.
-3. **Open both browser tabs** you'll need:
+3. **Open the browser tabs** you'll need:
    - DigitalOcean → https://cloud.digitalocean.com/droplets (switch to the team that owns the droplet — most customer hosting lives in **Technology Team 2**)
    - Cloudflare DNS → https://dash.cloudflare.com/35321218724970e16ca5dee8cf7f02d2/kiluth.com/dns/records
+   - Coolify (only if the droplet was managed by Coolify) → https://coolify.kiluth.com
 
 ## Steps
 
@@ -86,6 +87,27 @@ fetch('/api/method/frappe.client.set_value', {
 }).then(r => r.json()).then(console.log);
 ```
 
+### 7. Clean Coolify (only if the droplet was Coolify-managed)
+
+Skip this step for droplets that weren't registered as Coolify Servers (most pre-2026 customer envs aren't). Quick check: search the customer slug at https://coolify.kiluth.com/servers — if nothing matches, skip.
+
+If there is a match, you'll typically have:
+
+- A **Server** entry under Servers (the SSH connection to the now-dead droplet, marked "Not reachable & Not usable by Coolify")
+- An **Environment** under the customer's Project (Projects → `PROJ-XXXX - <customer> - <app>` → `dev` / `uat` / etc.) holding the Application + Postgres/MySQL + Redis + any object-store services
+
+The cleanest path is **Server → Danger Zone → Delete** with the **"Delete all resources (N total)"** checkbox checked, then type the server name to confirm. That cascades through the application + databases + services.
+
+> ⚠️ **Known Coolify gotcha**: when the underlying VM is already destroyed, the cascade-delete tries to SSH the dead host first and silently hangs — the Continue click returns no error but nothing actually gets removed. If you see this:
+>
+> 1. The Coolify entries are cosmetic at this point — they can't deploy anything to a dead host, so leaving them is safe but ugly. Track in a follow-up task.
+> 2. To force the delete, you'll need either the Coolify API (`DELETE /api/v1/servers/{uuid}` with the `COOLIFY_TOKEN` from the GitHub repo secret), or a SQL DELETE on Coolify's Postgres against the orphaned `servers` / `applications` / `standalone_postgresqls` / etc. rows.
+> 3. Don't try to manually click each resource's "Delete" inside the env — same SSH-to-dead-host hang, same silent failure.
+
+After the Server entry is gone, the empty Environment can be deleted via **Project → Environment → Delete Environment** (type the env name to confirm).
+
+✅ Once the Server and Env are gone (or you've decided to leave them per the gotcha above), the registry side is fully archived.
+
 ## Verification
 
 You should be able to assert all of the following:
@@ -93,6 +115,7 @@ You should be able to assert all of the following:
 - Droplet IP no longer appears on DO Droplets page (any team).
 - Snapshot row exists on https://cloud.digitalocean.com/images/snapshots with the expected size.
 - `pharmdelo` (or whatever slug) returns zero rows on the Cloudflare DNS search.
+- If Coolify-managed: the Server entry no longer appears at https://coolify.kiluth.com/servers (or is flagged as a known-blocked cleanup per step 7's gotcha).
 - Resource record's status is `Archived` and the three checklist boxes are ticked. The Snapshot ID field has the snapshot name.
 
 ## Rollback (customer comes back)
