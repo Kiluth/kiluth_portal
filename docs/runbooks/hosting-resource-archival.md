@@ -41,7 +41,29 @@ Wait until the Snapshots row shows a size and a `Created … minute ago` rather 
 
 Visit https://cloud.digitalocean.com/images/snapshots and confirm the row exists with a real size. Do this **before** the destroy click — once the droplet is gone, a missing snapshot means the data is unrecoverable.
 
-### 4. Destroy droplet
+### 4. Clean Coolify (only if the droplet is Coolify-managed)
+
+> ⚠️ **Order matters — do this BEFORE destroying the droplet.** Coolify's cascade-delete tries to SSH the host to gracefully shut down containers; with the host still alive that takes seconds, with the host already destroyed the click silently hangs and nothing gets removed. Get the snapshot first (step 2-3), Coolify second, droplet third.
+
+Skip this step for droplets that weren't registered as Coolify Servers (most pre-2026 customer envs aren't). Quick check: search the customer slug at https://coolify.kiluth.com/servers — if nothing matches, skip to step 5.
+
+If there is a match, you'll typically have:
+
+- A **Server** entry under Servers (the SSH connection to the droplet)
+- An **Environment** under the customer's Project (Projects → `PROJ-XXXX - <customer> - <app>` → `dev` / `uat` / etc.) holding the Application + Postgres/MySQL + Redis + any object-store services
+
+Cleanest path: **Server → Danger Zone → Delete** with the **"Delete all resources (N total)"** checkbox checked, then type the server name on the next step → Continue. That cascades through the application + databases + services.
+
+After the Server entry is gone, the now-empty Environment can be deleted via **Project → Environment → Delete Environment** (type the env name to confirm).
+
+> 🩹 **Recovery — if you already destroyed the droplet and Coolify entries are stuck**: the UI cascade-delete will silently fail. Two escape hatches:
+>
+> 1. **Coolify API**: `DELETE /api/v1/servers/{uuid}?delete_associated_volumes=true` with the `COOLIFY_TOKEN` from the frappe_docker GitHub repo secrets (same token the auto-deploy workflow uses). Get the server UUID from the URL on its Danger Zone page.
+> 2. **Direct SQL** on Coolify's Postgres: `DELETE` the orphan rows from `servers`, `applications`, `standalone_postgresqls`, `standalone_redis`, `services` referencing the dead server.
+>
+> Don't try to manually click each resource's "Delete" — same SSH-to-dead-host hang.
+
+### 5. Destroy droplet
 
 Droplet → **Settings** → scroll to **Destroy** → click Destroy.
 
@@ -55,7 +77,7 @@ Toast should read "Droplet deleted successfully" and the droplet leaves the list
 
 ✅ Tick **Droplet Destroyed**.
 
-### 5. Clean Cloudflare DNS
+### 6. Clean Cloudflare DNS
 
 On the Cloudflare DNS records page, type the customer-app slug (e.g. `pharmdelo`, `handyman`, `pimtooklaedee`) into **Search DNS Records** and click **Search**.
 
@@ -65,7 +87,7 @@ Use the header checkbox (Select all) → **Delete N records** (red) → type `DE
 
 ✅ Tick **DNS Records Cleaned**.
 
-### 6. Flip status to Archived
+### 7. Flip status to Archived
 
 On the Resource form, change **Status** from `Expired` → `Archived` and save. The doctype's [`_auto_set_status`](../../kiluth_portal/kiluth_hosting/doctype/resource/resource.py) early-returns on terminal states (`Archived`, `Deleted`), so the value sticks even though `before_save` runs. The daily scheduler is idempotent on terminal states for the same reason.
 
@@ -86,27 +108,6 @@ fetch('/api/method/frappe.client.set_value', {
   }),
 }).then(r => r.json()).then(console.log);
 ```
-
-### 7. Clean Coolify (only if the droplet was Coolify-managed)
-
-Skip this step for droplets that weren't registered as Coolify Servers (most pre-2026 customer envs aren't). Quick check: search the customer slug at https://coolify.kiluth.com/servers — if nothing matches, skip.
-
-If there is a match, you'll typically have:
-
-- A **Server** entry under Servers (the SSH connection to the now-dead droplet, marked "Not reachable & Not usable by Coolify")
-- An **Environment** under the customer's Project (Projects → `PROJ-XXXX - <customer> - <app>` → `dev` / `uat` / etc.) holding the Application + Postgres/MySQL + Redis + any object-store services
-
-The cleanest path is **Server → Danger Zone → Delete** with the **"Delete all resources (N total)"** checkbox checked, then type the server name to confirm. That cascades through the application + databases + services.
-
-> ⚠️ **Known Coolify gotcha**: when the underlying VM is already destroyed, the cascade-delete tries to SSH the dead host first and silently hangs — the Continue click returns no error but nothing actually gets removed. If you see this:
->
-> 1. The Coolify entries are cosmetic at this point — they can't deploy anything to a dead host, so leaving them is safe but ugly. Track in a follow-up task.
-> 2. To force the delete, you'll need either the Coolify API (`DELETE /api/v1/servers/{uuid}` with the `COOLIFY_TOKEN` from the GitHub repo secret), or a SQL DELETE on Coolify's Postgres against the orphaned `servers` / `applications` / `standalone_postgresqls` / etc. rows.
-> 3. Don't try to manually click each resource's "Delete" inside the env — same SSH-to-dead-host hang, same silent failure.
-
-After the Server entry is gone, the empty Environment can be deleted via **Project → Environment → Delete Environment** (type the env name to confirm).
-
-✅ Once the Server and Env are gone (or you've decided to leave them per the gotcha above), the registry side is fully archived.
 
 ## Verification
 
