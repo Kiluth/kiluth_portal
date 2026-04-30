@@ -116,7 +116,7 @@ You should be able to assert all of the following:
 - Droplet IP no longer appears on DO Droplets page (any team).
 - Snapshot row exists on https://cloud.digitalocean.com/images/snapshots with the expected size.
 - `pharmdelo` (or whatever slug) returns zero rows on the Cloudflare DNS search.
-- If Coolify-managed: the Server entry no longer appears at https://coolify.kiluth.com/servers (or is flagged as a known-blocked cleanup per step 7's gotcha).
+- If Coolify-managed: the Server entry no longer appears at https://coolify.kiluth.com/servers (or is flagged as a known-blocked cleanup per step 4's recovery callout).
 - Resource record's status is `Archived` and the three checklist boxes are ticked. The Snapshot ID field has the snapshot name.
 
 ## Rollback (customer comes back)
