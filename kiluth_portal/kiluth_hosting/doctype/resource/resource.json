@@ -220,21 +220,21 @@
   },
   {
    "depends_on": "eval:doc.resource_type=='Hosting'",
-   "description": "Cleanup workflow tracking. See docs/runbooks/hosting-resource-archival.md.",
+   "description": "Cleanup workflow tracking. See <a href=\"https://docs.kiluth.com/technology/hosting-resource-archival-guideline\" target=\"_blank\">Hosting Resource Archival Guideline</a>.",
    "fieldname": "archival_section",
    "fieldtype": "Section Break",
    "label": "Archival Checklist"
   },
   {
    "default": "0",
-   "description": "Live snapshot taken in DigitalOcean and verified Available.",
+   "description": "Snapshot/image of the VM was taken at the provider and verified available.",
    "fieldname": "archival_snapshot_taken",
    "fieldtype": "Check",
    "label": "Snapshot Taken"
   },
   {
    "depends_on": "archival_snapshot_taken",
-   "description": "Name of the retained DigitalOcean snapshot (e.g. PROJ-XXXX-customer-app-env-<unix-ms>).",
+   "description": "Provider-side identifier of the retained snapshot/image.",
    "fieldname": "archival_snapshot_id",
    "fieldtype": "Data",
    "label": "Snapshot ID"
@@ -245,14 +245,14 @@
   },
   {
    "default": "0",
-   "description": "Droplet destroyed in DigitalOcean (snapshot left unchecked in the destroy modal).",
+   "description": "Underlying VM/instance destroyed at the provider (snapshot retained — left unchecked in the destroy modal).",
    "fieldname": "archival_droplet_destroyed",
    "fieldtype": "Check",
-   "label": "Droplet Destroyed"
+   "label": "VM Destroyed"
   },
   {
    "default": "0",
-   "description": "All Cloudflare DNS records pointing to the destroyed IP have been removed.",
+   "description": "All DNS records pointing to the destroyed IP have been removed.",
    "fieldname": "archival_dns_cleaned",
    "fieldtype": "Check",
    "label": "DNS Records Cleaned"
