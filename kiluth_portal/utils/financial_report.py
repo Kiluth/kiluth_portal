@@ -32,9 +32,7 @@ of file:// and remote font URLs, and survives sandboxed worker processes.
 
 from __future__ import annotations
 
-import base64
 import datetime
-import os
 
 import frappe
 from frappe.utils import getdate, nowdate
@@ -574,11 +572,15 @@ def _line_chart_svg(series: dict, period_labels: list,
 
 # ─── Page chrome (letterhead, footer, KPI tiles, inception strip) ───────────
 
-LETTER_HEAD = """
+# Logo as inline SVG — bulletproof in wkhtmltopdf (no HTTP fetch, no image cache,
+# scales to any size). Pulled from /files/logo-black.svg (uploaded by Poom).
+LOGO_SVG = '<svg viewBox="0 0 80 24" width="70" height="21" xmlns="http://www.w3.org/2000/svg"><path d="m16.724 23h-3.9539l-6.51834-9.5124-2.06294 1.6761v7.8363h-3.438233v-20.94457h3.438233v10.01387c.42023-.5158.84523-1.0315 1.27501-1.5472.42978-.5158.85956-1.03149 1.28934-1.54723l5.90233-6.91944h3.8823l-7.82197 9.16867zm5.7877-15.85885v15.85885h-3.3666v-15.85885zm-1.6618-6.07421c.5158 0 .9599.13848 1.3323.41545.3821.27697.5731.7545.5731 1.4326 0 .66854-.191 1.14607-.5731 1.43259-.3724.27697-.8165.41546-1.3323.41546-.5348 0-.9885-.13849-1.3609-.41546-.363-.28652-.5444-.76405-.5444-1.43259 0-.6781.1814-1.15563.5444-1.4326.3724-.27697.8261-.41545 1.3609-.41545zm9.8706 21.93306h-3.3809v-22.291214h3.3809zm18.6381-15.85885v15.85885h-2.6503l-.4584-2.1346h-.1863c-.3342.5444-.7592.9981-1.275 1.361-.5157.3534-1.0887.616-1.7191.7879-.6303.1815-1.2941.2722-1.9913.2722-1.1938 0-2.2158-.2005-3.0658-.6017-.8404-.4106-1.4851-1.041-1.934-1.891-.4488-.85-.6733-1.9483-.6733-3.295v-10.35765h3.3809v9.72735c0 1.232.2484 2.1537.745 2.7649.5062.6112 1.2893.9169 2.3495.9169 1.0219 0 1.8337-.2102 2.4354-.6304s1.0267-1.041 1.275-1.8624c.2578-.8213.3868-1.8289.3868-3.0227v-7.89365zm10.7302 13.42345c.4393 0 .8738-.0382 1.3036-.1146.4298-.086.8214-.1863 1.1748-.3009v2.5501c-.3725.1623-.8548.3008-1.447.4154-.5921.1146-1.2081.1719-1.848.1719-.8978 0-1.7048-.148-2.4211-.4441-.7163-.3056-1.2846-.8261-1.7048-1.5615s-.6303-1.7526-.6303-3.0514v-8.524h-2.1633v-1.50423l2.3208-1.18906 1.1031-3.39525h2.1203v3.52419h4.5413v2.56435h-4.5413v8.481c0 .8022.2006 1.3991.6017 1.7907s.9312.5874 1.5902.5874zm9.0683-19.855814v5.601454c0 .58259-.0191 1.15086-.0573 1.70479-.0286.55394-.0621.98372-.1003 1.28934h.1863c.3342-.55394.7449-1.00759 1.232-1.36097.4871-.36292 1.0315-.63512 1.6332-.81658.6112-.18146 1.2606-.27219 1.9483-.27219 1.2129 0 2.2444.20534 3.0944.61602.85.40112 1.4995 1.02669 1.9483 1.8767.4585.85005.6877 1.95315.6877 3.30925v10.3434h-3.3666v-9.713c0-1.232-.2531-2.1537-.7593-2.7649-.5062-.62081-1.2893-.93121-2.3495-.93121-1.0219 0-1.8337.21489-2.4354.64471-.5921.4202-1.0171 1.0458-1.275 1.8767-.2579.8213-.3868 1.8241-.3868 3.0084v7.8793h-3.3666v-22.291214z" fill="#1a1a1a"/></svg>'
+
+LETTER_HEAD = f"""
 <table style="width: 100%; text-align: left; font-family: 'Theinhardt', 'IBM Plex Sans Thai', 'Inter', Arial, sans-serif; border-collapse: collapse;">
 	<tbody><tr>
 		<td style="width: 33%; vertical-align: top; padding: 0;">
-			<img src="https://www.kiluth.com/logo-black.png" alt="Kiluth" width="70" style="width: 70px; display: block;">
+			{LOGO_SVG}
 		</td>
 		<td style="width: 34%; vertical-align: top; font-size: 7pt; color: #D5D5D5; text-align: center; padding: 0; line-height: 1;">
 			Confidential
@@ -590,7 +592,7 @@ LETTER_HEAD = """
 		</td>
 	</tr></tbody>
 </table>
-<div style="width: 100%; height: 50px;"></div>
+<div style="width: 100%; height: 30px;"></div>
 """
 
 FOOTER = """
@@ -734,17 +736,15 @@ def _render_inception_strip(period_end) -> str:
 	"""
 
 
-# ─── Fonts (base64 inlined at module load) ──────────────────────────────────
-
-_FONT_DIR = os.path.join(os.path.dirname(__file__), "fonts")
-
-
-def _font_data_url(filename: str) -> str:
-	with open(os.path.join(_FONT_DIR, filename), "rb") as f:
-		return f"data:font/ttf;base64,{base64.b64encode(f.read()).decode('ascii')}"
+# ─── Fonts (served by Frappe at /files/, accessed via absolute URL) ─────────
+# wkhtmltopdf is flaky with base64 data: URLs in @font-face. Serving the TTFs
+# from Frappe's File doctype (uploaded once via /desk/file) gives wkhtmltopdf
+# a same-origin HTTP URL it can fetch reliably. Files are public so no auth.
 
 
 def _font_face_block() -> str:
+	from frappe.utils import get_url
+
 	mapping = [
 		("theinhardt-light-webfont.ttf", 300, "normal"),
 		("theinhardt-lightita-webfont.ttf", 300, "italic"),
@@ -755,9 +755,10 @@ def _font_face_block() -> str:
 	]
 	out = []
 	for fname, weight, style in mapping:
+		url = get_url(f"/files/{fname}")
 		out.append(
 			f"@font-face {{ font-family: 'Theinhardt'; "
-			f"src: url('{_font_data_url(fname)}') format('truetype'); "
+			f"src: url('{url}') format('truetype'); "
 			f"font-weight: {weight}; font-style: {style}; }}"
 		)
 	return "\n".join(out)
@@ -808,9 +809,13 @@ def _render_html(period: dict) -> str:
 		body { font-family: 'Theinhardt', 'IBM Plex Sans Thai', 'Inter', Arial, sans-serif; color: #1a1a1a; font-size: 10pt; line-height: 1.45; margin: 0; padding: 0; }
 		h1 { font-size: 22pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 12pt 0 4pt 0; }
 		.sub { font-size: 9pt; font-weight: 400; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7785; }
-		.page { page-break-after: always; position: relative; min-height: 259mm; padding-bottom: 22mm; box-sizing: border-box; }
-		.page:last-child { page-break-after: auto; }
-		.page-footer { position: absolute; bottom: 0; left: 0; right: 0; }
+		/* Pages flow naturally; explicit break BEFORE each page (except first) avoids
+		   the wkhtmltopdf "absolute footer overflow → blank page" trap. Footer is the
+		   last block in each page so it sits below content rather than glued to the
+		   page bottom — a tradeoff we accept to guarantee no spurious pages. */
+		.page { page-break-before: always; }
+		.page:first-child { page-break-before: auto; }
+		.page-footer { margin-top: 28px; padding-top: 10px; border-top: 0.5pt solid #e8e8e8; }
 		"""
 	)
 
