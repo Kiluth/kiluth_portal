@@ -32,10 +32,20 @@ doctype_js = {
 # Daily: re-run Resource status calc so expiry notifications fire on time even
 # if nobody saves a Resource manually that day. The same logic runs on every
 # Resource.before_save for single-record edits.
+#
+# Cron — `0 9 5 * *`: 09:00 on the 5th of each month (server time).
+# Builds + emails Kiluth's monthly financial PDF report covering the prior
+# full month + YTD. Recipients are hard-coded in the module. Picked the 5th
+# (not the 1st) to give finance a few days for late entries to land.
 scheduler_events = {
 	"daily": [
 		"kiluth_portal.utils.scheduler.recalc_resource_status",
 	],
+	"cron": {
+		"0 9 5 * *": [
+			"kiluth_portal.utils.financial_report.send_monthly_report",
+		],
+	},
 }
 
 
