@@ -67,10 +67,18 @@ def send_monthly_report(recipients: list[str] | str | None = None):
 		# financial data" — System Manager has it by default.
 		frappe.throw("Not permitted to send the monthly financial report.")
 
+	# Frappe's RPC layer JSON-encodes list args when called via /api/method/...,
+	# so a list passed from the browser arrives here as a JSON string. Decode
+	# that case before defaulting to "single string => one-recipient list".
 	if recipients is None:
 		recipients = list(RECIPIENTS)
 	elif isinstance(recipients, str):
-		recipients = [recipients]
+		stripped = recipients.strip()
+		if stripped.startswith("["):
+			recipients = frappe.parse_json(stripped)
+		else:
+			recipients = [stripped]
+		recipients = list(recipients)
 	else:
 		recipients = list(recipients)
 
