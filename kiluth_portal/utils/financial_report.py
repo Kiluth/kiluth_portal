@@ -13,6 +13,15 @@ Privacy: the underlying loan account is named after a real investor.
 For the PDF we relabel it to "Loan from Investors" (NAME_REMAP). All other
 account names render as-is minus the company suffix " - K".
 
+Manual test: it's safe (and whitelisted) to invoke directly; pass an
+explicit recipients list to avoid emailing the full distribution while
+sanity-checking output. From the browser console:
+
+    await frappe.call({
+        method: 'kiluth_portal.utils.financial_report.send_monthly_report',
+        args: {recipients: ['poom.pengcharoen@kiluth.com']}
+    })
+
 Idempotency: each invocation builds a fresh report covering the prior
 calendar month relative to "now", so re-runs on the same day produce the
 same content. Multiple invocations the same day = duplicate emails (the
@@ -44,8 +53,27 @@ NAME_REMAP = {
 
 # ─── Public entry point ─────────────────────────────────────────────────────
 
-def send_monthly_report():
-	"""Build and email the prior month's financial report."""
+@frappe.whitelist()
+def send_monthly_report(recipients: list[str] | str | None = None):
+	"""Build and email the prior month's financial report.
+
+	`recipients` defaults to the module-level RECIPIENTS tuple (the cron
+	uses this). Manual invocations can pass a single email or a list to
+	override — handy for testing without spamming everyone. Only users
+	with the System Manager role can call this via the API.
+	"""
+	if not frappe.has_permission("Server Script", "write"):
+		# Reuse Server Script perm as a proxy for "trusted enough to email
+		# financial data" — System Manager has it by default.
+		frappe.throw("Not permitted to send the monthly financial report.")
+
+	if recipients is None:
+		recipients = list(RECIPIENTS)
+	elif isinstance(recipients, str):
+		recipients = [recipients]
+	else:
+		recipients = list(recipients)
+
 	period = _compute_period()
 	data = _pull_data(period)
 	html = _render_html(period, data)
@@ -59,12 +87,13 @@ def send_monthly_report():
 	}
 
 	frappe.sendmail(
-		recipients=list(RECIPIENTS),
+		recipients=recipients,
 		subject=subject,
 		message=body,
 		attachments=[attachment],
 		delayed=False,
 	)
+	return {"period": period["label"], "recipients": recipients}
 
 
 # ─── Period helpers ─────────────────────────────────────────────────────────
