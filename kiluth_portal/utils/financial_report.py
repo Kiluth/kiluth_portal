@@ -66,6 +66,22 @@ PALETTE = (
 )
 
 
+# ─── Idempotency state ──────────────────────────────────────────────────────
+# We record "the last period we sent the production report for" via Frappe's
+# Defaults table — a key/value store that survives restarts. The value is the
+# period label ("YYYY-MM") of the prior-month being reported.
+
+_SENT_KEY = "kiluth_monthly_report_last_sent_period"
+
+
+def _last_sent_period() -> str | None:
+	return frappe.db.get_default(_SENT_KEY)
+
+
+def _mark_sent(period_key: str) -> None:
+	frappe.db.set_default(_SENT_KEY, period_key)
+
+
 # ─── Public entry point ─────────────────────────────────────────────────────
 
 @frappe.whitelist()
@@ -76,11 +92,18 @@ def send_monthly_report(recipients: list[str] | str | None = None):
 	this). Manual invocations can pass a single email or a list to override —
 	handy for testing without spamming the management group. Only users with
 	the System Manager role can call this via the API.
+
+	Idempotency: when called via the production path (no `recipients` arg),
+	skips if the current period's report has already been sent. Test calls
+	with an explicit `recipients` list always send (so the test send is
+	always observable and never accidentally suppressed).
 	"""
 	if not frappe.has_permission("Server Script", "write"):
 		# Reuse Server Script perm as a proxy for "trusted enough to email
 		# financial data" — System Manager has it by default.
 		frappe.throw("Not permitted to send the monthly financial report.")
+
+	is_test_send = recipients is not None
 
 	# Frappe's RPC layer JSON-encodes list args when called via /api/method/...,
 	# so a list passed from the browser arrives here as a JSON string. Decode
@@ -98,6 +121,13 @@ def send_monthly_report(recipients: list[str] | str | None = None):
 		recipients = list(recipients)
 
 	period = _compute_period()
+	period_key = period["start"].strftime("%Y-%m")
+
+	# Idempotency guard — production path only. Test sends always go through
+	# so a manual fire never gets silently swallowed.
+	if not is_test_send and _last_sent_period() == period_key:
+		return {"period": period["label"], "skipped": "already sent"}
+
 	html = _render_html(period)
 	pdf_bytes = get_pdf(html)
 
@@ -115,7 +145,38 @@ def send_monthly_report(recipients: list[str] | str | None = None):
 		attachments=[attachment],
 		delayed=False,
 	)
+
+	if not is_test_send:
+		_mark_sent(period_key)
+
 	return {"period": period["label"], "recipients": recipients}
+
+
+def send_monthly_report_catchup():
+	"""Hourly catch-up — sends the report if today is past the scheduled
+	5th-09:00 fire and the current period hasn't been delivered yet.
+
+	The cron `0 9 5 * *` fires once at 09:00 on the 5th. If the server is
+	down or restarting at that minute, the cron is missed and Frappe does
+	not catch up. This function runs hourly and re-attempts; the idempotency
+	guard in send_monthly_report ensures a single email per period.
+
+	No-op if the period for "today" hasn't passed its scheduled fire time.
+	"""
+	today = getdate(nowdate())
+	period = _compute_period()
+	period_key = period["start"].strftime("%Y-%m")
+
+	# Already sent for this period — done.
+	if _last_sent_period() == period_key:
+		return
+
+	# We only fire on/after the 5th of any given month at 09:00.
+	now_dt = frappe.utils.now_datetime()
+	if today.day < 5 or (today.day == 5 and now_dt.hour < 9):
+		return
+
+	send_monthly_report()  # uses production recipients; idempotency-protected
 
 
 # ─── Period setup ───────────────────────────────────────────────────────────

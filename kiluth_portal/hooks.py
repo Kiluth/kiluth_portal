@@ -37,6 +37,11 @@ doctype_js = {
 # Builds + emails Kiluth's monthly financial PDF report covering the prior
 # full month + YTD. Recipients are hard-coded in the module. Picked the 5th
 # (not the 1st) to give finance a few days for late entries to land.
+#
+# Hourly — catch-up: if the primary cron was missed (server down, deploy
+# in flight, etc.), the hourly tick re-attempts. The function is idempotent:
+# self-skips when the report for the current period has already been sent.
+# So the worst case is a delayed email, never a duplicate or missed month.
 scheduler_events = {
 	"daily": [
 		"kiluth_portal.utils.scheduler.recalc_resource_status",
@@ -46,6 +51,9 @@ scheduler_events = {
 			"kiluth_portal.utils.financial_report.send_monthly_report",
 		],
 	},
+	"hourly": [
+		"kiluth_portal.utils.financial_report.send_monthly_report_catchup",
+	],
 }
 
 
