@@ -851,6 +851,14 @@ def _render_html(period: dict) -> str:
 		<h1>Balance Sheet</h1>
 		<div class="sub">As at {period_end.strftime("%d %B %Y")}</div>
 		{bs_table}
+		<div class="page-footer">{FOOTER}</div>
+	</div>
+	"""
+	page4 = f"""
+	<div class="page">
+		{LETTER_HEAD}
+		<h1>Cash &amp; Loan Position</h1>
+		<div class="sub">Trailing 12 months ending {period_end.strftime("%d %B %Y")}</div>
 		{chart_caption}Cash and loan position — last 12 months</div>
 		{cash_loan_chart}
 		<div class="page-footer">{FOOTER}</div>
@@ -859,7 +867,7 @@ def _render_html(period: dict) -> str:
 
 	return f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>{page_style}</style></head>
-<body>{page1}{page2}{page3}</body></html>
+<body>{page1}{page2}{page3}{page4}</body></html>
 """
 
 
