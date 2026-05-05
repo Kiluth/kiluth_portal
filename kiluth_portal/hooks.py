@@ -228,4 +228,5 @@ fixtures = [
 # idempotent — safe to run repeatedly.
 after_migrate = [
     "kiluth_portal.utils.website.apply_website_settings",
+    "kiluth_portal.utils.print_defaults.apply_default_print_formats",
 ]

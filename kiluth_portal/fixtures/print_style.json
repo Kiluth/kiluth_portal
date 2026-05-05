@@ -1,0 +1,10 @@
+[
+ {
+  "doctype": "Print Style",
+  "name": "Redesign",
+  "print_style_name": "Redesign",
+  "standard": 0,
+  "disabled": 0,
+  "css": "@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/IBMPlexSansThai-Light.ttf') format('truetype'); font-weight: 300; font-style: normal; unicode-range: U+0E00-0E7F; }\n@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/IBMPlexSansThai-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; unicode-range: U+0E00-0E7F; }\n@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/IBMPlexSansThai-Medium.ttf') format('truetype'); font-weight: 500; font-style: normal; unicode-range: U+0E00-0E7F; }\n@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/IBMPlexSansThai-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; unicode-range: U+0E00-0E7F; }\n@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/theinhardt-light-webfont.ttf') format('truetype'); font-weight: 300; font-style: normal; }\n@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/theinhardt-lightita-webfont.ttf') format('truetype'); font-weight: 300; font-style: italic; }\n@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/theinhardt-regular-webfont.ttf') format('truetype'); font-weight: 400; font-style: normal; }\n@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/theinhardt-regularita-webfont.ttf') format('truetype'); font-weight: 400; font-style: italic; }\n@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/theinhardt-bold-webfont.ttf') format('truetype'); font-weight: 700; font-style: normal; }\n@font-face { font-family: 'Theinhardt'; src: url('https://portal.kiluth.com/files/theinhardt-boldita-webfont.ttf') format('truetype'); font-weight: 700; font-style: italic; }\n"
+ }
+]
