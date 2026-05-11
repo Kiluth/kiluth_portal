@@ -1,0 +1,18 @@
+<p>
+This is a reminder that the following resource is scheduled to expire in 15 days.
+</p>
+
+<table style="border-collapse: collapse; margin-top: 10px;">
+  <tr><td style="padding: 6px 10px; font-weight: bold;">Resource:</td><td style="padding: 6px 10px;">{{ doc.name }}</td></tr>
+  <tr><td style="padding: 6px 10px; font-weight: bold;">Resource Type:</td><td style="padding: 6px 10px;">{{ doc.resource_type }}</td></tr>
+  <tr><td style="padding: 6px 10px; font-weight: bold;">Customer:</td><td style="padding: 6px 10px;">{{ doc.customer or "-" }}</td></tr>
+  <tr><td style="padding: 6px 10px; font-weight: bold;">Expiry Date:</td><td style="padding: 6px 10px;">{{ doc.expiry_date }}</td></tr>
+</table>
+
+<p style="margin-top: 15px;">
+Please take the necessary action to renew or replace this resource before the expiry date to avoid any disruption.
+</p>
+
+<p>If you have already taken action, please disregard this message.</p>
+
+<p><strong>View Resource:</strong> <a href="https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}">https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}</a></p>

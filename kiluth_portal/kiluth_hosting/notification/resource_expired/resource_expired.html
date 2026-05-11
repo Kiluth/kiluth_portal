@@ -1,0 +1,9 @@
+<p>
+The resource <strong>{{ doc.name }}</strong> ({{ doc.resource_type }}) expired on {{ doc.expiry_date }}.
+</p>
+
+<p>
+Please confirm whether renewal is required. If you have already renewed, please update the expiry date in the resource record.
+</p>
+
+<p><strong>View Resource:</strong> <a href="https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}">https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}</a></p>

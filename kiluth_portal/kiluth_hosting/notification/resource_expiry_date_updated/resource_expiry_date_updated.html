@@ -1,0 +1,24 @@
+<p>
+A resource expiry date has been updated.
+Please review the details below:
+</p>
+
+<table style="border-collapse:collapse; margin-top:10px;">
+  <tr><td style="padding:6px 10px; font-weight:bold;">Resource Type</td><td style="padding:6px 10px;">{{ doc.resource_type }}</td></tr>
+  <tr><td style="padding:6px 10px; font-weight:bold;">Customer</td><td style="padding:6px 10px;">{{ doc.customer or "-" }}</td></tr>
+  <tr><td style="padding:6px 10px; font-weight:bold;">Project</td><td style="padding:6px 10px;">{{ doc.project or "-" }}</td></tr>
+  <tr><td style="padding:6px 10px; font-weight:bold;">Environment</td><td style="padding:6px 10px;">{{ doc.environment or "-" }}</td></tr>
+  <tr><td style="padding:6px 10px; font-weight:bold;">Provider</td><td style="padding:6px 10px;">{{ doc.provider or "-" }}</td></tr>
+  <tr><td style="padding:6px 10px; font-weight:bold;">Created Date</td><td style="padding:6px 10px;">{{ doc.created_date or "-" }}</td></tr>
+  <tr><td style="padding:6px 10px; font-weight:bold;">Expiry Date</td><td style="padding:6px 10px;"><b>{{ doc.expiry_date }}</b></td></tr>
+</table>
+
+{% if doc.description %}
+<p style="margin-top:12px;"><b>Description</b><br>{{ doc.description }}</p>
+{% endif %}
+
+<p style="margin-top:16px;">
+Please take note of the new expiry date and manage this resource accordingly.
+</p>
+
+<p><strong>View Resource:</strong> <a href="https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}">https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}</a></p>
