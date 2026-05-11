@@ -9,6 +9,7 @@
  "is_standard": 1,
  "message": "<p>\nThe resource <strong>{{ doc.name }}</strong> ({{ doc.resource_type }}) expired on {{ doc.expiry_date }}.\n</p>\n\n<p>\nPlease confirm whether renewal is required. If you have already renewed, please update the expiry date in the resource record.\n</p>\n\n<p><strong>View Resource:</strong> <a href=\"https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}\">https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}</a></p>",
  "message_type": "HTML",
+ "modified": "2026-05-11 05:28:41.784671",
  "module": "Kiluth Hosting",
  "name": "Resource Expired",
  "recipients": [
