@@ -1,0 +1,30 @@
+name: Trigger frappe_docker image build
+
+# Every push to kiluth_portal main kicks the "Kiluth / Build & push image"
+# workflow on Kiluth/frappe_docker. That workflow's apps.json already
+# pins kiluth_portal to `branch: main`, so it builds against HEAD — and
+# at the end it POSTs to Coolify's deploy API to roll portal.kiluth.com.
+#
+# Closes the manual "Bump trigger marker" loop that was historically
+# needed because frappe_docker doesn't watch kiluth_portal.
+#
+# Auth: FRAPPE_DOCKER_DISPATCH_TOKEN is a fine-grained PAT with
+# Actions: Read and write on Kiluth/frappe_docker. Rotate it when it
+# expires (PAT max is 1 year). If this workflow starts 404-ing on the
+# dispatch call, that's the first thing to check.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch Kiluth / Build & push image
+        env:
+          GH_TOKEN: ${{ secrets.FRAPPE_DOCKER_DISPATCH_TOKEN }}
+        run: |
+          gh workflow run "Kiluth / Build & push image" \
+            -R Kiluth/frappe_docker \
+            --ref main
