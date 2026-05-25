@@ -568,5 +568,22 @@
         "rel": "noopener noreferrer"
       }
     ]
+  },
+  {
+    "id": "kiluth-document-skill",
+    "title": "Kiluth Document Skill",
+    "description": "Claude Code skill that generates Kiluth-styled PDFs (proposals, quotations, briefs, agreements, reports) from your content. Drop the unzipped folder into ~/.claude/skills/ to install.",
+    "icon": "fa-file-code",
+    "iconColor": "text-dark",
+    "category": "tools",
+    "order": 30,
+    "links": [
+      {
+        "label": "Download",
+        "url": "https://docs.kiluth.com/static/kiluth-document/kiluth-document-skill.zip",
+        "target": "_blank",
+        "rel": "noopener noreferrer"
+      }
+    ]
   }
 ]
