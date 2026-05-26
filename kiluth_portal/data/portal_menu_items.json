@@ -537,22 +537,6 @@
     ]
   },
   {
-    "id": "convert-document",
-    "title": "Convert Document",
-    "description": "Convert markdown files into Kiluth-styled HTML or PDF documents.",
-    "icon": "fa-file-export",
-    "iconColor": "text-dark",
-    "category": "tools",
-    "order": 28,
-    "links": [
-      {
-        "label": "Open",
-        "url": "/convert-document",
-        "target": "_blank"
-      }
-    ]
-  },
-  {
     "id": "coolify",
     "title": "Coolify",
     "description": "Self-hosted deployment platform for applications and services",
