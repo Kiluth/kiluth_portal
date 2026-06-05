@@ -29,16 +29,32 @@ from kiluth_portal.utils.financial_report import (
 )
 
 # ─── Snapshot anchor ────────────────────────────────────────────────────────
-# Poom-confirmed true-up snapshot. Update both values together when the next
-# true-up is posted (typically just after the 5th-of-month financial report
-# fires, once Poom-paid expenses for the prior month are entered).
+# Snapshot at 30 April 2026 — reconciled against the live ERPNext P&L
+# (Profit and Loss Statement: inception → 2026-04-30) on 2026-06-05 after
+# the June PDF report revealed the original 1-May snapshot was overstated.
+#
+# `revenue` and `expenses` come straight from the P&L report — these are
+# authoritative and match the monthly emailed PDF exactly. Update them on
+# each true-up by re-running that P&L through the prior month-end.
+#
+# `returned_to_poom` and `kiluth_paid` are Poom-confirmed values from the
+# 1-May screenshot. They cannot be derived from GL (the rekey JE bundled
+# all pre-2026 net loan position into a single ฿437,126.50 number — the
+# split between gross repayments and gross Kiluth-paid bills was lost).
+# Known small inconsistency: returned + kiluth_paid sums to ฿298,376.00,
+# which is ~฿3,000 higher than the corrected revenue figure. The original
+# 1-May numbers were internally consistent but slightly inflated; we trust
+# the GL-derived revenue and accept this ~1% drift in the split until the
+# next clean true-up resets all 5 values together.
+#
+# `loan_balance` matches the current credit balance on the loan account.
 
-SNAPSHOT_DATE = "2026-05-01"
+SNAPSHOT_DATE = "2026-04-30"
 SNAPSHOT = {
-	"revenue": 298376.00,
-	"expenses": 743234.50,
-	"returned_to_poom": 139180.50,
-	"kiluth_paid": 159195.50,
+	"revenue": 295377.50,      # was 298376.00 — reconciled to P&L (Income, inception→2026-04-30)
+	"expenses": 547662.18,     # was 743234.50 — reconciled to P&L (Expense, inception→2026-04-30); old value was "total cash out incl. capex", a broader concept
+	"returned_to_poom": 139180.50,  # Poom-confirmed (not derivable from GL)
+	"kiluth_paid": 159195.50,       # Poom-confirmed (not derivable from GL)
 	"loan_balance": 444858.50,
 }
 
