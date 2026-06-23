@@ -1,8 +1,16 @@
 <p>
-The resource <strong>{{ doc.name }}</strong> ({{ doc.resource_type }}, {{ doc.environment or "-" }}) expired on {{ doc.expiry_date }}.
+The following resource has expired.
 </p>
 
-<p>
+<table style="border-collapse: collapse; margin-top: 10px;">
+  <tr><td style="padding: 6px 10px; font-weight: bold;">Resource:</td><td style="padding: 6px 10px;">{{ doc.name }}</td></tr>
+  <tr><td style="padding: 6px 10px; font-weight: bold;">Resource Type:</td><td style="padding: 6px 10px;">{{ doc.resource_type }}</td></tr>
+  <tr><td style="padding: 6px 10px; font-weight: bold;">Customer:</td><td style="padding: 6px 10px;">{{ doc.customer or "-" }}</td></tr>
+  <tr><td style="padding: 6px 10px; font-weight: bold;">Environment:</td><td style="padding: 6px 10px;">{{ doc.environment or "-" }}</td></tr>
+  <tr><td style="padding: 6px 10px; font-weight: bold;">Expiry Date:</td><td style="padding: 6px 10px;">{{ doc.expiry_date }}</td></tr>
+</table>
+
+<p style="margin-top: 15px;">
 Please confirm whether renewal is required. If you have already renewed, please update the expiry date in the resource record.
 </p>
 
