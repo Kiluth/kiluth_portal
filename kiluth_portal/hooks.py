@@ -114,7 +114,7 @@ override_whitelisted_methods = {
 #
 # Filters scope the export to Kiluth-authored records only, so we don't
 # accidentally serialize ERPNext / HRMS stock artifacts.
-KILUTH_MODULES = ["Kiluth HR", "Kiluth Hosting", "Kiluth Sales"]
+KILUTH_MODULES = ["Kiluth HR", "Kiluth Hosting", "Kiluth Sales", "Kiluth Legal"]
 
 KILUTH_WEB_PAGES = ["portal", "holidays", "convert-document"]
 KILUTH_HOLIDAY_LISTS = ["Kiluth Thailand Holiday 2025", "Kiluth Thailand Holiday 2026"]
@@ -150,6 +150,7 @@ KILUTH_CUSTOM_ROLES = [
     "HR",
     "Executive",
     "Observer",
+    "Document User",
 ]
 
 # Specific standard doctypes where we grant extra roles outside the concern

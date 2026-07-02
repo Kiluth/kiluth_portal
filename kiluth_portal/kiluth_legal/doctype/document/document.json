@@ -1,0 +1,223 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "",
+ "creation": "2026-07-02 00:00:00",
+ "description": "Register of formal signed documents (agreements, change requests, NDAs, maintenance agreements, sign-offs) that have no other ERPNext home. Issues a per-type ID and stores the signed PDF.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "classification_section",
+  "document_type",
+  "title",
+  "column_break_classification",
+  "customer",
+  "project",
+  "related_document",
+  "details_section",
+  "stage",
+  "fee_amount",
+  "column_break_details",
+  "counterparty_signatory",
+  "kiluth_signatory",
+  "status_section",
+  "status",
+  "date_issued",
+  "signed_date",
+  "column_break_status",
+  "effective_date",
+  "expiry_date",
+  "files_section",
+  "signed_pdf",
+  "related_asana_task",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "classification_section",
+   "fieldtype": "Section Break",
+   "label": "Classification"
+  },
+  {
+   "description": "Drives the ID prefix (AGR / CR / NDA / MA / SGN) and which fields below apply.",
+   "fieldname": "document_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Document Type",
+   "options": "Agreement / Contract\nChange Request / Change Order\nNDA\nMaintenance Agreement\nSign-off / Acceptance",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_classification",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Optional. NDAs may be with a vendor/partner, or drafted before a Customer record exists.",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "description": "The related document this one amends or references (e.g. a Change Request points to its base Agreement).",
+   "fieldname": "related_document",
+   "fieldtype": "Link",
+   "label": "Related Document",
+   "options": "Document"
+  },
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "depends_on": "eval:doc.document_type=='Sign-off / Acceptance'",
+   "description": "Which gate this sign-off covers.",
+   "fieldname": "stage",
+   "fieldtype": "Select",
+   "label": "Stage",
+   "options": "\nScope\nDesign\nUAT\nFinal Acceptance\nHandover"
+  },
+  {
+   "depends_on": "eval:['Change Request / Change Order','Maintenance Agreement'].includes(doc.document_type)",
+   "description": "Fee for this document, excl. VAT.",
+   "fieldname": "fee_amount",
+   "fieldtype": "Currency",
+   "label": "Fee (excl. VAT)"
+  },
+  {
+   "fieldname": "column_break_details",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Name of the client / counterparty signatory.",
+   "fieldname": "counterparty_signatory",
+   "fieldtype": "Data",
+   "label": "Counterparty Signatory"
+  },
+  {
+   "description": "Name of the Kiluth signatory.",
+   "fieldname": "kiluth_signatory",
+   "fieldtype": "Data",
+   "label": "Kiluth Signatory"
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Status & Dates"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nPending signature\nSigned\nVoid"
+  },
+  {
+   "fieldname": "date_issued",
+   "fieldtype": "Date",
+   "label": "Date Issued"
+  },
+  {
+   "description": "Date both parties signed.",
+   "fieldname": "signed_date",
+   "fieldtype": "Date",
+   "label": "Signed Date"
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:['Maintenance Agreement','NDA'].includes(doc.document_type)",
+   "fieldname": "effective_date",
+   "fieldtype": "Date",
+   "label": "Effective Date"
+  },
+  {
+   "depends_on": "eval:['Maintenance Agreement','NDA'].includes(doc.document_type)",
+   "description": "Drives expiry reminders (to be wired to the Resource-expiry notification pattern).",
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Expiry Date"
+  },
+  {
+   "fieldname": "files_section",
+   "fieldtype": "Section Break",
+   "label": "Files & Links"
+  },
+  {
+   "description": "The finalized, signed document. Required before Status can be set to Signed.",
+   "fieldname": "signed_pdf",
+   "fieldtype": "Attach",
+   "label": "Signed PDF"
+  },
+  {
+   "description": "Link to the originating Asana task.",
+   "fieldname": "related_asana_task",
+   "fieldtype": "Data",
+   "label": "Related Asana Task"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-02 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Kiluth Legal",
+ "name": "Document",
+ "naming_rule": "",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Document User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
