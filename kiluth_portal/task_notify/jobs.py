@@ -37,8 +37,8 @@ def _channels():
 	return channels.enabled(frappe.conf.get("kiluth_notify_channels"))
 
 
-def process(event):
-	dispatch.process_event(event, FrappeStore(), _channels())
+def process(notify_event):
+	dispatch.process_event(notify_event, FrappeStore(), _channels())
 
 
 def retry_failed():

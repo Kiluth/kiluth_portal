@@ -46,9 +46,6 @@ scheduler_events = {
 	"daily": [
 		"kiluth_portal.utils.scheduler.recalc_resource_status",
 	],
-	"hourly": [
-		"kiluth_portal.task_notify.jobs.retry_failed",
-	],
 	"cron": {
 		"0 9 5 * *": [
 			"kiluth_portal.utils.financial_report.send_monthly_report",
@@ -56,6 +53,8 @@ scheduler_events = {
 	},
 	"hourly": [
 		"kiluth_portal.utils.financial_report.send_monthly_report_catchup",
+		# Kiluth Tasks notifications: retry Failed outbox rows (Dead at 5 tries).
+		"kiluth_portal.task_notify.jobs.retry_failed",
 	],
 }
 
