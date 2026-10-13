@@ -15,7 +15,9 @@ def _enqueue(event):
 		return
 	frappe.enqueue(
 		"kiluth_portal.task_notify.jobs.process",
-		event=event,
+		# Not `event=`: frappe.enqueue reserves that name (scheduler event) and
+		# would swallow it, so the job ran with no argument.
+		notify_event=event,
 		queue="short",
 		enqueue_after_commit=True,
 	)
