@@ -1,7 +1,7 @@
-"""Who gets a phone push for a Task event.
+"""Who gets notified for a Task event.
 
 Pure functions only — no frappe import — so the oracle tests in
-`kiluth_portal/tests/test_web_push_recipients.py` run with plain `python -m
+`kiluth_portal/tests/test_task_notify_recipients.py` run with plain `python -m
 unittest`, no bench needed. `handlers.py` reads the docs and calls these.
 
 The rules (from Poom, 2026-10-13):

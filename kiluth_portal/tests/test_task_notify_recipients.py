@@ -1,12 +1,12 @@
-"""Oracle: who gets a phone push for a Task event.
+"""Oracle: who gets notified for a Task event.
 
-Runs without bench:  python -m unittest kiluth_portal.tests.test_web_push_recipients
+Runs without bench:  python -m unittest kiluth_portal.tests.test_task_notify_recipients
 """
 
 import json
 import unittest
 
-from kiluth_portal.web_push.recipients import (
+from kiluth_portal.task_notify.recipients import (
 	assignment_recipients,
 	comment_recipients,
 	parse_assign,

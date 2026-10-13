@@ -94,6 +94,8 @@ scheduler_events = {
 		"kiluth_portal.utils.tax_checks.withholding_check_catchup",
 		# Website leads nobody touched for one working day go to the Executive role too.
 		"kiluth_portal.utils.lead_routing.escalate_unanswered_leads",
+		# Kiluth Tasks notifications: retry Failed outbox rows (Dead at 5 tries).
+		"kiluth_portal.task_notify.jobs.retry_failed",
 	],
 }
 
@@ -144,6 +146,15 @@ doc_events = {
     # Refuse a new customer whose name matches one we have (utils/customer.py).
     "Customer": {
         "before_insert": "kiluth_portal.utils.customer.block_duplicate",
+    },
+    # Kiluth Tasks notifications. Hooks only queue a
+    # job; who is told lives in task_notify/recipients.py, delivery in
+    # task_notify/channels.py.
+    "ToDo": {
+        "on_update": "kiluth_portal.task_notify.handlers.on_todo_change",
+    },
+    "Comment": {
+        "after_insert": "kiluth_portal.task_notify.handlers.on_comment_insert",
     },
 }
 
