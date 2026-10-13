@@ -46,6 +46,9 @@ scheduler_events = {
 	"daily": [
 		"kiluth_portal.utils.scheduler.recalc_resource_status",
 	],
+	"hourly": [
+		"kiluth_portal.task_notify.jobs.retry_failed",
+	],
 	"cron": {
 		"0 9 5 * *": [
 			"kiluth_portal.utils.financial_report.send_monthly_report",
@@ -84,6 +87,15 @@ doc_events = {
     # email not ending in @kiluth.com.
     "User": {
         "before_insert": "kiluth_portal.utils.auth.restrict_signup_to_kiluth_domain",
+    },
+    # Kiluth Tasks notifications (spike, sim/notify-listener). Hooks only queue
+    # a job; who is told lives in task_notify/recipients.py, delivery in
+    # task_notify/channels.py.
+    "ToDo": {
+        "on_update": "kiluth_portal.task_notify.handlers.on_todo_change",
+    },
+    "Comment": {
+        "after_insert": "kiluth_portal.task_notify.handlers.on_comment_insert",
     },
 }
 
