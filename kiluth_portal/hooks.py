@@ -239,3 +239,9 @@ after_migrate = [
     "kiluth_portal.utils.website.apply_website_settings",
     "kiluth_portal.utils.print_defaults.apply_default_print_formats",
 ]
+
+# A completed Task keeps its assignee as holder; ERPNext would clear it.
+# See kiluth_portal/overrides/task.py.
+override_doctype_class = {
+	"Task": "kiluth_portal.overrides.task.KiluthTask",
+}
