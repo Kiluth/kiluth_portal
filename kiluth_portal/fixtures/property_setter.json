@@ -1,1 +1,18 @@
-[]
+[
+ {
+  "default_value": null,
+  "doc_type": "Document",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "document_type",
+  "is_system_generated": 0,
+  "modified": "2026-10-15 05:28:57.592487",
+  "module": "Kiluth Legal",
+  "name": "Document-document_type-options",
+  "property": "options",
+  "property_type": "Text",
+  "row_name": null,
+  "value": "Agreement / Contract\nChange Request / Change Order\nNDA\nMaintenance Agreement\nSign-off / Acceptance\nCertificate"
+ }
+]
