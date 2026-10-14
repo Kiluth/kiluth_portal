@@ -13,6 +13,7 @@ NAMING_SERIES = {
 	"NDA": "NDA-.#####",
 	"Maintenance Agreement": "MA-.#####",
 	"Sign-off / Acceptance": "SGN-.#####",
+	"Certificate": "CERT-.#####",
 }
 
 
