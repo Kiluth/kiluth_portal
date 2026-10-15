@@ -6,14 +6,19 @@ erpnext/projects/doctype/task/task.py). Kiluth's Task Usage Guideline needs the
 opposite: a finished task keeps its holder, the person who did the work, so
 anyone can see who to ask about that area later ("How a Task Moves").
 
-So completed tasks keep their assignees. Cancelled tasks behave as ERPNext
-intends: nothing was delivered, so nobody holds them.
+So completed tasks keep their assignees. A cancelled task carries its
+requester instead: nothing was delivered, so the person who asked for it is the
+one to ask about it (docs.kiluth.com/delivery/working-with-tasks). The requester
+is the task's creator; tasks the system created keep whoever is assigned.
 """
 from contextlib import contextmanager
 
 from erpnext.projects.doctype.task import task as erpnext_task
 from erpnext.projects.doctype.task.task import Task
-from frappe.desk.form.assign_to import clear
+import frappe
+from frappe.desk.form.assign_to import add, clear
+
+SYSTEM_USERS = {"Administrator", "Guest"}
 
 
 @contextmanager
@@ -35,5 +40,13 @@ class KiluthTask(Task):
 			super().validate_status()
 
 	def unassign_todo(self):
-		if self.status == "Cancelled":
-			clear(self.doctype, self.name)
+		if self.status != "Cancelled":
+			return
+		requester = self.owner
+		if requester in SYSTEM_USERS or not frappe.db.get_value("User", requester, "enabled"):
+			return  # no real requester: keep whoever is assigned
+		current = frappe.parse_json(self.get("_assign") or "[]") or []
+		if current == [requester]:
+			return
+		clear(self.doctype, self.name, ignore_permissions=True)
+		add({"doctype": self.doctype, "name": self.name, "assign_to": [requester]})
