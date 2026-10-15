@@ -50,9 +50,14 @@ scheduler_events = {
 		"0 9 5 * *": [
 			"kiluth_portal.utils.financial_report.send_monthly_report",
 		],
+		# Monthly Close step 1: create "Close the books for <last month>".
+		"0 8 1 * *": [
+			"kiluth_portal.utils.close_task.create_close_task",
+		],
 	},
 	"hourly": [
 		"kiluth_portal.utils.financial_report.send_monthly_report_catchup",
+		"kiluth_portal.utils.close_task.create_close_task_catchup",
 	],
 }
 
