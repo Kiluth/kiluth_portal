@@ -225,6 +225,12 @@ def _collect(period: dict, task) -> dict:
 
 # ─── HTML ───────────────────────────────────────────────────────────────────
 
+def _th(text: str) -> str:
+	"""Set the Thai font explicitly. wkhtmltopdf doesn't fall back per
+	character, so Thai inside a Theinhardt run renders as boxes."""
+	return f"<span style=\"font-family: 'IBM Plex Sans Thai';\">{text}</span>"
+
+
 def _section(title: str, rows: list[tuple[str, str]], note: str = "") -> str:
 	body = "".join(
 		f"<tr><td style='padding: 5px 0; border-bottom: 0.5pt solid #e8e8e8;'>{label}</td>"
@@ -290,8 +296,8 @@ def _render_html(period: dict, d: dict, task) -> str:
 		cw_rows = [("No client withheld tax this month", "—")]
 
 	kw_rows = [
-		("ภ.ง.ด.3 — withheld from individuals", _fmt(d["pnd3"]) if d["pnd3"] else "Nothing to file"),
-		("ภ.ง.ด.53 — withheld from companies", _fmt(d["pnd53"]) if d["pnd53"] else "Nothing to file"),
+		(_th("ภ.ง.ด.3") + " — withheld from individuals", _fmt(d["pnd3"]) if d["pnd3"] else "Nothing to file"),
+		(_th("ภ.ง.ด.53") + " — withheld from companies", _fmt(d["pnd53"]) if d["pnd53"] else "Nothing to file"),
 	]
 	kw_note = ""
 	if d["wht_unknown"]:
@@ -303,7 +309,7 @@ def _render_html(period: dict, d: dict, task) -> str:
 		sal_rows = [
 			("Salary slips", str(s.n)),
 			("Gross pay", _fmt(float(s.gross or 0))),
-			("ภ.ง.ด.1 — salary tax withheld", _fmt(d["salary_tax"]) if d["salary_tax"] else "Nothing to file"),
+			(_th("ภ.ง.ด.1") + " — salary tax withheld", _fmt(d["salary_tax"]) if d["salary_tax"] else "Nothing to file"),
 			("Social security — employee share", _fmt(d["social_security"])),
 			("Net pay", _fmt(float(s.net or 0))),
 		]
@@ -325,7 +331,7 @@ def _render_html(period: dict, d: dict, task) -> str:
 	<div class="sub">{period['label']} · Kiluth LTD. · {task.name}</div>
 	{_section("1. Booked this month", booked_rows)}
 	{_section("2. Portal against the bank", bank_rows, bank_note)}
-	{_section("3. Tax clients withheld from Kiluth", cw_rows, "Each certificate (50 ทวิ) should be attached to its payment.")}
+	{_section("3. Tax clients withheld from Kiluth", cw_rows, "Each certificate (50 " + _th("ทวิ") + ") should be attached to its payment.")}
 	{_section("4. Tax Kiluth withheld from suppliers", kw_rows, kw_note)}
 	{_section("5. Salaries", sal_rows, sal_note)}
 	<div class="page-footer">{FOOTER}</div>
