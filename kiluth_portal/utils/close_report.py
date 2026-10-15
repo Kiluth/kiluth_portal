@@ -141,8 +141,9 @@ def _collect(period: dict, task) -> dict:
 	)
 
 	cash = _cash_balance_on(end)
-	bank = task.get("close_bank_balance")
-	bank = float(bank) if bank not in (None, "") else None
+	# A Currency field reads 0 when nobody filled it in; a real month-end
+	# bank balance of exactly 0 is not a case Kiluth has, so 0 = not entered.
+	bank = float(task.get("close_bank_balance") or 0) or None
 
 	client_wht = frappe.db.sql(
 		"""
@@ -239,6 +240,27 @@ def _section(title: str, rows: list[tuple[str, str]], note: str = "") -> str:
 	)
 
 
+def _thai_font_face_block() -> str:
+	"""IBM Plex Sans Thai, same-origin, so Thai form names (ภ.ง.ด.) render.
+
+	Declared as its own family and listed after Theinhardt: wkhtmltopdf falls
+	back per character, so Latin stays Theinhardt and Thai uses Plex.
+	"""
+	from frappe.utils import get_url
+
+	return "\n".join(
+		f"@font-face {{ font-family: 'IBM Plex Sans Thai'; "
+		f"src: url('{get_url('/files/' + fname)}') format('truetype'); "
+		f"font-weight: {weight}; font-style: normal; }}"
+		for fname, weight in (
+			("IBMPlexSansThai-Light.ttf", 300),
+			("IBMPlexSansThai-Regular.ttf", 400),
+			("IBMPlexSansThai-SemiBold.ttf", 600),
+			("IBMPlexSansThai-Bold.ttf", 700),
+		)
+	)
+
+
 def _render_html(period: dict, d: dict, task) -> str:
 	booked_rows = [(r.voucher_type, str(r.n)) for r in d["booked"]] or [("Nothing booked for this month", "—")]
 	total = sum(r.n for r in d["booked"])
@@ -290,7 +312,7 @@ def _render_html(period: dict, d: dict, task) -> str:
 		sal_rows = [("No salary slips for this month", "—")]
 		sal_note = ""
 
-	style = _font_face_block() + """
+	style = _font_face_block() + "\n" + _thai_font_face_block() + """
 		@page { size: A4; margin: 16mm 14mm 22mm 14mm; }
 		body { font-family: 'Theinhardt', 'IBM Plex Sans Thai', 'Inter', Arial, sans-serif; color: #1a1a1a; font-size: 10pt; line-height: 1.45; margin: 0; }
 		h1 { font-size: 22pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 12pt 0 4pt 0; }
