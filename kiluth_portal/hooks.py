@@ -78,6 +78,12 @@ doc_events = {
     "Timesheet": {
         "before_insert": "kiluth_portal.utils.employee.autofill_employee",
     },
+    # Monthly Close: build and email the Close Report PDF when a
+    # "Close the books for <Month YYYY>" task is completed.
+    # Implements docs.kiluth.com/finance/monthly-close.
+    "Task": {
+        "on_update": "kiluth_portal.utils.close_report.on_task_update",
+    },
     # Gate User creation to the kiluth.com domain — needed because Website
     # Settings has signup enabled (so Google SSO auto-provisions Kiluth staff
     # without HR having to pre-create each User record). The hook bounces any
