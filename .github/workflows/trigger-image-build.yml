@@ -8,6 +8,11 @@ name: Trigger frappe_docker image build
 # Closes the manual "Bump trigger marker" loop that was historically
 # needed because frappe_docker doesn't watch kiluth_portal.
 #
+# Deploy hours: the build runs at once, but in Bangkok office hours the
+# Portal only switches to it at 18:05 (docs.kiluth.com/technology/go-live-and-incidents).
+# A fix for something broken goes live at once: put [urgent] in the commit
+# message and it is passed through as the build's `urgent` input.
+#
 # Auth: FRAPPE_DOCKER_DISPATCH_TOKEN is a fine-grained PAT with
 # Actions: Read and write on Kiluth/frappe_docker. Rotate it when it
 # expires (PAT max is 1 year). If this workflow starts 404-ing on the
@@ -24,7 +29,9 @@ jobs:
       - name: Dispatch Kiluth / Build & push image
         env:
           GH_TOKEN: ${{ secrets.FRAPPE_DOCKER_DISPATCH_TOKEN }}
+          URGENT: ${{ contains(github.event.head_commit.message, '[urgent]') }}
         run: |
           gh workflow run "Kiluth / Build & push image" \
             -R Kiluth/frappe_docker \
-            --ref main
+            --ref main \
+            -f urgent="$URGENT"
