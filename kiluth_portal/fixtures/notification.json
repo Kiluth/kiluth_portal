@@ -31,7 +31,7 @@
     "bcc": null,
     "cc": null,
     "condition": null,
-    "receiver_by_document_field": "employee.user_id",
+    "receiver_by_document_field": "employee_user",
     "receiver_by_role": null
    }
   ],
@@ -76,7 +76,7 @@
     "bcc": null,
     "cc": null,
     "condition": null,
-    "receiver_by_document_field": "employee.user_id",
+    "receiver_by_document_field": "employee_user",
     "receiver_by_role": null
    }
   ],

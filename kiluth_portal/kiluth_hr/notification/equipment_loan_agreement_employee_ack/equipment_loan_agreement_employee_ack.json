@@ -11,7 +11,7 @@
  "name": "Equipment Loan Agreement Employee Ack",
  "recipients": [
   {
-   "receiver_by_document_field": "employee.user_id"
+   "receiver_by_document_field": "employee_user"
   }
  ],
  "send_system_notification": 1,
