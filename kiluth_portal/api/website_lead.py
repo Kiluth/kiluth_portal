@@ -86,7 +86,8 @@ def create_website_lead(name=None, email=None, company=None, message=None):
 		}
 	).insert(ignore_permissions=True)
 
-	assign_to.add(
+	# Frappe 16: the public add() always checks permissions, and the bot has none.
+	assign_to._add(
 		{"assign_to": [SALES_ASSIGNEE], "doctype": "Task", "name": task.name, "description": task.subject},
 		ignore_permissions=True,
 	)
