@@ -48,8 +48,14 @@ def _owner() -> str:
 
 
 def _raise_task(subject: str, description: str, priority: str = "Medium") -> str | None:
-	"""Create and assign one task. Returns None if that subject already exists."""
-	if frappe.db.exists("Task", {"subject": subject, "status": ["not in", ["Completed", "Cancelled"]]}):
+	"""Create and assign one task. Returns None if that subject already exists.
+
+	Matched on subject whatever its status, so a task someone has completed or
+	cancelled is never raised again by a later run or the hourly catch-up.
+	Each subject carries its own period (a month, or a year) so that "never
+	again" means "not again for that period".
+	"""
+	if frappe.db.exists("Task", {"subject": subject}):
 		return None
 	task = frappe.get_doc({
 		"doctype": "Task",
@@ -206,10 +212,12 @@ def vat_threshold_watch():
 		return None
 
 	over = highest >= VAT_LINE
+	# The subject names the year, never the percentage, so the weekly run
+	# raises each stage once a year instead of a new task every week.
 	subject = (
-		f"VAT registration required — income passed ฿{VAT_LINE:,.0f}"
+		f"VAT registration required — {today.year} income passed ฿{VAT_LINE:,.0f}"
 		if over
-		else f"VAT threshold {highest / VAT_LINE:.0%} reached — plan registration"
+		else f"Plan VAT registration — {today.year} income past {VAT_WARN_AT:.0%} of ฿{VAT_LINE:,.0f}"
 	)
 	description = (
 		f"Income against the ฿{VAT_LINE:,.0f} VAT registration line. "
