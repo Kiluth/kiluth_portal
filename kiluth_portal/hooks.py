@@ -45,6 +45,7 @@ doctype_js = {
 scheduler_events = {
 	"daily": [
 		"kiluth_portal.utils.scheduler.recalc_resource_status",
+		"kiluth_portal.utils.yearly_tasks.yearly_tasks_catchup",
 	],
 	"cron": {
 		"0 9 5 * *": [
@@ -58,6 +59,14 @@ scheduler_events = {
 		# The 3rd leaves four days before the ภ.ง.ด.3 / ภ.ง.ด.53 deadline.
 		"0 8 3 * *": [
 			"kiluth_portal.utils.tax_checks.withholding_check",
+		],
+		# Year end: ภ.ง.ด.1ก (due end Feb) and ภ.ง.ด.50 + statements (due end May).
+		"0 8 5 1 *": [
+			"kiluth_portal.utils.yearly_tasks.year_end_tasks",
+		],
+		# Half year: ภ.ง.ด.51 (due 31 Aug).
+		"0 8 5 7 *": [
+			"kiluth_portal.utils.yearly_tasks.half_year_task",
 		],
 	},
 	"weekly": [
