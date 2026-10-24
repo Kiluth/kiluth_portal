@@ -54,10 +54,20 @@ scheduler_events = {
 		"0 8 1 * *": [
 			"kiluth_portal.utils.close_task.create_close_task",
 		],
+		# Thai withholding: last month's service payments with no 3% recorded.
+		# The 3rd leaves four days before the ภ.ง.ด.3 / ภ.ง.ด.53 deadline.
+		"0 8 3 * *": [
+			"kiluth_portal.utils.tax_checks.withholding_check",
+		],
 	},
+	"weekly": [
+		# Income against the ฿1.8m VAT line. Silent until 75% of it.
+		"kiluth_portal.utils.tax_checks.vat_threshold_watch",
+	],
 	"hourly": [
 		"kiluth_portal.utils.financial_report.send_monthly_report_catchup",
 		"kiluth_portal.utils.close_task.create_close_task_catchup",
+		"kiluth_portal.utils.tax_checks.withholding_check_catchup",
 	],
 }
 
