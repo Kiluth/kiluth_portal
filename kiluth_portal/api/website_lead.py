@@ -6,7 +6,8 @@ method is all its API key can do.
 
 Follows Lead Intake (docs.kiluth.com/marketing/lead-intake):
   1. the Lead holds the person's details (UTM Source "Website", Unqualified);
-  2. one task "Qualify lead: <id>" holds only the link, assigned to Sales.
+  2. one task "Qualify lead: <id>" holds only the link, assigned to the
+     least-busy salesperson (utils/lead_routing.py: the "Sales" role).
 The assignment email is how Sales hears about it.
 
   POST /api/method/kiluth_portal.api.website_lead.create_website_lead
@@ -19,10 +20,10 @@ from __future__ import annotations
 import re
 
 import frappe
-from frappe.desk.form import assign_to
+
+from kiluth_portal.utils.lead_routing import SUBJECT_PREFIX, assign, pick_salesperson
 
 BOT_USER = "website-bot@kiluth.com"
-SALES_ASSIGNEE = "phuttipan.samranruen@kiluth.com"  # Reaw (Poom, 2026-10-22)
 SOURCE = "Website"
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -72,7 +73,7 @@ def create_website_lead(name=None, email=None, company=None, message=None):
 	task = frappe.get_doc(
 		{
 			"doctype": "Task",
-			"subject": f"Qualify lead: {lead.name}",
+			"subject": f"{SUBJECT_PREFIX}{lead.name}",
 			"status": "Open",
 			"priority": "Medium",
 			"department": "Account Management - K",
@@ -86,9 +87,5 @@ def create_website_lead(name=None, email=None, company=None, message=None):
 		}
 	).insert(ignore_permissions=True)
 
-	# Frappe 16: the public add() always checks permissions, and the bot has none.
-	assign_to._add(
-		{"assign_to": [SALES_ASSIGNEE], "doctype": "Task", "name": task.name, "description": task.subject},
-		ignore_permissions=True,
-	)
+	assign(task.name, task.subject, [pick_salesperson()])
 	return {"lead": lead.name}

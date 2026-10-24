@@ -77,6 +77,8 @@ scheduler_events = {
 		"kiluth_portal.utils.financial_report.send_monthly_report_catchup",
 		"kiluth_portal.utils.close_task.create_close_task_catchup",
 		"kiluth_portal.utils.tax_checks.withholding_check_catchup",
+		# Website leads nobody touched for one working day go to the Executive role too.
+		"kiluth_portal.utils.lead_routing.escalate_unanswered_leads",
 	],
 }
 
@@ -175,6 +177,7 @@ KILUTH_CATALOG_ITEMS = [
 # ERPNext/HRMS rules that already ship in their modules.
 KILUTH_CUSTOM_ROLES = [
     "Commercial",
+    "Sales",  # certified salespeople; website leads are routed among them (utils/lead_routing.py)
     "Delivery",
     "Finance",
     "HR",
