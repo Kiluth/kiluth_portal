@@ -42,13 +42,41 @@ def users_with_role(role: str) -> list[str]:
 	)
 
 
-def referred_salesperson(code: str) -> str | None:
-	"""The user whose referral code this is, if they may take leads (enabled, Sales role)."""
-	code = (code or "").strip().lower()
-	if not code:
+PLANNER_URL = "https://kiluth.com/plan/?ref={ref}"
+
+
+def referred_salesperson(ref: str) -> str | None:
+	"""The salesperson whose planner link this is. The ref is their Portal username
+	(e.g. phuttipan.samranruen), and only counts while they are enabled and in Sales."""
+	ref = (ref or "").strip().lower()
+	if not ref:
 		return None
-	user = frappe.db.get_value("User", {"kiluth_referral_code": code, "enabled": 1}, "name")
+	user = frappe.db.get_value("User", {"username": ref, "enabled": 1}, "name")
 	return user if user and user in users_with_role(SALES_ROLE) else None
+
+
+@frappe.whitelist()
+def planner_link(user: str | None = None) -> dict:
+	"""A salesperson's own planner link and its QR code (SVG, base64), for their
+	user page. Empty unless the user has the Sales role. Anyone may read their own;
+	reading someone else's needs read access to that user."""
+	from base64 import b64encode
+	from io import BytesIO
+
+	from pyqrcode import create as qrcreate
+
+	user = user or frappe.session.user
+	if user != frappe.session.user:
+		frappe.has_permission("User", "read", user, throw=True)
+	if user not in users_with_role(SALES_ROLE):
+		return {}
+	username = frappe.db.get_value("User", user, "username")
+	if not username:
+		return {}
+	url = PLANNER_URL.format(ref=username)
+	stream = BytesIO()
+	qrcreate(url).svg(stream, scale=6, background="#ffffff", module_color="#000000", xmldecl=False, svgns=True)
+	return {"url": url, "qr": b64encode(stream.getvalue()).decode()}
 
 
 def pick_salesperson() -> str:

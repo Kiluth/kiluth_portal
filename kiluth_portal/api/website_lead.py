@@ -13,8 +13,8 @@ The assignment email is how Sales hears about it.
 Two optional extras (Poom, 2026-10-25):
   - heard: how they heard about Kiluth (one of HEARD), kept as the Lead's
     UTM Medium so Marketing can see which channels bring clients;
-  - ref: a salesperson's referral code from their planner link
-    (kiluth.com/plan/?ref=<code>). A code that belongs to an enabled user with
+  - ref: a salesperson's Portal username from their planner link
+    (kiluth.com/plan/?ref=<username>). One that belongs to an enabled user with
     the Sales role sends the task to that person; anything else is ignored and
     the lead is routed as usual.
 A repeat enquiry from the same email adds a note to the lead and, if its

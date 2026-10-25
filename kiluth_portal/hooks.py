@@ -24,6 +24,7 @@ doctype_js = {
 	"Sales Invoice": "public/js/sales_invoice.js",
 	"Equipment Loan Agreement": "public/js/equipment_loan_agreement.js",
 	"Material Request": "public/js/material_request.js",
+	"User": "public/js/user.js",
 }
 
 
