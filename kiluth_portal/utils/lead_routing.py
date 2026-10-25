@@ -42,6 +42,15 @@ def users_with_role(role: str) -> list[str]:
 	)
 
 
+def referred_salesperson(code: str) -> str | None:
+	"""The user whose referral code this is, if they may take leads (enabled, Sales role)."""
+	code = (code or "").strip().lower()
+	if not code:
+		return None
+	user = frappe.db.get_value("User", {"kiluth_referral_code": code, "enabled": 1}, "name")
+	return user if user and user in users_with_role(SALES_ROLE) else None
+
+
 def pick_salesperson() -> str:
 	"""The Sales user with the fewest open "Qualify lead" tasks, or FALLBACK."""
 	team = users_with_role(SALES_ROLE)
