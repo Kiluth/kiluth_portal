@@ -942,5 +942,18 @@
   "translatable": 0,
   "unique": 0,
   "width": null
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Customer-custom_legal_name",
+  "dt": "Customer",
+  "module": "Kiluth Sales",
+  "fieldname": "custom_legal_name",
+  "fieldtype": "Data",
+  "label": "Legal name (for documents)",
+  "description": "The name as registered, e.g. in Thai: โรงเรียนอนุบาลบ้านพลอยภูมิ. Quotations, invoices and receipts print this instead of the client name. Keep the client name in English.",
+  "insert_after": "customer_name",
+  "length": 240,
+  "modified": "2026-10-25 22:30:00.000000"
  }
 ]

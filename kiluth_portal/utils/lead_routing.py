@@ -99,15 +99,21 @@ def pick_salesperson() -> str:
 
 
 def customer_for_email(email: str) -> str | None:
-	"""The Customer whose Contact has this email address, if any."""
+	"""The Customer whose Contact has this email address, if any.
+
+	Also the Customer's own "Unique Email ID" (custom_unique_email_id), which a
+	few customers hold as their only email; most hold a placeholder there.
+	"""
 	contacts = frappe.get_all("Contact Email", filters={"email_id": email, "parenttype": "Contact"}, pluck="parent")
-	if not contacts:
-		return None
-	return frappe.db.get_value(
-		"Dynamic Link",
-		{"parenttype": "Contact", "parent": ["in", contacts], "link_doctype": "Customer"},
-		"link_name",
-	)
+	if contacts:
+		customer = frappe.db.get_value(
+			"Dynamic Link",
+			{"parenttype": "Contact", "parent": ["in", contacts], "link_doctype": "Customer"},
+			"link_name",
+		)
+		if customer:
+			return customer
+	return frappe.db.get_value("Customer", {"custom_unique_email_id": email}, "name")
 
 
 def account_manager(customer: str) -> str:

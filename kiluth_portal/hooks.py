@@ -118,6 +118,10 @@ doc_events = {
     "User": {
         "before_insert": "kiluth_portal.utils.auth.restrict_signup_to_kiluth_domain",
     },
+    # Refuse a new customer whose name matches one we have (utils/customer.py).
+    "Customer": {
+        "before_insert": "kiluth_portal.utils.customer.block_duplicate",
+    },
 }
 
 
