@@ -87,7 +87,8 @@ def create_website_lead(name=None, email=None, company=None, message=None, heard
 		)
 	if medium and not lead.utm_medium:
 		lead.utm_medium = medium
-	note = frappe.utils.escape_html(message) if message else ""
+	# The planner's brief is one line per item; the note is HTML, so keep the lines.
+	note = frappe.utils.escape_html(message).replace("\n", "<br>") if message else ""
 	if referrer:
 		who = frappe.db.get_value("User", referrer, "full_name") or referrer
 		note = f"Referred by {frappe.utils.escape_html(who)} (planner link)" + (f"<br><br>{note}" if note else "")
