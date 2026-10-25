@@ -98,6 +98,35 @@ def pick_salesperson() -> str:
 	return least_loaded(loads) or FALLBACK
 
 
+def customer_for_email(email: str) -> str | None:
+	"""The Customer whose Contact has this email address, if any."""
+	contacts = frappe.get_all("Contact Email", filters={"email_id": email, "parenttype": "Contact"}, pluck="parent")
+	if not contacts:
+		return None
+	return frappe.db.get_value(
+		"Dynamic Link",
+		{"parenttype": "Contact", "parent": ["in", contacts], "link_doctype": "Customer"},
+		"link_name",
+	)
+
+
+def account_manager(customer: str) -> str:
+	"""Who answers an existing customer: the AE (docs.kiluth.com/account-management/sales-playbook).
+
+	The Account Manager of their newest open project, else the one on the
+	Customer, else the least-busy salesperson so the message is never unassigned.
+	"""
+	am = frappe.db.get_value(
+		"Project",
+		{"customer": customer, "status": "Open", "account_manager": ["is", "set"]},
+		"account_manager",
+		order_by="creation desc",
+	) or frappe.db.get_value("Customer", customer, "account_manager")
+	if am and frappe.db.get_value("User", am, "enabled"):
+		return am
+	return pick_salesperson()
+
+
 def assign(task_name: str, subject: str, users: list[str]) -> None:
 	# Private _add: the public add() always checks permissions in Frappe 16,
 	# and the website bot and the scheduler have none on Task.

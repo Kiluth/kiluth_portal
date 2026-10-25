@@ -20,6 +20,11 @@ Two optional extras (Poom, 2026-10-25):
 A repeat enquiry from the same email adds a note to the lead and, if its
 "Qualify lead" task is still open, a comment there instead of a second task.
 
+An existing customer (the email is on a Contact linked to a Customer) is not a
+lead: the message goes on the Customer as a comment, and a "Client message"
+task goes to their AE, as the Sales Playbook says the AE handles existing
+customers (Poom, 2026-10-25, after the form coverage test).
+
   POST /api/method/kiluth_portal.api.website_lead.create_website_lead
        name, email, company, message, heard, ref (all but name and email optional)
   response = {"lead": "CRM-LEAD-2026-00042"}
@@ -31,12 +36,20 @@ import re
 
 import frappe
 
-from kiluth_portal.utils.lead_routing import SUBJECT_PREFIX, assign, pick_salesperson, referred_salesperson
+from kiluth_portal.utils.lead_routing import (
+	SUBJECT_PREFIX,
+	account_manager,
+	assign,
+	customer_for_email,
+	pick_salesperson,
+	referred_salesperson,
+)
 
 BOT_USER = "website-bot@kiluth.com"
 SOURCE = "Website"
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 # What the website form sends → the UTM Medium it is filed under.
+CLIENT_PREFIX = "Client message: "
 HEARD = {
 	"search": "Search",
 	"social": "Social media",
@@ -69,6 +82,13 @@ def create_website_lead(name=None, email=None, company=None, message=None, heard
 		if value and not frappe.db.exists(doctype, value):
 			frappe.get_doc({"doctype": doctype, "name": value}).insert(ignore_permissions=True)
 
+	# The planner's brief is one line per item; notes are HTML, so keep the lines.
+	note = frappe.utils.escape_html(message).replace("\n", "<br>") if message else ""
+
+	customer = customer_for_email(email)
+	if customer:
+		return _client_message(customer, note)
+
 	# One lead per email address.
 	existing = frappe.db.get_value("Lead", {"email_id": email}, "name")
 	if existing:
@@ -87,8 +107,6 @@ def create_website_lead(name=None, email=None, company=None, message=None, heard
 		)
 	if medium and not lead.utm_medium:
 		lead.utm_medium = medium
-	# The planner's brief is one line per item; the note is HTML, so keep the lines.
-	note = frappe.utils.escape_html(message).replace("\n", "<br>") if message else ""
 	if referrer:
 		who = frappe.db.get_value("User", referrer, "full_name") or referrer
 		note = f"Referred by {frappe.utils.escape_html(who)} (planner link)" + (f"<br><br>{note}" if note else "")
@@ -128,3 +146,37 @@ def create_website_lead(name=None, email=None, company=None, message=None, heard
 
 	assign(task.name, task.subject, [referrer or pick_salesperson()])
 	return {"lead": lead.name}
+
+
+def _client_message(customer: str, note: str) -> dict:
+	"""An existing customer wrote in: a comment on the Customer and a task for their AE."""
+	frappe.get_doc("Customer", customer).add_comment(
+		"Comment", "Message from the kiluth.com website:<br><br>" + (note or "(no message)")
+	)
+	subject = f"{CLIENT_PREFIX}{customer}"
+	open_task = frappe.db.get_value("Task", {"subject": subject, "status": "Open"}, "name")
+	if open_task:
+		frappe.get_doc("Task", open_task).add_comment(
+			"Comment", "Another message from the website: see the latest comment on the customer."
+		)
+		return {"lead": "", "customer": customer}
+
+	link = frappe.utils.get_url_to_form("Customer", customer)
+	task = frappe.get_doc(
+		{
+			"doctype": "Task",
+			"subject": subject,
+			"status": "Open",
+			"priority": "Medium",
+			"department": "Account Management - K",
+			"description": (
+				f'Customer link: <a href="{link}">{frappe.utils.escape_html(customer)}</a><br>'
+				"Message: see the latest comment on the customer. Do not add names, email or phone in this task.<br><br>"
+				"An existing customer wrote through kiluth.com (a change, a question, or billing).<br><br>"
+				"<b>Done when</b> the AE has replied and the next step is in the Portal: a change request, "
+				"a support task, or a task for Finance."
+			),
+		}
+	).insert(ignore_permissions=True)
+	assign(task.name, task.subject, [account_manager(customer)])
+	return {"lead": "", "customer": customer}
