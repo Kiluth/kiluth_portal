@@ -1,0 +1,71 @@
+{
+ "actions": [],
+ "creation": "2026-10-26 00:00:00",
+ "description": "Kiluth's check on passed certification tests (kiluth_hr/certify.py). Implements docs.kiluth.com/hr/certification.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "dry_run",
+  "model_column",
+  "model_id",
+  "max_tokens"
+ ],
+ "fields": [
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Check new certificates automatically",
+   "description": "Off: pending certificates wait for a person."
+  },
+  {
+   "default": "0",
+   "fieldname": "dry_run",
+   "fieldtype": "Check",
+   "label": "Dry run",
+   "description": "Comment what the check would do on the certificate, and change nothing."
+  },
+  {
+   "fieldname": "model_column",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "default": "global.anthropic.claude-sonnet-4-6",
+   "fieldname": "model_id",
+   "fieldtype": "Data",
+   "label": "Model ID",
+   "reqd": 1,
+   "description": "Bedrock inference profile. The Portal's AWS role may call Sonnet 4.6 and Sonnet 5.5 (global.anthropic.claude-sonnet-5-5); another model needs an infra change first."
+  },
+  {
+   "default": "8000",
+   "fieldname": "max_tokens",
+   "fieldtype": "Int",
+   "label": "Max output tokens"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-26 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Kiluth HR",
+ "name": "Certificate Check Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

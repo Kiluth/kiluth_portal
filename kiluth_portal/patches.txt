@@ -6,3 +6,4 @@
 # Patches added in this section will be executed after doctypes are migrated
 kiluth_portal.patches.v2026.seed_supplier_withholding
 kiluth_portal.patches.v2026.drop_user_referral_code
+kiluth_portal.patches.v2026.seed_certificate_check_settings

@@ -81,6 +81,8 @@ scheduler_events = {
 	"hourly": [
 		"kiluth_portal.utils.financial_report.send_monthly_report_catchup",
 		"kiluth_portal.kiluth_hr.learning_report.send_monthly_catchup",
+		# Certificates still Pending signature after an hour: check them again.
+		"kiluth_portal.kiluth_hr.certify.sweep",
 		"kiluth_portal.utils.close_task.create_close_task_catchup",
 		"kiluth_portal.utils.tax_checks.withholding_check_catchup",
 		# Website leads nobody touched for one working day go to the Executive role too.
@@ -122,6 +124,15 @@ doc_events = {
     # email not ending in @kiluth.com.
     "User": {
         "before_insert": "kiluth_portal.utils.auth.restrict_signup_to_kiluth_domain",
+    },
+    # Kiluth's check on a passed certification test (kiluth_hr/certify.py).
+    # Implements docs.kiluth.com/hr/certification. The record File is often
+    # attached just after the Document is saved, so both events enqueue.
+    "Document": {
+        "on_update": "kiluth_portal.kiluth_hr.certify.on_document_update",
+    },
+    "File": {
+        "after_insert": "kiluth_portal.kiluth_hr.certify.on_file_insert",
     },
     # Refuse a new customer whose name matches one we have (utils/customer.py).
     "Customer": {
