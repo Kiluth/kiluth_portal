@@ -49,6 +49,9 @@ OPS_PROJECT = "PROJ-0001"
 TITLE_RE = re.compile(r"^(?P<course>.+?) – (?P<email>\S+@\S+)$")
 LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "learning_report_logo.svg")
 _SENT_KEY = "kiluth_learning_report_last_sent_period"
+# Reports start with October 2026 (first run 6 Nov, per hr/state). Never send or catch up on earlier
+# months: on first deploy the hourly catch-up would otherwise send September's reports.
+_FIRST_PERIOD = "2026-10"
 
 
 # ─── Records ─────────────────────────────────────────────────────────────────
@@ -548,6 +551,8 @@ def send_monthly():
 	import frappe
 
 	month = _last_month()
+	if month < _FIRST_PERIOD:
+		return
 	if frappe.db.get_default(_SENT_KEY) == month:
 		return
 	user = frappe.session.user
@@ -575,6 +580,8 @@ def send_monthly_catchup():
 
 	today, now = getdate(nowdate()), frappe.utils.now_datetime()
 	if today.day < 6 or (today.day == 6 and now.hour < 9):
+		return
+	if _last_month() < _FIRST_PERIOD:
 		return
 	if frappe.db.get_default(_SENT_KEY) == _last_month():
 		return
