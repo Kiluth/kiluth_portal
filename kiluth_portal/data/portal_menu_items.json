@@ -554,17 +554,17 @@
     ]
   },
   {
-    "id": "kiluth-document-skill",
-    "title": "Kiluth Document Skill",
-    "description": "Claude Code skill that generates Kiluth-styled PDFs (proposals, quotations, briefs, agreements, reports) from your content. Drop the unzipped folder into ~/.claude/skills/ to install.",
+    "id": "kiluth-skills",
+    "title": "Kiluth Skills",
+    "description": "Kiluth's shared AI skills for Claude, Codex, Gemini and others. Set up once; they stay up to date.",
     "icon": "fa-file-code",
     "iconColor": "text-dark",
     "category": "tools",
     "order": 30,
     "links": [
       {
-        "label": "Download",
-        "url": "https://docs.kiluth.com/static/kiluth-document/kiluth-document-skill.zip",
+        "label": "Setup guide",
+        "url": "https://docs.kiluth.com/technology/using-kiluth-skills",
         "target": "_blank",
         "rel": "noopener noreferrer"
       }
