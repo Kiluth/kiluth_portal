@@ -52,6 +52,10 @@ scheduler_events = {
 		"0 9 5 * *": [
 			"kiluth_portal.utils.financial_report.send_monthly_report",
 		],
+		# Learning reports for last month, after the 5th's financial report.
+		"0 9 6 * *": [
+			"kiluth_portal.kiluth_hr.learning_report.send_monthly",
+		],
 		# Monthly Close step 1: create "Close the books for <last month>".
 		"0 8 1 * *": [
 			"kiluth_portal.utils.close_task.create_close_task",
@@ -76,6 +80,7 @@ scheduler_events = {
 	],
 	"hourly": [
 		"kiluth_portal.utils.financial_report.send_monthly_report_catchup",
+		"kiluth_portal.kiluth_hr.learning_report.send_monthly_catchup",
 		"kiluth_portal.utils.close_task.create_close_task_catchup",
 		"kiluth_portal.utils.tax_checks.withholding_check_catchup",
 		# Website leads nobody touched for one working day go to the Executive role too.
