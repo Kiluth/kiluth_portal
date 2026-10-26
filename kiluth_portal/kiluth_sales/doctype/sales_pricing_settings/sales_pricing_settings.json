@@ -1,0 +1,157 @@
+{
+ "actions": [],
+ "creation": "2026-10-26 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "labor_section",
+  "labor_cost_rate",
+  "hard_floor_net_rate",
+  "markup_column",
+  "kiluth_markup_default",
+  "kiluth_markup_min",
+  "kiluth_markup_max",
+  "agency_markup",
+  "costs_section",
+  "direct_expenses_default",
+  "overhead_default",
+  "tax_column",
+  "vat_rate",
+  "honesty_section",
+  "honesty_strong_under_pct",
+  "honesty_possible_under_pct",
+  "honesty_pushback_pct"
+ ],
+ "fields": [
+  {
+   "fieldname": "labor_section",
+   "fieldtype": "Section Break",
+   "label": "Labor"
+  },
+  {
+   "fieldname": "labor_cost_rate",
+   "fieldtype": "Currency",
+   "label": "Labor cost rate per hour",
+   "description": "Blended cost of one hour of work. Direct and agency rates are computed from this, never stored."
+  },
+  {
+   "fieldname": "hard_floor_net_rate",
+   "fieldtype": "Currency",
+   "label": "Hard floor per hour, Kiluth net",
+   "description": "Walk-away rate. No quote goes below this after all discounts."
+  },
+  {
+   "fieldname": "markup_column",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "kiluth_markup_default",
+   "fieldtype": "Percent",
+   "label": "Kiluth markup, default"
+  },
+  {
+   "fieldname": "kiluth_markup_min",
+   "fieldtype": "Percent",
+   "label": "Kiluth markup, minimum"
+  },
+  {
+   "fieldname": "kiluth_markup_max",
+   "fieldtype": "Percent",
+   "label": "Kiluth markup, maximum"
+  },
+  {
+   "fieldname": "agency_markup",
+   "fieldtype": "Percent",
+   "label": "Agency markup",
+   "description": "Added on top of the direct-client price when work comes through an agency deal."
+  },
+  {
+   "fieldname": "costs_section",
+   "fieldtype": "Section Break",
+   "label": "Costs and tax"
+  },
+  {
+   "fieldname": "direct_expenses_default",
+   "fieldtype": "Currency",
+   "label": "Direct expenses per engagement, default"
+  },
+  {
+   "fieldname": "overhead_default",
+   "fieldtype": "Currency",
+   "label": "Overhead per engagement, default"
+  },
+  {
+   "fieldname": "tax_column",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "vat_rate",
+   "fieldtype": "Percent",
+   "label": "VAT rate",
+   "description": "0 while Kiluth is not VAT-registered."
+  },
+  {
+   "fieldname": "honesty_section",
+   "fieldtype": "Section Break",
+   "label": "Honesty check",
+   "description": "Price as a percent of the client's yearly revenue."
+  },
+  {
+   "fieldname": "honesty_strong_under_pct",
+   "fieldtype": "Percent",
+   "label": "Strong underprice below"
+  },
+  {
+   "fieldname": "honesty_possible_under_pct",
+   "fieldtype": "Percent",
+   "label": "Possible underprice below"
+  },
+  {
+   "fieldname": "honesty_pushback_pct",
+   "fieldtype": "Percent",
+   "label": "Expect pushback above"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-26 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Kiluth Sales",
+ "name": "Sales Pricing Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Sales Manager",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "print": 1,
+   "email": 1,
+   "share": 0
+  },
+  {
+   "role": "Sales User",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "print": 1,
+   "email": 1,
+   "share": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
