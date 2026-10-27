@@ -80,6 +80,16 @@ check("one-word names ignored", lr.check_reports(a, {}, lr.summary_html(a) + " B
 check("docs to check: one section missed twice", [x[0] for x in lr.docs_to_check(a)] == ["Estimation"])
 check("heading parser", lr._heading_texts('<h2 id="x">Who&#x27;s in<a role="anchor" href="#x"></a></h2><h3>Table</h3>') == ["Who's in"])
 
+mail = lr.email_html(False, "October 2026", "https://portal.kiluth.com/assets/kiluth_portal/")
+check("person email wording", "Your learning report for October 2026 is attached." in mail
+	and "It's yours: it isn't a score, and other people see it only if you share it." in mail and "— Kiluth" in mail)
+check("summary email wording", "The company learning summary for October 2026 is attached.<br>No names."
+	in lr.email_html(True, "October 2026", "https://x/"))
+check("email design rules", "gradient" not in mail and "#fefefe" in mail and 'class="k"' in mail
+	and "learning/hero-person.jpg" in mail)
+for jpg in ("hero-person.jpg", "hero-summary.jpg"):
+	check(f"photo {jpg} shipped", os.path.exists(os.path.join(here, "..", "public", "learning", jpg)))
+
 if fails:
 	print("FAIL:", *fails, sep="\n  ")
 	sys.exit(1)

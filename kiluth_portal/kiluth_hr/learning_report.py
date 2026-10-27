@@ -353,6 +353,76 @@ def summary_html(a):
 	return page("Learning Report — Company", f"{month} · Kiluth LTD.", body)
 
 
+# ─── Email ───────────────────────────────────────────────────────────────────
+
+ASSETS = "/assets/kiluth_portal/"  # app public/: learning/ has the photos, certificate/ the logo and fonts
+SANS = "Theinhardt,'Helvetica Neue',Arial,sans-serif"
+
+
+def email_html(summary, label, assets):
+	"""The email that carries a report PDF (design approved by Poom, 2026-10-27).
+
+	Same look as the certificate email: a photo melting into black (the fade is
+	in the JPG), white words, mint only on the label. Tables and inline styles so
+	Gmail keeps it; the button's cell is #fefefe because Gmail on iPhone drops pure
+	white. `assets` is the full URL of the app's public folder. Wording unchanged."""
+	e = html.escape
+	a = e(assets)
+	f = f"{a}certificate/"
+	if summary:
+		hero, kicker, title = "hero-summary.jpg", "Company summary", "Learning report"
+		line = f"The company learning summary for {e(label)} is attached.<br>No names."
+	else:
+		hero, kicker, title = "hero-person.jpg", "Learning report", "Learning report"
+		line = (f"Your learning report for {e(label)} is attached.<br>"
+			"It's yours: it isn't a score, and other people see it only if you share it.")
+	pill = f"""<table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td bgcolor="#fefefe" style="background-color:#fefefe;border-radius:999px">
+<a class="k" href="{DOCS}/hr/learning-report" style="display:inline-block;padding:15px 30px;font-size:16px;font-family:{SANS};font-weight:300;text-decoration:none"><span style="color:#000000;text-decoration:none">How it's made</span></a></td></tr></table>"""
+	return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
+<title>{e(title)}: {e(label)}</title>
+<style>
+@font-face {{ font-family: 'Theinhardt'; src: url('{f}theinhardt-light.woff2') format('woff2'); font-weight: 300; }}
+@font-face {{ font-family: 'Theinhardt'; src: url('{f}theinhardt-regular.woff2') format('woff2'); font-weight: 400; }}
+body {{ margin: 0; padding: 0; background: #000; }}
+/* frappe.sendmail wraps this in its standard template, whose email.css forces
+   `.email-body a:not(.btn)` dark, bold and underlined, and its CSS inliner drops
+   plain rules from this block. Rules inside @media survive, and these outrank
+   that selector. They also cover the links iPhone Mail adds around dates. */
+@media screen {{
+  body .email-body a.k, body .email-body a[x-apple-data-detectors], body .email-body .nolink a {{
+    color: inherit !important; font-weight: inherit !important; text-decoration: none !important; }}
+  /* Its `.body-table td` font rule would put the system font back on every cell. */
+  body .email-body .kl td {{ font-family: {SANS} !important; }}
+}}
+@media (max-width: 480px) {{
+  .hero {{ padding-top: 180px !important; }}
+  .h1 {{ font-size: 44px !important; }}
+  .gut {{ padding-left: 20px !important; padding-right: 20px !important; }}
+}}
+</style></head>
+<body id="body" style="margin:0;padding:0;background:#000">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#000000" style="background:#000"><tr><td align="center">
+<table role="presentation" class="kl" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;font-family:{SANS};font-weight:300;color:#fff">
+<tr><td background="{a}learning/{hero}" bgcolor="#000000" style="background-color:#000;background-image:url('{a}learning/{hero}');background-position:center top;background-size:100% auto;background-repeat:no-repeat">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td class="gut" style="padding:22px 24px"><img src="{f}logo-white.png" width="78" alt="Kiluth" style="display:block;width:78px;height:auto;border:0"></td></tr>
+<tr><td align="center" class="hero gut" style="padding:260px 40px 0">
+<div style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#7ee2a8">{e(kicker)}</div>
+<div class="h1" style="font-size:56px;line-height:1.1;font-weight:400;letter-spacing:-.02em;padding:14px 0 18px;color:#fff"><span class="nolink">{e(label)}</span></div>
+<div style="font-size:18px;line-height:1.7;color:#d6d6d6;padding-bottom:12px">{line}</div>
+<div style="font-size:16px;line-height:1.7;color:#9a9a9a;padding-bottom:40px">— Kiluth</div></td></tr></table></td></tr>
+<tr><td align="center" style="padding:8px 40px 56px">{pill}</td></tr>
+<tr><td class="gut" style="padding:48px 40px;border-top:1px solid #1f1f1f"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><span style="color:#fff">{e(title)}</span><br>
+<a class="k" href="{DOCS}/hr/learning-report" style="color:#9a9a9a;text-decoration:none">How it's made</a></td>
+<td align="right" style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><img src="{f}logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto">Bangkok</td>
+</tr></table></td></tr>
+</table></td></tr></table></body></html>"""
+
+
 # ─── Checks before sending ───────────────────────────────────────────────────
 
 def check_reports(a, reports, summary, names):
@@ -518,13 +588,14 @@ def build(month, send=False, only=None):
 	summary_pdf = _pdf(summary) if summary else None
 	if not send:
 		return result
+	from frappe.utils import get_url
+
+	assets = get_url(ASSETS)
 	for email, pdf in pdfs.items():
-		_send(email, f"Your Kiluth learning report — {label}",
-			f"<p>Your learning report for {label} is attached. It's yours: it isn't a score, and other people see it only if you share it.</p><p>— Kiluth</p>",
+		_send(email, f"Your Kiluth learning report — {label}", email_html(False, label, assets),
 			f"Kiluth-Learning-Report-{month}-{email.split('@')[0]}.pdf", pdf)
 	if summary_pdf:
-		_send(SUMMARY_TO, f"Kiluth learning report, company summary — {label}",
-			f"<p>The company learning summary for {label} is attached. No names.</p><p>— Kiluth</p>",
+		_send(SUMMARY_TO, f"Kiluth learning report, company summary — {label}", email_html(True, label, assets),
 			f"Kiluth-Learning-Report-{month}-company.pdf", summary_pdf)
 		result["flagged_tasks"] = _flag_docs(month, docs_to_check(a))
 	result["sent"] = True
