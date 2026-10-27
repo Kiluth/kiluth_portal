@@ -90,6 +90,6 @@ body {{ margin: 0; padding: 0; background: #000; }}
 {attached}{pill}<tr><td class="gut" style="padding:48px 40px;border-top:1px solid #1f1f1f"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><span style="color:#fff">Kiluth Portal</span><br>
 <a class="k" href="{e(portal_url)}" style="color:#9a9a9a;text-decoration:none">{e(re.sub(r"^https?://", "", portal_url).rstrip("/"))}</a></td>
-<td align="right" style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><img src="{a}certificate/logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto">Kiluth LTD., Bangkok</td>
+<td align="right" style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><img src="{a}certificate/logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto">Bangkok</td>
 </tr></table></td></tr>
 </table></td></tr></table></body></html>"""
