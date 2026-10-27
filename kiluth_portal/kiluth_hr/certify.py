@@ -499,11 +499,9 @@ def email_html(signed, course, first_name, assets, portal_url, cert_id="", expir
 		hero, kicker, colour = "hero-not-signed.jpg", "Not signed", "#9a9a9a"
 		line = f"Thanks for taking the test, {e(first_name)}.<br>Kiluth's check couldn't sign this one."
 		button, href = "How to retake", f"{DOCS}/hr/certification#the-test"
-		middle = f"""<tr><td style="padding:0 40px 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-<td background="{a}why.jpg" bgcolor="#0d0d0d" style="background-color:#0d0d0d;background-image:url('{a}why.jpg');background-size:cover;background-position:center;border-radius:14px;padding:32px 30px">
-<div style="font-size:14px;color:#d6d6d6">&#9679;&nbsp;Why</div>
-<div style="font-size:18px;line-height:1.7;color:#ededed;padding-top:12px">{e(reason)}</div>
-</td></tr></table>
+		middle = f"""<tr><td class="gut" style="padding:0 40px 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a"><tr>
+<td style="padding:22px 0;vertical-align:top"><div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7a7a">Why</div><div style="font-size:18px;line-height:1.7;padding-top:6px;color:#ffffff">{e(reason)}</div></td>
+</tr></table>
 <div style="font-size:16px;line-height:1.8;color:#9a9a9a;padding-top:32px;text-align:center">Nothing counts against you.</div></td></tr>"""
 	pill = f"""<table role="presentation" cellpadding="0" cellspacing="0" align="center" class="pill"><tr><td bgcolor="#fefefe" style="background-color:#fefefe;border-radius:999px">
 <a class="k" href="{e(href)}" style="display:inline-block;padding:15px 30px;font-size:16px;font-family:{SANS};font-weight:300;text-decoration:none"><span style="color:#000000;text-decoration:none">{e(button)}</span></a></td></tr></table>"""

@@ -7,7 +7,7 @@
  "event": "Value Change",
  "is_standard": 1,
  "message_type": "HTML",
- "modified": "2026-10-27 20:00:00.000000",
+ "modified": "2026-10-27 20:30:00.000000",
  "module": "Kiluth HR",
  "name": "Leave Application Status Change",
  "recipients": [
@@ -17,6 +17,6 @@
  ],
  "send_system_notification": 1,
  "send_to_all_assignees": 0,
- "subject": "Leave {{ doc.status|lower }}: {{ frappe.utils.formatdate(doc.from_date, 'd MMM') }} to {{ frappe.utils.formatdate(doc.to_date, 'd MMM yyyy') }}",
+ "subject": "Leave {{ doc.status|lower }}: {{ doc.from_date }} to {{ doc.to_date }}",
  "value_changed": "status"
 }

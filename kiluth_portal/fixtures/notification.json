@@ -388,7 +388,7 @@
   "message_type": "HTML",
   "method": null,
   "minutes_offset": 0,
-  "modified": "2026-10-27 20:00:00.000000",
+  "modified": "2026-10-27 20:30:00.000000",
   "module": "Kiluth HR",
   "name": "Leave Application HR Alert",
   "print_format": null,
@@ -408,7 +408,7 @@
   "sender_email": null,
   "set_property_after_alert": null,
   "slack_webhook_url": null,
-  "subject": "Leave request: {{ doc.employee_name or doc.employee }}, {{ frappe.utils.formatdate(doc.from_date, 'd MMM') }} to {{ frappe.utils.formatdate(doc.to_date, 'd MMM yyyy') }}",
+  "subject": "Leave request: {{ doc.employee_name or doc.employee }}, {{ doc.from_date }} to {{ doc.to_date }}",
   "value_changed": null
  },
  {
@@ -433,7 +433,7 @@
   "message_type": "HTML",
   "method": null,
   "minutes_offset": 0,
-  "modified": "2026-10-27 20:00:00.000000",
+  "modified": "2026-10-27 20:30:00.000000",
   "module": "Kiluth HR",
   "name": "Leave Application Status Change",
   "print_format": null,
@@ -453,7 +453,7 @@
   "sender_email": null,
   "set_property_after_alert": null,
   "slack_webhook_url": null,
-  "subject": "Leave {{ doc.status|lower }}: {{ frappe.utils.formatdate(doc.from_date, 'd MMM') }} to {{ frappe.utils.formatdate(doc.to_date, 'd MMM yyyy') }}",
+  "subject": "Leave {{ doc.status|lower }}: {{ doc.from_date }} to {{ doc.to_date }}",
   "value_changed": "status"
  },
  {
