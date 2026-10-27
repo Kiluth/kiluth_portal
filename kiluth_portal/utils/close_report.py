@@ -89,12 +89,7 @@ def send_close_report(task: str, recipients: list[str] | str | None = None):
 	frappe.sendmail(
 		recipients=recipients,
 		subject=f"Kiluth — Close Report — {period['label']}",
-		message=(
-			f"<p>The books for <strong>{period['label']}</strong> are closed. "
-			f"The Close Report is attached.</p>"
-			f"<p>{frappe.utils.get_link_to_form('Task', doc.name, 'Open the close task')}</p>"
-			f"<p>— Kiluth Portal</p>"
-		),
+		message=_email_body(period, doc.name, fname),
 		attachments=[{"fname": fname, "fcontent": pdf_bytes}],
 		delayed=False,
 	)
@@ -109,6 +104,25 @@ def send_close_report(task: str, recipients: list[str] | str | None = None):
 	}).insert(ignore_permissions=True)
 
 	return {"period": period["label"], "recipients": recipients}
+
+
+def _email_body(period: dict, task: str, fname: str) -> str:
+	"""Look: kiluth_portal/utils/report_email.py (the Portal email design, 2026-10-27)."""
+	from frappe.utils import get_url, get_url_to_form
+
+	from kiluth_portal.utils.report_email import email_html
+
+	return email_html(
+		title="Close Report",
+		kicker=period["label"],
+		lines=[f"The books for **{period['label']}** are closed. The Close Report is attached."],
+		hero="hero-close.jpg",
+		assets=get_url("/assets/kiluth_portal/"),
+		portal_url=get_url(),
+		attachment=fname,
+		button="Open the close task",
+		href=get_url_to_form("Task", task),
+	)
 
 
 # ─── Period ─────────────────────────────────────────────────────────────────

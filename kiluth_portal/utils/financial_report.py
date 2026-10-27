@@ -132,9 +132,10 @@ def send_monthly_report(recipients: list[str] | str | None = None):
 	pdf_bytes = get_pdf(html)
 
 	subject = f"Kiluth — Monthly Financial Report — {period['label']}"
-	body = _email_body(period)
+	fname = f"Kiluth-Financial-Report-{period['start'].strftime('%Y-%m')}.pdf"
+	body = _email_body(period, fname)
 	attachment = {
-		"fname": f"Kiluth-Financial-Report-{period['start'].strftime('%Y-%m')}.pdf",
+		"fname": fname,
 		"fcontent": pdf_bytes,
 	}
 
@@ -932,12 +933,24 @@ def _render_html(period: dict) -> str:
 """
 
 
-def _email_body(period: dict) -> str:
+def _email_body(period: dict, fname: str = "") -> str:
 	# Greetings only — all financial detail lives in the attached PDF.
-	start_str = period["start"].strftime("%-d")
-	end_str = period["end"].strftime("%-d %B %Y")
-	return (
-		f"<p>Hi team,</p>"
-		f"<p>Kiluth's financial report for <strong>{start_str}–{end_str}</strong> is attached.</p>"
-		f"<p>— Kiluth Portal</p>"
+	# Look: kiluth_portal/utils/report_email.py (the Portal email design, 2026-10-27).
+	from frappe.utils import get_url
+
+	from kiluth_portal.utils.report_email import email_html
+
+	return email_html(
+		title="Monthly Financial Report",
+		kicker=period["label"],
+		lines=["Hi team,", f"Kiluth's financial report for **{_period_range(period)}** is attached."],
+		hero="hero-financial.jpg",
+		assets=get_url("/assets/kiluth_portal/"),
+		portal_url=get_url(),
+		attachment=fname,
 	)
+
+
+def _period_range(period: dict) -> str:
+	"""1–30 September 2026"""
+	return f"{period['start'].strftime('%-d')}–{period['end'].strftime('%-d %B %Y')}"
