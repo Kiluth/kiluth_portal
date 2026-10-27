@@ -56,6 +56,10 @@ scheduler_events = {
 		"0 9 6 * *": [
 			"kiluth_portal.kiluth_hr.learning_report.send_monthly",
 		],
+		# Days off this week, Mondays 08:00 (replaces the HRMS holiday reminder).
+		"0 8 * * 1": [
+			"kiluth_portal.kiluth_hr.holiday_reminder.send_weekly",
+		],
 		# Monthly Close step 1: create "Close the books for <last month>".
 		"0 8 1 * *": [
 			"kiluth_portal.utils.close_task.create_close_task",
