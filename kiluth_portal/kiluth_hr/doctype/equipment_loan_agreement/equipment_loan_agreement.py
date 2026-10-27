@@ -29,6 +29,9 @@ def resend_acknowledgment_email(name: str):
 	Reuses the existing Notification record so the content never drifts.
 	"""
 	doc = frappe.get_doc("Equipment Loan Agreement", name)
+	# get_doc skips permissions: without this, any signed-in user could make the
+	# Portal email any borrower (reported by an outside scan, 2026-10-27).
+	doc.check_permission("write")
 
 	if doc.docstatus != 0 or doc.i_agree_to_the_terms:
 		frappe.throw("Resend is only available for draft agreements awaiting acknowledgment.")
