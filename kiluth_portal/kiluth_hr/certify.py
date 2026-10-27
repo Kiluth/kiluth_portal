@@ -491,8 +491,8 @@ def email_html(signed, course, first_name, assets, portal_url, cert_id="", expir
 		line = f"Every answer right, {e(first_name)}.<br>Your certificate is attached."
 		button, href = "Open your certificate", portal_url
 		middle = f"""<tr><td style="padding:0 40px 56px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a"><tr>
-<td width="50%" style="padding:22px 0;vertical-align:top"><div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7a7a">Certificate No.</div><div style="font-size:18px;padding-top:6px;color:#fff">{e(cert_id)}</div></td>
-<td width="50%" style="padding:22px 0 22px 24px;border-left:1px solid #2a2a2a;vertical-align:top"><div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7a7a">Valid until</div><div style="font-size:18px;padding-top:6px;color:#fff">{e(expires)}</div></td>
+<td width="50%" style="padding:22px 0;vertical-align:top"><div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7a7a">Certificate No.</div><div class="nolink" style="font-size:18px;padding-top:6px;color:#fff"><span style="color:#ffffff;text-decoration:none">{e(cert_id)}</span></div></td>
+<td width="50%" style="padding:22px 0 22px 24px;border-left:1px solid #2a2a2a;vertical-align:top"><div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7a7a">Valid until</div><div class="nolink" style="font-size:18px;padding-top:6px;color:#fff"><span style="color:#ffffff;text-decoration:none">{e(expires)}</span></div></td>
 </tr></table>
 <div style="font-size:16px;line-height:1.8;color:#9a9a9a;padding-top:24px">Certificates last a year, because the way we work keeps changing. Take the test again before it ends to keep it.</div></td></tr>"""
 	else:
@@ -505,23 +505,28 @@ def email_html(signed, course, first_name, assets, portal_url, cert_id="", expir
 <div style="font-size:18px;line-height:1.7;color:#ededed;padding-top:12px">{e(reason)}</div>
 </td></tr></table>
 <div style="font-size:16px;line-height:1.8;color:#9a9a9a;padding-top:32px;text-align:center">Nothing counts against you.</div></td></tr>"""
-	pill = f"""<table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td bgcolor="#fefefe" style="background-color:#fefefe;border-radius:999px">
-<a href="{e(href)}" style="display:inline-block;padding:15px 30px;font-size:16px;font-family:{SANS};font-weight:300;text-decoration:none"><span style="color:#000000">{e(button)}</span></a></td></tr></table>"""
+	pill = f"""<table role="presentation" cellpadding="0" cellspacing="0" align="center" class="pill"><tr><td bgcolor="#fefefe" style="background-color:#fefefe;border-radius:999px">
+<a href="{e(href)}" style="display:inline-block;padding:15px 30px;font-size:16px;font-family:{SANS};font-weight:300;text-decoration:none"><span style="color:#000000;text-decoration:none">{e(button)}</span></a></td></tr></table>"""
 	return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
 <title>{e(kicker)}: {e(course)}</title>
 <style>
 @font-face {{ font-family: 'Theinhardt'; src: url('{a}theinhardt-light.woff2') format('woff2'); font-weight: 300; }}
 @font-face {{ font-family: 'Theinhardt'; src: url('{a}theinhardt-regular.woff2') format('woff2'); font-weight: 400; }}
 body {{ margin: 0; padding: 0; background: #000; }}
+/* iPhone Mail turns dates into dark, underlined links; keep them as written */
+a[x-apple-data-detectors], .nolink a {{ color: inherit !important; text-decoration: none !important;
+  font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }}
+u + #body a, .pill a {{ text-decoration: none !important; }}
 @media (max-width: 480px) {{
   .hero {{ padding-top: 200px !important; }}
   .h1 {{ font-size: 48px !important; }}
   .gut {{ padding-left: 20px !important; padding-right: 20px !important; }}
 }}
 </style></head>
-<body style="margin:0;padding:0;background:#000">
+<body id="body" style="margin:0;padding:0;background:#000">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#000000" style="background:#000"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;font-family:{SANS};font-weight:300;color:#fff">
 <tr><td background="{a}{hero}" bgcolor="#000000" style="background-color:#000;background-image:url('{a}{hero}');background-position:center top;background-size:100% auto;background-repeat:no-repeat">
