@@ -24,9 +24,27 @@ def _rich(text: str) -> str:
 	return re.sub(r"\*\*(.+?)\*\*", r'<span style="color:#ffffff;font-weight:400">\1</span>', html.escape(text))
 
 
+def footer(assets: str, why: str, portal_url: str = "https://portal.kiluth.com", links: list | None = None) -> str:
+	"""The footer every Kiluth email ends with (design C, Poom 2026-10-27): links,
+	why you got it, then a dark Kiluth wordmark. The wordmark is a dark-grey PNG,
+	not a faded white logo: some email apps ignore CSS opacity.
+	assets  the app's public folder URL, ending in "/"
+	links   [(label, url)]; default kiluth.com, Portal, Docs"""
+	e = html.escape
+	link = lambda t, h: f'<a class="k" href="{h}" style="color:#9a9a9a;text-decoration:none">{t}</a>'
+	dot = '<span style="color:#3a3a3a">&nbsp;&nbsp;·&nbsp;&nbsp;</span>'
+	links = dot.join(link(e(t), e(h)) for t, h in (links or [
+		("kiluth.com", "https://kiluth.com"), ("Portal", portal_url), ("Docs", "https://docs.kiluth.com")]))
+	return f"""<tr><td class="gut" style="padding:40px 40px 0;border-top:1px solid #1f1f1f;font-family:{SANS};font-size:13px;line-height:1.8;color:#6a6a6a">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:13px;color:#9a9a9a">{links}</td><td align="right" style="font-size:13px;color:#6a6a6a">Bangkok</td></tr></table>
+<div style="padding-top:8px">{e(why)}</div></td></tr>
+<tr><td class="gut" style="padding:40px 40px 40px"><img src="{e(assets)}email/wordmark-dark.png" width="115" alt="Kiluth" style="display:block;width:115px;height:auto;border:0"></td></tr>"""
+
+
 def email_html(*, title: str, kicker: str, lines: list[str], hero: str, assets: str,
 		portal_url: str, attachment: str = "", button: str = "", href: str = "",
-		sign_off: str = "— Kiluth Portal", facts: list | None = None) -> str:
+		sign_off: str = "— Kiluth Portal", facts: list | None = None,
+		why: str = "You get this because you work in the Kiluth Portal.") -> str:
 	"""Build the email.
 
 	title       big white heading, e.g. "Close Report"
@@ -37,6 +55,7 @@ def email_html(*, title: str, kicker: str, lines: list[str], hero: str, assets: 
 	            (https://portal.kiluth.com/assets/kiluth_portal/)
 	attachment  file name of the attached PDF, shown under the words
 	button/href optional white pill
+	why         the footer's one line on why this person gets the email
 	facts       optional [(label, value)] rows shown under the words, e.g. a
 	            leave request's dates; empty values show as "—"
 	"""
@@ -92,14 +111,9 @@ body {{ margin: 0; padding: 0; background: #000; }}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;font-family:{SANS};font-weight:300;color:#fff">
 <tr><td background="{a}email/{e(hero)}" bgcolor="#000000" style="background-color:#000;background-image:url('{a}email/{e(hero)}');background-position:center top;background-size:100% auto;background-repeat:no-repeat">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-<tr><td class="gut" style="padding:22px 24px"><img src="{a}certificate/logo-white.png" width="78" alt="Kiluth" style="display:block;width:78px;height:auto;border:0"></td></tr>
+<tr><td class="gut" style="padding:28px 40px"><img src="{a}certificate/logo-white.png" width="78" alt="Kiluth" style="display:block;width:78px;height:auto;border:0"></td></tr>
 <tr><td class="hero gut" style="padding:280px 40px 0">
 <div class="nolink" style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#7ee2a8"><span style="color:#7ee2a8;text-decoration:none">{e(kicker)}</span></div>
 <div class="h1" style="font-size:52px;line-height:1.1;font-weight:400;letter-spacing:-.02em;padding:14px 0 24px;color:#fff">{e(title)}</div>
 {body}<div style="font-size:16px;line-height:1.7;color:#9a9a9a;padding:10px 0 40px">{e(sign_off)}</div></td></tr></table></td></tr>
-{rows}{attached}{pill}<tr><td class="gut" style="padding:48px 40px;border-top:1px solid #1f1f1f"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-<td style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><span style="color:#fff">Kiluth Portal</span><br>
-<a class="k" href="{e(portal_url)}" style="color:#9a9a9a;text-decoration:none">{e(re.sub(r"^https?://", "", portal_url).rstrip("/"))}</a></td>
-<td align="right" style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><img src="{a}certificate/logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto">Bangkok</td>
-</tr></table></td></tr>
-</table></td></tr></table></body></html>"""
+{rows}{attached}{pill}{footer(assets, why, portal_url)}</table></td></tr></table></body></html>"""

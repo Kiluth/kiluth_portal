@@ -407,19 +407,14 @@ body {{ margin: 0; padding: 0; background: #000; }}
 <table role="presentation" class="kl" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;font-family:{SANS};font-weight:300;color:#fff">
 <tr><td background="{a}learning/{hero}" bgcolor="#000000" style="background-color:#000;background-image:url('{a}learning/{hero}');background-position:center top;background-size:100% auto;background-repeat:no-repeat">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-<tr><td class="gut" style="padding:22px 24px"><img src="{f}logo-white.png" width="78" alt="Kiluth" style="display:block;width:78px;height:auto;border:0"></td></tr>
+<tr><td class="gut" style="padding:28px 40px"><img src="{f}logo-white.png" width="78" alt="Kiluth" style="display:block;width:78px;height:auto;border:0"></td></tr>
 <tr><td align="center" class="hero gut" style="padding:260px 40px 0">
 <div style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#7ee2a8">{e(kicker)}</div>
 <div class="h1" style="font-size:56px;line-height:1.1;font-weight:400;letter-spacing:-.02em;padding:14px 0 18px;color:#fff"><span class="nolink">{e(label)}</span></div>
 <div style="font-size:18px;line-height:1.7;color:#d6d6d6;padding-bottom:12px">{line}</div>
 <div style="font-size:16px;line-height:1.7;color:#9a9a9a;padding-bottom:40px">— Kiluth</div></td></tr></table></td></tr>
 <tr><td align="center" style="padding:8px 40px 56px">{pill}</td></tr>
-<tr><td class="gut" style="padding:48px 40px;border-top:1px solid #1f1f1f"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-<td style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><span style="color:#fff">{e(title)}</span><br>
-<a class="k" href="{DOCS}/hr/learning-report" style="color:#9a9a9a;text-decoration:none">How it's made</a></td>
-<td align="right" style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><img src="{f}logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto">Bangkok</td>
-</tr></table></td></tr>
-</table></td></tr></table></body></html>"""
+{_rp_email().footer(assets, "You get this because you work at Kiluth.", links=[("kiluth.com", "https://kiluth.com"), ("Docs", DOCS), ("How it's made", f"{DOCS}/hr/learning-report")])}</table></td></tr></table></body></html>"""
 
 
 # ─── Checks before sending ───────────────────────────────────────────────────
@@ -657,3 +652,17 @@ def send_monthly_catchup():
 			"project": OPS_PROJECT, "status": ["not in", ["Completed", "Cancelled"]]}, limit=1):
 		return
 	send_monthly()
+
+
+def _rp_email():
+	"""utils/report_email.py, also when tests load this file on its own."""
+	try:
+		from kiluth_portal.utils import report_email
+	except ImportError:
+		import importlib.util
+
+		path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "utils", "report_email.py")
+		spec = importlib.util.spec_from_file_location("report_email", path)
+		report_email = importlib.util.module_from_spec(spec)
+		spec.loader.exec_module(report_email)
+	return report_email

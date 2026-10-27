@@ -120,6 +120,7 @@ def _email_body(period: dict, task: str, fname: str) -> str:
 		attachment=fname,
 		button="Open the close task",
 		href=get_url_to_form("Task", task),
+		why="You get this because you're on Kiluth's finance list.",
 	)
 
 

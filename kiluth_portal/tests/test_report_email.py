@@ -33,7 +33,8 @@ check("financial attachment", "Kiluth-Financial-Report-2026-09.pdf" in fin)
 check("no button without href", "#fefefe" not in fin)
 check("no gradients", "gradient" not in fin)
 check("link override", "body .email-body a.k" in fin and "@media screen" in fin)
-check("portal link", 'href="https://portal.kiluth.com"' in fin and ">portal.kiluth.com<" in fin)
+check("footer", 'href="https://portal.kiluth.com"' in fin and ">Portal<" in fin and "wordmark-dark.png" in fin
+	and "You get this because you work in the Kiluth Portal." in fin)
 check("mint kicker", "#7ee2a8" in fin and "September 2026" in fin)
 check("fonts", A + "certificate/theinhardt-light.woff2" in fin)
 

@@ -535,18 +535,14 @@ body {{ margin: 0; padding: 0; background: #000; }}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;font-family:{SANS};font-weight:300;color:#fff">
 <tr><td background="{a}{hero}" bgcolor="#000000" style="background-color:#000;background-image:url('{a}{hero}');background-position:center top;background-size:100% auto;background-repeat:no-repeat">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-<tr><td class="gut" style="padding:22px 24px"><img src="{a}logo-white.png" width="78" alt="Kiluth" style="display:block;width:78px;height:auto;border:0"></td></tr>
+<tr><td class="gut" style="padding:28px 40px"><img src="{a}logo-white.png" width="78" alt="Kiluth" style="display:block;width:78px;height:auto;border:0"></td></tr>
 <tr><td align="center" class="hero gut" style="padding:300px 40px 0">
 <div style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:{colour}">{e(kicker)}</div>
 <div class="h1" style="font-size:64px;line-height:1.1;font-weight:400;letter-spacing:-.02em;padding:14px 0 18px;color:#fff">{e(course)}</div>
 <div style="font-size:18px;line-height:1.7;color:#d6d6d6;padding-bottom:40px">{line}</div></td></tr></table></td></tr>
 {"" if signed else middle}<tr><td align="center" style="padding:8px 40px 48px">{pill}</td></tr>
-{middle if signed else ""}<tr><td class="gut" style="padding:48px 40px;border-top:1px solid #1f1f1f"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-<td style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><span style="color:#fff">Certification</span><br>
-<a class="k" href="{DOCS}/hr/certification" style="color:#9a9a9a;text-decoration:none">How it works</a></td>
-<td align="right" style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><img src="{a}logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto">Bangkok</td>
-</tr></table></td></tr>
-</table></td></tr></table></body></html>"""
+{middle if signed else ""}{_report_email().footer(assets.rsplit("certificate/", 1)[0], "You get this because you took a Kiluth certification test.",
+	links=[("kiluth.com", "https://kiluth.com"), ("Portal", portal_url.split("/app/")[0]), ("How it works", f"{DOCS}/hr/certification")])}</table></td></tr></table></body></html>"""
 
 
 # ─── Portal side ─────────────────────────────────────────────────────────────
@@ -783,3 +779,17 @@ def run(name, dry_run=0):
 
 	frappe.only_for("System Manager")
 	return check(name, dry_run=dry_run)
+
+
+def _report_email():
+	"""utils/report_email.py, also when tests load this file on its own."""
+	try:
+		from kiluth_portal.utils import report_email
+	except ImportError:
+		import importlib.util
+
+		path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "utils", "report_email.py")
+		spec = importlib.util.spec_from_file_location("report_email", path)
+		report_email = importlib.util.module_from_spec(spec)
+		spec.loader.exec_module(report_email)
+	return report_email

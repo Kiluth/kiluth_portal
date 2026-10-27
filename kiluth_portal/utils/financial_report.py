@@ -645,6 +645,7 @@ def _email_body(period: dict, fname: str = "") -> str:
 		assets=get_url("/assets/kiluth_portal/"),
 		portal_url=get_url(),
 		attachment=fname,
+		why="You get this because you're on Kiluth's management list.",
 	)
 
 

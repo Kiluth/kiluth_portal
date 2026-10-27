@@ -142,27 +142,34 @@
 							<div>{{ content }}</div>
 						</td>
 					</tr>
+					{#- Footer, design C (Poom 2026-10-27), same as utils/report_email.py footer(). #}
 					<tr>
-						<td class="kf-gut" style="padding:32px 40px 48px;border-top:1px solid #1f1f1f">
+						<td class="kf-gut" style="padding:40px 40px 0;border-top:1px solid #1f1f1f;font-family:{{ sans }};font-size:13px;line-height:1.8;color:#6a6a6a">
 							<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
 								<tr>
-									<td valign="top" style="font-family:{{ sans }};font-weight:300;font-size:14px;line-height:2;color:#9a9a9a"><span style="color:#ffffff">Kiluth Portal</span><br /><a href="{{ site_url or 'https://portal.kiluth.com' }}" style="color:#9a9a9a;text-decoration:none;font-weight:300">Open the Portal</a></td>
-									<td valign="top" align="right" style="font-family:{{ sans }};font-weight:300;font-size:14px;line-height:2;color:#9a9a9a"><img src="{{ assets }}logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto" />Bangkok</td>
+									<td style="font-family:{{ sans }};font-size:13px;color:#9a9a9a"><a href="https://kiluth.com" style="color:#9a9a9a;text-decoration:none;font-weight:300">kiluth.com</a><span style="color:#3a3a3a">&nbsp;&nbsp;&middot;&nbsp;&nbsp;</span><a href="{{ site_url or 'https://portal.kiluth.com' }}" style="color:#9a9a9a;text-decoration:none;font-weight:300">Portal</a><span style="color:#3a3a3a">&nbsp;&nbsp;&middot;&nbsp;&nbsp;</span><a href="https://docs.kiluth.com" style="color:#9a9a9a;text-decoration:none;font-weight:300">Docs</a></td>
+									<td align="right" style="font-family:{{ sans }};font-size:13px;color:#6a6a6a">Bangkok</td>
 								</tr>
 							</table>
+							<div style="padding:8px 0 24px">Sent from the Kiluth Portal.</div>
 						</td>
 					</tr>
+					{%- if footer %}
 					<tr>
 						<td class="kf-foot kf-gut" valign="top" style="padding:0 40px 32px;font-family:{{ sans }};font-size:12px;line-height:1.6;color:#7a7a7a">
 							<div data-email-footer="true">{{ footer }}</div>
 						</td>
 					</tr>
+					{%- endif %}
 					{%- if print_html %}
 					<tr>
 						{#- A document printed into the email (Print Format) is designed for white paper. #}
 						<td class="kf-gut" style="padding:0 40px 48px"><div class="print-html" style="background-color:#ffffff;color:#171717;padding:24px;border-radius:8px">{{ print_html }}</div></td>
 					</tr>
 					{%- endif %}
+					<tr>
+						<td class="kf-gut" style="padding:16px 40px 40px"><img src="{{ (site_url or 'https://portal.kiluth.com') ~ '/assets/kiluth_portal/email/wordmark-dark.png' }}" width="115" alt="Kiluth" style="display:block;width:115px;height:auto;border:0" /></td>
+					</tr>
 				</table>
 			</td>
 		</tr>

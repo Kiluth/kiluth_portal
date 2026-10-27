@@ -77,7 +77,8 @@ def send_weekly(only: str | None = None):
 			recipients=[to],
 			subject=w["subject"],
 			message=email_html(title=w["title"], kicker=w["kicker"], lines=w["lines"], hero=HERO,
-				assets=get_url("/assets/kiluth_portal/"), portal_url=get_url(), sign_off="— Kiluth"),
+				assets=get_url("/assets/kiluth_portal/"), portal_url=get_url(), sign_off="— Kiluth",
+				why="You get this because you work at Kiluth."),
 			delayed=False,
 		)
 		sent.append(to)
