@@ -25,9 +25,8 @@ Idempotency: each invocation builds a fresh report covering the prior
 calendar month relative to "now". The scheduler won't double-fire, but
 manual `bench execute` calls the same day will produce duplicate emails.
 
-The PDF is rendered by wkhtmltopdf (Frappe default). Fonts are inlined as
-base64 data URLs in @font-face — sidesteps wkhtmltopdf's flaky resolution
-of file:// and remote font URLs, and survives sandboxed worker processes.
+The PDF design (black pages, photo cover) lives in utils/report_pdf.py,
+shared with the Close Report and the Learning reports.
 """
 
 from __future__ import annotations
@@ -36,7 +35,6 @@ import datetime
 
 import frappe
 from frappe.utils import getdate, nowdate
-from frappe.utils.pdf import get_pdf
 
 
 COMPANY = "Kiluth"
@@ -51,20 +49,6 @@ NAME_REMAP = {
 }
 
 LOAN_ACCOUNT = "Loan from Pavaruth Pengcharoen - K"
-
-# Categorical palette — muted but distinguishable. Document chrome stays
-# monochrome; data viz uses color so categories can be told apart at a glance.
-PALETTE = (
-	"#1a3a52",  # deep navy   (dominant category)
-	"#c19a6b",  # warm tan
-	"#5e8a7c",  # muted teal
-	"#8a4a3a",  # terracotta
-	"#6b7c93",  # slate
-	"#a89880",  # stone
-	"#3d3d3d",  # charcoal
-	"#b5a8c9",  # dusty lavender ("Other")
-)
-
 
 # ─── Idempotency state ──────────────────────────────────────────────────────
 # We record "the last period we sent the production report for" via Frappe's
@@ -128,8 +112,9 @@ def send_monthly_report(recipients: list[str] | str | None = None):
 	if not is_test_send and _last_sent_period() == period_key:
 		return {"period": period["label"], "skipped": "already sent"}
 
-	html = _render_html(period)
-	pdf_bytes = get_pdf(html)
+	from kiluth_portal.utils.report_pdf import pdf
+
+	pdf_bytes = pdf(_render_html(period))
 
 	subject = f"Kiluth — Monthly Financial Report — {period['label']}"
 	fname = f"Kiluth-Financial-Report-{period['start'].strftime('%Y-%m')}.pdf"
@@ -472,330 +457,98 @@ def _fmt_compact(v) -> str:
 	return f"฿{v:.0f}"
 
 
-# ─── SVG chart primitives ───────────────────────────────────────────────────
+# ─── Charts (SVG in mm, white on black) ──────────────────────────────────────
+# Design: kiluth_portal/utils/report_pdf.py (design A, 2026-10-27). Categories
+# are told apart by shades of grey; mint is kept for the one accent.
 
-def _sparkline_svg(values, width=140, height=28, color="#1a1a1a") -> str:
-	if not values:
-		return ""
-	vmin, vmax = min(values), max(values)
-	rng = vmax - vmin or 1
-	pts = " ".join(
-		f"{i / max(len(values) - 1, 1) * (width - 2) + 1:.1f},"
-		f"{height - 1 - (v - vmin) / rng * (height - 2):.1f}"
-		for i, v in enumerate(values)
-	)
-	last_x = width - 1
-	last_y = height - 1 - (values[-1] - vmin) / rng * (height - 2)
-	return (
-		f'<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" '
-		f'xmlns="http://www.w3.org/2000/svg">'
-		f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1"/>'
-		f'<circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="1.5" fill="{color}"/>'
-		f"</svg>"
-	)
+GREYS = ("#e8e8e8", "#b0b0b0", "#808080", "#5a5a5a", "#404040", "#2e2e2e", "#d0d0d0", "#6e6e6e")
 
 
-def _stacked_bar_svg(categories: dict, period_labels: list,
-		width=620, height=210, max_cats=7) -> str:
+def _legend(names, colors) -> str:
+	return "<div class='legend'>" + "".join(
+		f"<span><span style='color:{c}'>&#9632;</span>&nbsp;{n}</span>" for n, c in zip(names, colors)) + "</div>"
+
+
+def _bars_svg(categories: dict, labels: list, w=174, h=62, max_cats=7) -> str:
 	items = list(categories.items())
 	if len(items) > max_cats:
-		top = items[:max_cats]
-		n_periods = len(period_labels)
-		other = [sum(items[i][1][j] for i in range(max_cats, len(items)))
-			for j in range(n_periods)]
-		items = top + [("Other", other)]
-
-	n = len(period_labels)
-	totals = [sum(amts[j] for _, amts in items) for j in range(n)]
-	vmax = max(totals + [1])
-
-	margin_l, margin_r, margin_t, margin_b = 50, 150, 8, 36
-	chart_w = width - margin_l - margin_r
-	chart_h = height - margin_t - margin_b
-	slot_w = chart_w / n
-	bar_w = slot_w * 0.62
-
-	grid = (
-		f'<line x1="{margin_l}" y1="{margin_t}" x2="{margin_l + chart_w}" y2="{margin_t}" '
-		f'stroke="#e8e8e8" stroke-width="0.5"/>'
-		f'<line x1="{margin_l}" y1="{margin_t + chart_h}" x2="{margin_l + chart_w}" y2="{margin_t + chart_h}" '
-		f'stroke="#1a1a1a" stroke-width="0.5"/>'
-		f'<text x="{margin_l - 6}" y="{margin_t + 3}" font-size="7" text-anchor="end" fill="#6b7785">{_fmt_compact(vmax)}</text>'
-		f'<text x="{margin_l - 6}" y="{margin_t + chart_h + 3}" font-size="7" text-anchor="end" fill="#6b7785">฿0</text>'
-	)
-
-	bars = ""
+		other = [sum(items[i][1][j] for i in range(max_cats, len(items))) for j in range(len(labels))]
+		items = items[:max_cats] + [("Other", other)]
+	n = len(labels)
+	top = max([sum(max(a[j], 0) for _, a in items) for j in range(n)] + [1])
+	bw = w / n * 0.5
+	out = (f"<text x='0' y='3' font-size='2.4' fill='#5a5a5a'>{_fmt_compact(top)}</text>"
+		f"<line x1='0' x2='{w}' y1='{h - 6}' y2='{h - 6}' stroke='#3a3a3a' stroke-width='0.3'/>")
 	for j in range(n):
-		x0 = margin_l + j * slot_w + (slot_w - bar_w) / 2
-		y_cursor = margin_t + chart_h
-		for i, (_, amts) in enumerate(items):
-			v = max(amts[j], 0)
-			h = (v / vmax) * chart_h if vmax > 0 else 0
-			if h <= 0:
+		x = j * w / n + (w / n - bw) / 2
+		y = h - 6
+		for k, (_, amts) in enumerate(items):
+			bh = max(amts[j], 0) / top * (h - 12)
+			if bh <= 0:
 				continue
-			y_cursor -= h
-			bars += (
-				f'<rect x="{x0:.1f}" y="{y_cursor:.2f}" width="{bar_w:.1f}" height="{h:.2f}" '
-				f'fill="{PALETTE[i % len(PALETTE)]}" stroke="#ffffff" stroke-width="0.5"/>'
-			)
-
-	xlabels = ""
-	for j, lbl in enumerate(period_labels):
-		cx = margin_l + j * slot_w + slot_w / 2
-		xlabels += (
-			f'<text x="{cx:.1f}" y="{margin_t + chart_h + 14}" font-size="7" '
-			f'text-anchor="middle" fill="#1a1a1a">{lbl}</text>'
-		)
-
-	legend = ""
-	for i, (name, _) in enumerate(items):
-		ly = margin_t + i * 14
-		legend += (
-			f'<rect x="{width - margin_r + 8}" y="{ly}" width="9" height="9" '
-			f'fill="{PALETTE[i % len(PALETTE)]}"/>'
-			f'<text x="{width - margin_r + 22}" y="{ly + 8}" font-size="8" fill="#1a1a1a">{name}</text>'
-		)
-
-	return (
-		f'<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" '
-		f'xmlns="http://www.w3.org/2000/svg">{grid}{bars}{xlabels}{legend}</svg>'
-	)
+			y -= bh
+			out += f"<rect x='{x:.1f}' y='{y:.2f}' width='{bw:.1f}' height='{bh:.2f}' fill='{GREYS[k % len(GREYS)]}'/>"
+		out += f"<text x='{x + bw / 2:.1f}' y='{h - 1}' font-size='2.6' fill='#7a7a7a' text-anchor='middle'>{labels[j]}</text>"
+	svg = f"<svg width='{w}mm' height='{h}mm' viewBox='0 0 {w} {h}' style='margin-top:4mm' xmlns='http://www.w3.org/2000/svg'>{out}</svg>"
+	return svg + _legend([nm for nm, _ in items], GREYS)
 
 
-def _line_chart_svg(series: dict, period_labels: list,
-		width=620, height=210) -> str:
-	all_vals = [v for amts in series.values() for v in amts] + [0]
-	vmin, vmax = min(all_vals), max(all_vals)
-	rng = vmax - vmin or 1
-	n = len(period_labels)
-
-	margin_l, margin_r, margin_t, margin_b = 60, 150, 8, 36
-	chart_w = width - margin_l - margin_r
-	chart_h = height - margin_t - margin_b
-
-	line_palette = {"Cash": "#1a1a1a", "Loan from Investors": "#7d7d7d"}
-
-	def y_at(v):
-		return margin_t + chart_h - (v - vmin) / rng * chart_h
-
-	grid = (
-		f'<line x1="{margin_l}" y1="{margin_t}" x2="{margin_l + chart_w}" y2="{margin_t}" '
-		f'stroke="#e8e8e8" stroke-width="0.5"/>'
-		f'<line x1="{margin_l}" y1="{margin_t + chart_h}" x2="{margin_l + chart_w}" y2="{margin_t + chart_h}" '
-		f'stroke="#1a1a1a" stroke-width="0.5"/>'
-		f'<text x="{margin_l - 6}" y="{margin_t + 3}" font-size="7" text-anchor="end" fill="#6b7785">{_fmt_compact(vmax)}</text>'
-		f'<text x="{margin_l - 6}" y="{margin_t + chart_h + 3}" font-size="7" text-anchor="end" fill="#6b7785">{_fmt_compact(vmin)}</text>'
-	)
-	if vmin < 0 < vmax:
-		zy = y_at(0)
-		grid += (
-			f'<line x1="{margin_l}" y1="{zy:.1f}" x2="{margin_l + chart_w}" y2="{zy:.1f}" '
-			f'stroke="#cccccc" stroke-width="0.5" stroke-dasharray="2,2"/>'
-		)
-
-	lines = ""
-	for i, (name, amts) in enumerate(series.items()):
-		color = line_palette.get(name, PALETTE[i % len(PALETTE)])
-		pts = " ".join(
-			f"{margin_l + j / max(n - 1, 1) * chart_w:.1f},{y_at(v):.1f}"
-			for j, v in enumerate(amts)
-		)
-		lines += f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.5"/>'
-		last_x = margin_l + (n - 1) / max(n - 1, 1) * chart_w
-		last_y = y_at(amts[-1])
-		lines += f'<circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="2" fill="{color}"/>'
-
-	xlabels = ""
-	label_idx = sorted({0, n // 2, n - 1})
-	for j in label_idx:
-		cx = margin_l + j / max(n - 1, 1) * chart_w
-		anchor = "middle" if 0 < j < n - 1 else ("start" if j == 0 else "end")
-		xlabels += (
-			f'<text x="{cx:.1f}" y="{margin_t + chart_h + 14}" font-size="7" '
-			f'text-anchor="{anchor}" fill="#1a1a1a">{period_labels[j]}</text>'
-		)
-
-	legend = ""
-	for i, name in enumerate(series.keys()):
-		ly = margin_t + i * 14
-		color = line_palette.get(name, PALETTE[i % len(PALETTE)])
-		legend += (
-			f'<line x1="{width - margin_r + 8}" y1="{ly + 5}" x2="{width - margin_r + 22}" '
-			f'y2="{ly + 5}" stroke="{color}" stroke-width="1.5"/>'
-			f'<circle cx="{width - margin_r + 15}" cy="{ly + 5}" r="2" fill="{color}"/>'
-			f'<text x="{width - margin_r + 27}" y="{ly + 8}" font-size="8" fill="#1a1a1a">{name}</text>'
-		)
-
-	return (
-		f'<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" '
-		f'xmlns="http://www.w3.org/2000/svg">{grid}{lines}{xlabels}{legend}</svg>'
-	)
+def _lines_svg(series: dict, labels: list, w=174, h=56) -> str:
+	colors = ("#ffffff", "#7a7a7a")
+	vals = [v for a in series.values() for v in a] + [0]
+	lo, hi = min(vals), max(vals) * 1.1 or 1
+	span = (hi - lo) or 1
+	n = len(labels)
+	y_at = lambda v: 4 + (1 - (v - lo) / span) * (h - 14)
+	out = ""
+	for g in range(5):
+		v = hi - g * span / 4
+		y = y_at(v)
+		out += (f"<line x1='0' x2='{w}' y1='{y:.1f}' y2='{y:.1f}' stroke='#1f1f1f' stroke-width='0.3'/>"
+			f"<text x='0' y='{y - 1:.1f}' font-size='2.4' fill='#5a5a5a'>{_fmt_compact(v)}</text>")
+	for k, amts in enumerate(series.values()):
+		pts = " ".join(f"{j * w / max(n - 1, 1):.1f},{y_at(v):.1f}" for j, v in enumerate(amts))
+		out += f"<polyline points='{pts}' fill='none' stroke='{colors[k % 2]}' stroke-width='0.6'/>"
+	for j, lbl in enumerate(labels):
+		anchor = "start" if j == 0 else ("end" if j == n - 1 else "middle")
+		out += f"<text x='{j * w / max(n - 1, 1):.1f}' y='{h - 1}' font-size='2.6' fill='#7a7a7a' text-anchor='{anchor}'>{lbl}</text>"
+	svg = f"<svg width='{w}mm' height='{h}mm' viewBox='0 0 {w} {h}' style='margin-top:4mm' xmlns='http://www.w3.org/2000/svg'>{out}</svg>"
+	return svg + _legend(list(series), colors)
 
 
-# ─── Page chrome (letterhead, footer, KPI tiles, inception strip) ───────────
+# ─── Cover: KPI tiles and the since-inception strip ─────────────────────────
 
-# Logo as inline SVG — bulletproof in wkhtmltopdf (no HTTP fetch, no image cache,
-# scales to any size). Pulled from /files/logo-black.svg (uploaded by Poom).
-LOGO_SVG = '<svg viewBox="0 0 80 24" width="70" height="21" xmlns="http://www.w3.org/2000/svg"><path d="m16.724 23h-3.9539l-6.51834-9.5124-2.06294 1.6761v7.8363h-3.438233v-20.94457h3.438233v10.01387c.42023-.5158.84523-1.0315 1.27501-1.5472.42978-.5158.85956-1.03149 1.28934-1.54723l5.90233-6.91944h3.8823l-7.82197 9.16867zm5.7877-15.85885v15.85885h-3.3666v-15.85885zm-1.6618-6.07421c.5158 0 .9599.13848 1.3323.41545.3821.27697.5731.7545.5731 1.4326 0 .66854-.191 1.14607-.5731 1.43259-.3724.27697-.8165.41546-1.3323.41546-.5348 0-.9885-.13849-1.3609-.41546-.363-.28652-.5444-.76405-.5444-1.43259 0-.6781.1814-1.15563.5444-1.4326.3724-.27697.8261-.41545 1.3609-.41545zm9.8706 21.93306h-3.3809v-22.291214h3.3809zm18.6381-15.85885v15.85885h-2.6503l-.4584-2.1346h-.1863c-.3342.5444-.7592.9981-1.275 1.361-.5157.3534-1.0887.616-1.7191.7879-.6303.1815-1.2941.2722-1.9913.2722-1.1938 0-2.2158-.2005-3.0658-.6017-.8404-.4106-1.4851-1.041-1.934-1.891-.4488-.85-.6733-1.9483-.6733-3.295v-10.35765h3.3809v9.72735c0 1.232.2484 2.1537.745 2.7649.5062.6112 1.2893.9169 2.3495.9169 1.0219 0 1.8337-.2102 2.4354-.6304s1.0267-1.041 1.275-1.8624c.2578-.8213.3868-1.8289.3868-3.0227v-7.89365zm10.7302 13.42345c.4393 0 .8738-.0382 1.3036-.1146.4298-.086.8214-.1863 1.1748-.3009v2.5501c-.3725.1623-.8548.3008-1.447.4154-.5921.1146-1.2081.1719-1.848.1719-.8978 0-1.7048-.148-2.4211-.4441-.7163-.3056-1.2846-.8261-1.7048-1.5615s-.6303-1.7526-.6303-3.0514v-8.524h-2.1633v-1.50423l2.3208-1.18906 1.1031-3.39525h2.1203v3.52419h4.5413v2.56435h-4.5413v8.481c0 .8022.2006 1.3991.6017 1.7907s.9312.5874 1.5902.5874zm9.0683-19.855814v5.601454c0 .58259-.0191 1.15086-.0573 1.70479-.0286.55394-.0621.98372-.1003 1.28934h.1863c.3342-.55394.7449-1.00759 1.232-1.36097.4871-.36292 1.0315-.63512 1.6332-.81658.6112-.18146 1.2606-.27219 1.9483-.27219 1.2129 0 2.2444.20534 3.0944.61602.85.40112 1.4995 1.02669 1.9483 1.8767.4585.85005.6877 1.95315.6877 3.30925v10.3434h-3.3666v-9.713c0-1.232-.2531-2.1537-.7593-2.7649-.5062-.62081-1.2893-.93121-2.3495-.93121-1.0219 0-1.8337.21489-2.4354.64471-.5921.4202-1.0171 1.0458-1.275 1.8767-.2579.8213-.3868 1.8241-.3868 3.0084v7.8793h-3.3666v-22.291214z" fill="#1a1a1a"/></svg>'
+def _kpi_tile(label: str, values: list, prior_label: str, up_good=True) -> str:
+	from kiluth_portal.utils.report_pdf import sparkline
 
-LETTER_HEAD = f"""
-<table style="width: 100%; text-align: left; font-family: 'Theinhardt', 'IBM Plex Sans Thai', 'Inter', Arial, sans-serif; border-collapse: collapse;">
-	<tbody><tr>
-		<td style="width: 33%; vertical-align: top; padding: 0;">
-			{LOGO_SVG}
-		</td>
-		<td style="width: 34%; vertical-align: top; font-size: 7pt; color: #D5D5D5; text-align: center; padding: 0; line-height: 1;">
-			Confidential
-		</td>
-		<td style="width: 33%; vertical-align: top; font-size: 7pt; font-weight: 300; text-align: right; padding: 0;">
-			hello@kiluth.com<br>
-			+66 (0) 65 484 0370<br>
-			kiluth.com
-		</td>
-	</tr></tbody>
-</table>
-<div style="width: 100%; height: 30px;"></div>
-"""
-
-FOOTER = """
-<table style="width: 100%; text-align: left; font-family: 'Theinhardt', 'IBM Plex Sans Thai', 'Inter', Arial, sans-serif; border-collapse: collapse;">
-	<tbody><tr>
-		<td style="width: 50%; vertical-align: top; font-size: 7pt; font-weight: 300; padding: 0;">
-			7 Phet Kasem Rd 54 Lane 1<br>
-			Bang Duan, Bangkok 10160<br>
-			<br>
-			01055 68200 199
-		</td>
-		<td style="width: 50%; vertical-align: top; font-size: 7pt; font-weight: 300; text-align: right; padding: 0;">
-			&nbsp;
-		</td>
-	</tr></tbody>
-</table>
-"""
-
-
-def _render_table(headers: list, rows_for_periods: list) -> str:
-	period_count = len(headers) - 1
-	th_html = "<th></th>" + "".join(
-		f"<th style='text-align: right; padding: 8px 12px 8px 8px; font-weight: 600; "
-		f"font-size: 9pt; text-transform: uppercase; letter-spacing: 0.5px; "
-		f"border-bottom: 1pt solid #1a1a1a;'>{h}</th>"
-		for h in headers[1:]
-	)
-
-	body_html = ""
-	for label, amts, indent, bold in rows_for_periods:
-		if not label and not any(amts):
-			body_html += "<tr><td colspan='%d' style='height: 8px;'></td></tr>" % (period_count + 1)
-			continue
-		pad_left = 0 + indent * 14
-		weight = "600" if bold else "400"
-		border_top = "border-top: 0.5pt solid #1a1a1a;" if bold and label.startswith("Total") else ""
-		border_bot = "border-bottom: 1pt solid #1a1a1a;" if bold and label.startswith("Net profit") else ""
-		body_html += "<tr>"
-		body_html += (
-			f"<td style='padding: 4px 0 4px {pad_left}px; font-weight: {weight}; "
-			f"font-size: 10pt; {border_top} {border_bot}'>{label}</td>"
-		)
-		for amt in amts:
-			body_html += (
-				f"<td style='padding: 4px 12px 4px 8px; text-align: right; "
-				f"font-weight: {weight}; font-size: 10pt; "
-				f"{border_top} {border_bot}'>{_fmt(amt)}</td>"
-			)
-		body_html += "</tr>"
-
-	return f"""
-	<table style="width: 100%; border-collapse: collapse; margin-top: 18px;">
-		<thead><tr>{th_html}</tr></thead>
-		<tbody>{body_html}</tbody>
-	</table>
-	"""
-
-
-def _render_kpi_tile(label: str, value, prior_value, sparkline_values,
-		polarity: str = "up_good") -> str:
-	"""polarity: 'up_good' (revenue/cash/net) — green when up; 'up_bad' (expenses) — red when up."""
-	delta = (value or 0) - (prior_value or 0)
-	if abs(delta) < 0.005:
-		delta_str = "—"
-		delta_color = "#6b7785"
+	cur, prv = values[-1], values[-2]
+	d = cur - prv
+	if abs(d) < 0.005:
+		delta = "<span class='muted'>No change</span>"
 	else:
-		pct = (delta / abs(prior_value) * 100) if prior_value else 0
-		sign = "+" if delta > 0 else "−"
-		delta_str = f"{sign}{_fmt_compact(abs(delta))} ({pct:+.0f}%)"
-		if (delta > 0) == (polarity == "up_good"):
-			delta_color = "#1a8a4a"
-		else:
-			delta_color = "#c4262c"
-
-	spark = _sparkline_svg(sparkline_values, width=140, height=28)
-
-	return f"""
-	<td style="border: 0.5pt solid #d5d5d5; padding: 14px 16px; vertical-align: top; width: 50%;">
-		<div style="font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7785;">{label}</div>
-		<div style="font-size: 18pt; font-weight: 700; margin-top: 4px; line-height: 1.1;">{_fmt(value)}</div>
-		<div style="font-size: 9pt; color: {delta_color}; margin-top: 4px;">{delta_str} <span style="color: #6b7785;">vs prior month</span></div>
-		<div style="margin-top: 8px;">{spark}</div>
-	</td>
-	"""
+		pct = f" ({d / abs(prv) * 100:+.0f}%)" if prv else ""
+		cls = "good" if (d > 0) == up_good else "bad"
+		delta = f"<span class='{cls}'>{'+' if d > 0 else '−'}{abs(d):,.0f}{pct}</span>"
+	return (f"<td><div class='k'>{label}</div><div class='v'>{_fmt(cur)}</div>"
+		f"<div class='d'>{delta} <span class='muted'>vs {prior_label}</span></div>{sparkline(values)}</td>")
 
 
-def _render_kpi_grid(series: dict) -> str:
-	cur = -1
-	prv = -2
-	rev = series["revenue"]
-	exp = series["expenses"]
-	net = series["net"]
-	cash = series["cash"]
-
-	return f"""
-	<table style="width: 100%; border-collapse: separate; border-spacing: 12px 12px; margin-top: 16px;">
-		<tr>
-			{_render_kpi_tile("Revenue", rev[cur], rev[prv], rev, "up_good")}
-			{_render_kpi_tile("Operating expenses", exp[cur], exp[prv], exp, "up_bad")}
-		</tr>
-		<tr>
-			{_render_kpi_tile("Net profit / (loss)", net[cur], net[prv], net, "up_good")}
-			{_render_kpi_tile("Cash on hand", cash[cur], cash[prv], cash, "up_good")}
-		</tr>
-	</table>
-	"""
+def _kpi_grid(series: dict, prior_label: str) -> str:
+	t = lambda *a: _kpi_tile(*a[:2], prior_label, *a[2:])
+	return (f"<table class='kpi'><tr>{t('Revenue', series['revenue'])}{t('Operating expenses', series['expenses'], False)}</tr>"
+		f"<tr>{t('Net profit / (loss)', series['net'])}{t('Cash on hand', series['cash'])}</tr></table>")
 
 
-def _render_inception_strip(period_end) -> str:
+def _inception_strip(period_end) -> str:
+	from kiluth_portal.utils.report_pdf import heading
+
 	earliest = datetime.date(2000, 1, 1)
-	total_revenue = -_sum_root("Income", earliest, period_end)
-	total_expenses = _sum_root("Expense", earliest, period_end)
-	net = total_revenue - total_expenses
-	loan_outstanding = _loan_balance_on(period_end)
-
-	cells = [
-		("Lifetime revenue", total_revenue),
-		("Lifetime expenses", total_expenses),
-		("Lifetime net", net),
-		("Loan outstanding", loan_outstanding),
-	]
-	# Drop left border on first cell.
-	cell_html = ""
-	for i, (label, v) in enumerate(cells):
-		border = "" if i == 0 else "border-left: 0.5pt solid #d5d5d5;"
-		cell_html += (
-			f'<td style="padding: 10px 14px; {border} vertical-align: top;">'
-			f'<div style="font-size: 7pt; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7785;">{label}</div>'
-			f'<div style="font-size: 12pt; font-weight: 700; margin-top: 2px;">{_fmt(v)}</div>'
-			f'</td>'
-		)
-	return f"""
-	<div style="margin-top: 22px;">
-		<div style="font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7785; margin-bottom: 6px;">
-			Since inception
-		</div>
-		<table style="width: 100%; border-collapse: collapse; border-top: 0.5pt solid #1a1a1a; border-bottom: 0.5pt solid #1a1a1a;">
-			<tr>{cell_html}</tr>
-		</table>
-	</div>
-	"""
+	revenue = -_sum_root("Income", earliest, period_end)
+	expenses = _sum_root("Expense", earliest, period_end)
+	cells = [("Revenue", revenue), ("Expenses", expenses), ("Net", revenue - expenses),
+		("Loan outstanding", _loan_balance_on(period_end))]
+	return heading("Since inception") + "<table class='strip'><tr>" + "".join(
+		f"<td><div class='k'>{k}</div>{_fmt(v)}</td>" for k, v in cells) + "</tr></table>"
 
 
 # ─── Fonts (served by Frappe at /files/, accessed via absolute URL) ─────────
@@ -828,109 +581,53 @@ def _font_face_block() -> str:
 
 # ─── HTML assembly ──────────────────────────────────────────────────────────
 
-def _render_html(period: dict) -> str:
-	period_start = period["start"]
-	period_end = period["end"]
-	prior_start = period["prior_month_start"]
-	prior_end = period["prior_month_end"]
-	fy_start = period["fy_start"]
-	ttm_start = period["ttm_start"]
+def _statement_rows(rows: list) -> list:
+	"""(label, amts, indent, bold) rows → report_pdf table rows."""
+	out = []
+	for label, amts, indent, bold in rows:
+		if not label:
+			continue
+		if all(a is None for a in amts):
+			out.append(([label] + [""] * len(amts), "sec"))
+			continue
+		kind = "total" if bold else ("ind" if indent else "")
+		out.append(([label] + [_fmt(a) for a in amts], kind))
+	return out
 
+
+def _render_html(period: dict) -> str:
+	from kiluth_portal.utils import report_pdf as rp
+
+	period_start, period_end = period["start"], period["end"]
+	prior_start, prior_end = period["prior_month_start"], period["prior_month_end"]
 	series = _build_monthly_series(period_end, n=12)
+	month = period_end.strftime("%B %Y")
 
 	pl_rows = _build_pl_table([
 		(period_start, period_end),
 		(prior_start, prior_end),
-		(fy_start, period_end),
-		(ttm_start, period_end),
+		(period["fy_start"], period_end),
+		(period["ttm_start"], period_end),
 	])
 	bs_rows = _build_bs_table([period_end, prior_end])
 
-	pl_table = _render_table(
-		["", period_start.strftime("%B %Y"), prior_start.strftime("%B %Y"),
-			"Year to date", "Last 12 mo"],
-		pl_rows,
-	)
-	bs_table = _render_table(
-		["", period_end.strftime("%d %b %Y"), prior_end.strftime("%d %b %Y")],
-		bs_rows,
-	)
-
-	expense_chart = _stacked_bar_svg(series["expense_by_cat"], series["labels"])
-	cash_loan_chart = _line_chart_svg(
-		{"Cash": series["cash"], "Loan from Investors": series["loan"]},
-		series["labels"],
-	)
-	kpi_grid = _render_kpi_grid(series)
-	inception = _render_inception_strip(period_end)
-
-	page_style = (
-		_font_face_block()
-		+ """
-		@page { size: A4; margin: 16mm 14mm 22mm 14mm; }
-		body { font-family: 'Theinhardt', 'IBM Plex Sans Thai', 'Inter', Arial, sans-serif; color: #1a1a1a; font-size: 10pt; line-height: 1.45; margin: 0; padding: 0; }
-		h1 { font-size: 22pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 12pt 0 4pt 0; }
-		.sub { font-size: 9pt; font-weight: 400; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7785; }
-		/* Pages flow naturally; explicit break BEFORE each page (except first) avoids
-		   the wkhtmltopdf "absolute footer overflow → blank page" trap. Footer is the
-		   last block in each page so it sits below content rather than glued to the
-		   page bottom — a tradeoff we accept to guarantee no spurious pages. */
-		.page { page-break-before: always; }
-		.page:first-child { page-break-before: auto; }
-		.page-footer { margin-top: 28px; padding-top: 10px; border-top: 0.5pt solid #e8e8e8; }
-		"""
-	)
-
-	chart_caption = (
-		'<div style="font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; '
-		'color: #6b7785; margin-top: 18px; margin-bottom: 4px;">'
-	)
-
-	page1 = f"""
-	<div class="page">
-		{LETTER_HEAD}
-		<h1>Monthly Report</h1>
-		<div class="sub">{period_end.strftime("%B %Y")} · Kiluth LTD.</div>
-		{kpi_grid}
-		{inception}
-		<div class="page-footer">{FOOTER}</div>
-	</div>
-	"""
-	page2 = f"""
-	<div class="page">
-		{LETTER_HEAD}
-		<h1>Statement of Operations</h1>
-		<div class="sub">For the month ended {period_end.strftime("%d %B %Y")}</div>
-		{pl_table}
-		{chart_caption}Operating expenses by category — last 12 months</div>
-		{expense_chart}
-		<div class="page-footer">{FOOTER}</div>
-	</div>
-	"""
-	page3 = f"""
-	<div class="page">
-		{LETTER_HEAD}
-		<h1>Balance Sheet</h1>
-		<div class="sub">As at {period_end.strftime("%d %B %Y")}</div>
-		{bs_table}
-		<div class="page-footer">{FOOTER}</div>
-	</div>
-	"""
-	page4 = f"""
-	<div class="page">
-		{LETTER_HEAD}
-		<h1>Cash &amp; Loan Position</h1>
-		<div class="sub">Trailing 12 months ending {period_end.strftime("%d %B %Y")}</div>
-		{chart_caption}Cash and loan position — last 12 months</div>
-		{cash_loan_chart}
-		<div class="page-footer">{FOOTER}</div>
-	</div>
-	"""
-
-	return f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>{page_style}</style></head>
-<body>{page1}{page2}{page3}{page4}</body></html>
-"""
+	cover = rp.cover(rp.photo("email/hero-financial.jpg"), "Monthly report", month,
+		"Kiluth's money: the month, the year, and where it stands.")
+	blocks = [
+		rp.Block(_kpi_grid(series, prior_start.strftime("%B")) + _inception_strip(period_end), 120),
+		rp.NewPage("Statement of operations", f"For the month ended {period_end.strftime('%d %B %Y')}"),
+		rp.Table("Profit and loss", ["", period_start.strftime("%b %Y"), prior_start.strftime("%b %Y"),
+			"Year to date", "Last 12 mo"], _statement_rows(pl_rows), right=(1, 2, 3, 4)),
+		rp.Block(rp.heading("Operating expenses by category, last 12 months")
+			+ _bars_svg(series["expense_by_cat"], series["labels"]), 92),
+		rp.NewPage("Balance sheet", f"As at {period_end.strftime('%d %B %Y')}"),
+		rp.Table("Assets, liabilities and equity", ["", period_end.strftime("%d %b %Y"), prior_end.strftime("%d %b %Y")],
+			_statement_rows(bs_rows), widths=[46, 27, 27], right=(1, 2)),
+		rp.Block(rp.heading("Cash and loan, last 12 months")
+			+ _lines_svg({"Cash": series["cash"], "Loan from investors": series["loan"]}, series["labels"]), 84),
+	]
+	pages = rp.paginate(blocks, rp.CONTENT_END - rp.COVER_BODY_TOP, "Monthly report", month)
+	return rp.document(f"Kiluth Monthly Report {month}", cover, pages)
 
 
 def _email_body(period: dict, fname: str = "") -> str:

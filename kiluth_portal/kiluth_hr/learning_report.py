@@ -37,7 +37,6 @@ import calendar
 import collections
 import datetime as dt
 import html
-import json
 import os
 import re
 
@@ -47,7 +46,6 @@ SWARM = "swarm@kiluth.com"
 FAILURE_ASSIGNEE = "poom.pengcharoen@kiluth.com"
 OPS_PROJECT = "PROJ-0001"
 TITLE_RE = re.compile(r"^(?P<course>.+?) – (?P<email>\S+@\S+)$")
-LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "learning_report_logo.svg")
 _SENT_KEY = "kiluth_learning_report_last_sent_period"
 # Reports start with October 2026 (first run 6 Nov, per hr/state). Never send or catch up on earlier
 # months: on first deploy the hourly catch-up would otherwise send September's reports.
@@ -253,39 +251,33 @@ def docs_to_check(a):
 
 # ─── HTML ────────────────────────────────────────────────────────────────────
 
-def logo_svg():
-	with open(LOGO) as f:
-		return f.read().strip()
+_RP = []
 
 
-STYLE = """
-@page { size: A4; margin: 16mm 16mm 18mm 16mm; }
-* { box-sizing: border-box; }
-body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #191615; font-size: 10pt; line-height: 1.45; margin: 0; }
-.logo { width: 28mm; height: auto; }
-h1 { font-size: 20pt; font-weight: 500; text-transform: uppercase; letter-spacing: .4px; margin: 10mm 0 1mm; }
-.sub { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .5px; color: #6b7785; }
-h2 { font-size: 9pt; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1pt solid #191615; padding-bottom: 3px; margin: 7mm 0 2mm; }
-table { width: 100%; border-collapse: collapse; }
-td, th { text-align: left; padding: 4px 6px 4px 0; border-bottom: .5pt solid #e3e1db; vertical-align: top; }
-th { font-size: 8pt; text-transform: uppercase; color: #6b7785; font-weight: 600; }
-.note { font-size: 8.5pt; color: #6b7785; margin-top: 3px; }
-.empty { color: #6b7785; }
-ol { margin: 0; padding-left: 16px; }
-a { color: inherit; }
-"""
+def _rp():
+	"""The shared report PDF design. Tests load this file on its own, outside the package."""
+	if _RP:
+		return _RP[0]
+	try:
+		from kiluth_portal.utils import report_pdf
+	except ImportError:
+		import importlib.util
+
+		path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "utils", "report_pdf.py")
+		spec = importlib.util.spec_from_file_location("report_pdf", path)
+		report_pdf = importlib.util.module_from_spec(spec)
+		spec.loader.exec_module(report_pdf)
+	_RP.append(report_pdf)
+	return report_pdf
 
 
-def page(title, sub, body):
-	return f"<!doctype html><html><head><meta charset='utf-8'><style>{STYLE}</style></head><body>{logo_svg()}<h1>{title}</h1><div class='sub'>{sub}</div>{body}</body></html>"
-
-
-def table(headers, rows, empty):
-	if not rows:
-		return f"<p class='empty'>{empty}</p>"
-	th = "".join(f"<th>{h}</th>" for h in headers)
-	tr = "".join("<tr>" + "".join(f"<td>{c}</td>" for c in r) + "</tr>" for r in rows)
-	return f"<table><tr>{th}</tr>{tr}</table>"
+def _report(doc_title, hero, label, month, sub, cover_blocks, rest, rest_title, closing):
+	"""Cover with its sections, then the rest on inner pages. Design: utils/report_pdf.py."""
+	rp = _rp()
+	space = rp.CONTENT_END - rp.COVER_BODY_TOP
+	blocks = cover_blocks + [rp.NewPage(rest_title, sub, soft=True)] + rest + [rp.Block(f"<div class='note' style='margin-top:9mm'>{closing}</div>", 16)]
+	pages = rp.paginate(blocks, space, rest_title, sub)
+	return rp.document(doc_title, rp.cover(rp.photo(hero), label, month, sub), pages)
 
 
 def _others_hidden(text, email):
@@ -301,18 +293,23 @@ def person_html(email, p, v, a):
 	prog = [(html.escape(k), " → ".join(html.escape(x) for x in vals)) for k, vals in v["progress"].items()]
 	tasks = [(t["name"], html.escape(_others_hidden(t["subject"] or "", email)),
 		html.escape(_others_hidden((t["hygiene_note"] or "").split(" | ")[0], email))) for t in v["tasks"]]
-	body = (
-		"<h2>1. Certificates you hold</h2>" + table(["Course", "Certificate", "Valid until"], held, "None yet.")
-		+ ("<p class='note'>Expiring within two months: " + ", ".join(html.escape(c["course"]) for c in v["expiring"]) + ".</p>" if v["expiring"] else "")
-		+ f"<h2>2. Attempts in {month}</h2>" + table(["Course", "Record", "Result"], att, "No attempts this month.")
-		+ "<h2>3. Topics to study</h2>" + table(["Doc", "Sections", "Questions missed"], topics, "Nothing missed this month.")
-		+ "<h2>4. Progress</h2>" + table(["Course", "Results, oldest first"], prog, "No attempts yet.")
-		+ ("<p class='note'>Docs once missed, now answered right: " + ", ".join(html.escape(s) for s in sorted(v["fixed"])) + ".</p>" if v["fixed"] else "")
-		+ "<h2>5. Task habits</h2>" + table(["Task", "Title", "What the checker found"], tasks, "The task checker found nothing on your tasks this month.")
-		+ "<h2>6. What to do next</h2>" + ("<ol>" + "".join(f"<li>{x}</li>" for x in v["next"]) + "</ol>" if v["next"] else "<p class='empty'>Nothing to do — keep going.</p>")
-		+ f"<p class='note' style='margin-top:8mm'>This report is yours. It isn't a score, and other people see it only if you share it. How it's made: {DOCS}/hr/learning-report</p>"
-	)
-	return page("Learning Report", f"{month} · {html.escape(email)}", body)
+	rp = _rp()
+	T = rp.Table
+	expiring = ("Expiring within two months: " + ", ".join(html.escape(c["course"]) for c in v["expiring"]) + ".") if v["expiring"] else ""
+	fixed = ("Docs once missed, now answered right: " + ", ".join(html.escape(s) for s in sorted(v["fixed"])) + ".") if v["fixed"] else ""
+	nxt = rp.Block(rp.heading("What to do next", 6) + ("<ol>" + "".join(f"<li>{x}</li>" for x in v["next"]) + "</ol>"
+		if v["next"] else "<div class='empty'>Nothing to do. Keep going.</div>"), 16 + 9 * max(len(v["next"]), 1))
+	return _report(f"Kiluth Learning Report {month}", "learning/hero-person.jpg", "Learning report", month,
+		f"For {html.escape(email)}. Only you get this report.",
+		[T("Certificates you hold", ["Course", "Certificate", "Valid until"], held, 1, "None yet.", expiring),
+			T(f"Attempts in {month}", ["Course", "Record", "Result"], att, 2, "No attempts this month.")],
+		[T("Topics to study", ["Doc", "Sections", "Questions missed"], topics, 3, "Nothing missed this month."),
+			T("Progress", ["Course", "Results, oldest first"], prog, 4, "No attempts yet.", fixed),
+			T("Task habits", ["Task", "Title", "What the checker found"], tasks, 5,
+				"The task checker found nothing on your tasks this month."),
+			nxt],
+		"What to work on",
+		f"This report is yours. It isn't a score, and other people see it only if you share it. How it's made: {DOCS}/hr/learning-report")
 
 
 def summary_html(a):
@@ -341,16 +338,18 @@ def summary_html(a):
 	check = [(page_cell(t, u), sections_cell(sec), n, ppl) for t, u, sec, n, ppl in pages if ppl > 1 or n > 1]
 	exp = collections.Counter(c["course"] for c in a["certs"] if c["status"] == "Signed" and c["expiry_date"]
 		and dt.date.fromisoformat(c["expiry_date"]) <= a["soon"])
-	body = (
-		"<h2>1. Attempts and passes</h2>" + table(["Course", f"{month}: attempts / passes", "Year to date"], rows, "No attempts.")
-		+ "<h2>2. Most-missed docs</h2>" + table(["Doc", "Sections", "Times missed", "People"], missed, "Nothing missed.")
-		+ "<h2>3. Docs to check</h2>" + table(["Doc", "Sections", "Times missed", "People"], check, "No doc stands out.")
-		+ "<p class='note'>Docs missed by more than one person, or more than once. The department that owns the doc decides whether to fix it.</p>"
-		+ "<h2>4. Flawed questions</h2>" + table(["Course", "Question"], flawed, "None this month.")
-		+ "<h2>5. Certificates expiring in the next two months</h2>" + table(["Course", "Count"], [(html.escape(k), n) for k, n in exp.items()], "None.")
-		+ f"<p class='note' style='margin-top:8mm'>No names in this summary. How it's made: {DOCS}/hr/learning-report</p>"
-	)
-	return page("Learning Report — Company", f"{month} · Kiluth LTD.", body)
+	rp = _rp()
+	T = rp.Table
+	return _report(f"Kiluth Learning Summary {month}", "learning/hero-summary.jpg", "Learning summary", month,
+		"The whole company. No names.",
+		[T("Attempts and passes", ["Course", f"{month}: attempts / passes", "Year to date"], rows, 1, "No attempts."),
+			T("Most-missed docs", ["Doc", "Sections", "Times missed", "People"], missed, 2, "Nothing missed.")],
+		[T("Docs to check", ["Doc", "Sections", "Times missed", "People"], check, 3, "No doc stands out.",
+			"Docs missed by more than one person, or more than once. The department that owns the doc decides whether to fix it."),
+			T("Flawed questions", ["Course", "Question"], flawed, 4, "None this month."),
+			T("Certificates expiring in the next two months", ["Course", "Count"], [(html.escape(k), n) for k, n in exp.items()], 5, "None.")],
+		"Docs and questions",
+		f"No names in this summary. How it's made: {DOCS}/hr/learning-report")
 
 
 # ─── Email ───────────────────────────────────────────────────────────────────
@@ -510,10 +509,7 @@ def _full_names(emails):
 
 
 def _pdf(page_html):
-	from frappe.utils.pdf import get_pdf
-
-	return get_pdf(page_html, {"page-size": "A4", "margin-top": "16mm", "margin-bottom": "18mm",
-		"margin-left": "16mm", "margin-right": "16mm"})
+	return _rp().pdf(page_html)
 
 
 def _send(to, subject, message, fname, pdf):

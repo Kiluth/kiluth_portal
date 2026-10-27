@@ -26,15 +26,11 @@ import calendar
 import datetime
 
 import frappe
-from frappe.utils.pdf import get_pdf
 
 from kiluth_portal.utils.financial_report import (
 	COMPANY,
-	FOOTER,
-	LETTER_HEAD,
 	_cash_balance_on,
 	_fmt,
-	_font_face_block,
 )
 
 RECIPIENTS = ("finance@kiluth.com",)
@@ -83,7 +79,9 @@ def send_close_report(task: str, recipients: list[str] | str | None = None):
 		frappe.throw(f"Can't read a month from the task title: {doc.subject}")
 
 	data = _collect(period, doc)
-	pdf_bytes = get_pdf(_render_html(period, data, doc))
+	from kiluth_portal.utils.report_pdf import pdf
+
+	pdf_bytes = pdf(_render_html(period, data, doc))
 	fname = f"Kiluth-Close-Report-{period['start'].strftime('%Y-%m')}.pdf"
 
 	frappe.sendmail(
@@ -238,116 +236,80 @@ def _collect(period: dict, task) -> dict:
 
 
 # ─── HTML ───────────────────────────────────────────────────────────────────
-
-def _th(text: str) -> str:
-	"""Set the Thai font explicitly. wkhtmltopdf doesn't fall back per
-	character, so Thai inside a Theinhardt run renders as boxes."""
-	return f"<span style=\"font-family: 'IBM Plex Sans Thai';\">{text}</span>"
-
-
-def _section(title: str, rows: list[tuple[str, str]], note: str = "") -> str:
-	body = "".join(
-		f"<tr><td style='padding: 5px 0; border-bottom: 0.5pt solid #e8e8e8;'>{label}</td>"
-		f"<td style='padding: 5px 0; border-bottom: 0.5pt solid #e8e8e8; text-align: right;'>{value}</td></tr>"
-		for label, value in rows
-	)
-	note_html = f"<div style='font-size: 8.5pt; color: #6b7785; margin-top: 4px;'>{note}</div>" if note else ""
-	return (
-		f"<div style='margin-top: 18px;'>"
-		f"<div style='font-size: 9pt; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; "
-		f"border-bottom: 1pt solid #1a1a1a; padding-bottom: 4px;'>{title}</div>"
-		f"<table style='width: 100%; border-collapse: collapse; font-size: 10pt;'>{body}</table>{note_html}</div>"
-	)
-
-
-def _thai_font_face_block() -> str:
-	"""IBM Plex Sans Thai, same-origin, so Thai form names (ภ.ง.ด.) render.
-
-	Declared as its own family and listed after Theinhardt: wkhtmltopdf falls
-	back per character, so Latin stays Theinhardt and Thai uses Plex.
-	"""
-	from frappe.utils import get_url
-
-	return "\n".join(
-		f"@font-face {{ font-family: 'IBM Plex Sans Thai'; "
-		f"src: url('{get_url('/files/' + fname)}') format('truetype'); "
-		f"font-weight: {weight}; font-style: normal; }}"
-		for fname, weight in (
-			("IBMPlexSansThai-Light.ttf", 300),
-			("IBMPlexSansThai-Regular.ttf", 400),
-			("IBMPlexSansThai-SemiBold.ttf", 600),
-			("IBMPlexSansThai-Bold.ttf", 700),
-		)
-	)
-
+# Design: kiluth_portal/utils/report_pdf.py (design A, 2026-10-27).
 
 def _render_html(period: dict, d: dict, task) -> str:
-	booked_rows = [(r.voucher_type, str(r.n)) for r in d["booked"]] or [("Nothing booked for this month", "—")]
-	total = sum(r.n for r in d["booked"])
-	if d["booked"]:
-		booked_rows.append(("<b>Total</b>", f"<b>{total}</b>"))
+	from kiluth_portal.utils import report_pdf as rp
+
+	muted = lambda x: f"<span class='muted'>{x}</span>"
+	booked = [[r.voucher_type, str(r.n)] for r in d["booked"]]
+	if booked:
+		booked.append((["Total", str(sum(r.n for r in d["booked"]))], "total"))
 
 	if d["bank"] is None:
-		bank_rows = [("Cash - K at month end", _fmt(d["cash"])), ("Bank balance at month end", "Not entered on the task")]
+		bank = [["Cash - K at month end", _fmt(d["cash"])], ["Bank balance at month end", "<span class='bad'>Not entered</span>"]]
 		bank_note = "Enter the bank's month-end balance on the close task to complete this check."
 	else:
 		diff = d["cash"] - d["bank"]
-		status = "Matches" if abs(diff) < 0.005 else f"Differs by {_fmt(diff)}"
-		bank_rows = [
-			("Cash - K at month end", _fmt(d["cash"])),
-			("Bank balance at month end", _fmt(d["bank"])),
-			("<b>Result</b>", f"<b>{status}</b>"),
-		]
+		status = "<span class='good'>Matches</span>" if abs(diff) < 0.005 else f"<span class='bad'>Differs by {_fmt(diff)}</span>"
+		bank = [["Cash - K at month end", _fmt(d["cash"])], ["Bank balance at month end", _fmt(d["bank"])], (["Result", status], "total")]
 		bank_note = ""
 
-	if d["client_wht"]:
-		cw_rows = [
-			(f"{r.party or r.voucher_no}", f"{_fmt(r.amt)} · {'certificate attached' if r.certificate else '<b>no certificate</b>'}")
-			for r in d["client_wht"]
-		]
-		cw_rows.append(("<b>Total withheld by clients</b>", f"<b>{_fmt(sum(r.amt for r in d['client_wht']))}</b>"))
-	else:
-		cw_rows = [("No client withheld tax this month", "—")]
+	client = [[rp.esc(r.party or r.voucher_no),
+		f"{_fmt(r.amt)} · " + ("certificate attached" if r.certificate else "<span class='bad'>no certificate</span>")]
+		for r in d["client_wht"]]
+	if client:
+		client.append((["Total withheld by clients", _fmt(sum(r.amt for r in d["client_wht"]))], "total"))
 
-	kw_rows = [
-		(_th("ภ.ง.ด.3") + " — withheld from individuals", _fmt(d["pnd3"]) if d["pnd3"] else "Nothing to file"),
-		(_th("ภ.ง.ด.53") + " — withheld from companies", _fmt(d["pnd53"]) if d["pnd53"] else "Nothing to file"),
+	kiluth = [
+		[rp.th("ภ.ง.ด.3") + " " + muted("individuals"), _fmt(d["pnd3"]) if d["pnd3"] else muted("Nothing to file")],
+		[rp.th("ภ.ง.ด.53") + " " + muted("companies"), _fmt(d["pnd53"]) if d["pnd53"] else muted("Nothing to file")],
 	]
 	kw_note = ""
 	if d["wht_unknown"]:
-		kw_rows.append(("Payee type not set", _fmt(d["wht_unknown"])))
+		kiluth.append(["Payee type not set", _fmt(d["wht_unknown"])])
 		kw_note = "Set the supplier type (Individual or Company) so this amount lands on the right form."
 
 	s = d["slips"]
 	if s.n:
-		sal_rows = [
-			("Salary slips", str(s.n)),
-			("Gross pay", _fmt(float(s.gross or 0))),
-			(_th("ภ.ง.ด.1") + " — salary tax withheld", _fmt(d["salary_tax"]) if d["salary_tax"] else "Nothing to file"),
-			("Social security — employee share", _fmt(d["social_security"])),
-			("Net pay", _fmt(float(s.net or 0))),
+		salaries = [
+			["Salary slips", str(s.n)],
+			["Gross pay", _fmt(float(s.gross or 0))],
+			[rp.th("ภ.ง.ด.1") + " " + muted("salary tax"), _fmt(d["salary_tax"]) if d["salary_tax"] else muted("Nothing to file")],
+			["Social security, employee share", _fmt(d["social_security"])],
+			(["Net pay", _fmt(float(s.net or 0))], "total"),
 		]
 		sal_note = "Kiluth pays an equal employer share of social security alongside the employee share."
 	else:
-		sal_rows = [("No salary slips for this month", "—")]
-		sal_note = ""
+		salaries, sal_note = [], ""
 
-	style = _font_face_block() + "\n" + _thai_font_face_block() + """
-		@page { size: A4; margin: 16mm 14mm 22mm 14mm; }
-		body { font-family: 'Theinhardt', 'IBM Plex Sans Thai', 'Inter', Arial, sans-serif; color: #1a1a1a; font-size: 10pt; line-height: 1.45; margin: 0; }
-		h1 { font-size: 22pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 12pt 0 4pt 0; }
-		.sub { font-size: 9pt; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7785; }
-		.page-footer { margin-top: 28px; padding-top: 10px; border-top: 0.5pt solid #e8e8e8; }
-	"""
-	body = f"""
-	{LETTER_HEAD}
-	<h1>Close Report</h1>
-	<div class="sub">{period['label']} · Kiluth LTD. · {task.name}</div>
-	{_section("1. Booked this month", booked_rows)}
-	{_section("2. Portal against the bank", bank_rows, bank_note)}
-	{_section("3. Tax clients withheld from Kiluth", cw_rows, "Each certificate (50 " + _th("ทวิ") + ") should be attached to its payment.")}
-	{_section("4. Tax Kiluth withheld from suppliers", kw_rows, kw_note)}
-	{_section("5. Salaries", sal_rows, sal_note)}
-	<div class="page-footer">{FOOTER}</div>
-	"""
-	return f"<!DOCTYPE html><html><head><meta charset='utf-8'><style>{style}</style></head><body>{body}</body></html>"
+	w = [62, 38]
+	left = [
+		rp.Table("Booked this month", ["", ""], booked, 1, "Nothing booked for this month.", widths=w, right=(1,)),
+		rp.Table("Portal against the bank", ["", ""], bank, 2, note=bank_note, widths=w, right=(1,)),
+	]
+	right = [
+		rp.Table("Tax clients withheld", ["", ""], client, 3, "No client withheld tax this month.",
+			"Each certificate (50 " + rp.th("ทวิ") + ") should be attached to its payment.", widths=w, right=(1,)),
+		rp.Table("Tax Kiluth withheld", ["", ""], kiluth, 4, note=kw_note, widths=w, right=(1,)),
+		rp.Table("Salaries", ["", ""], salaries, 5, "No salary slips for this month.", sal_note, widths=w, right=(1,)),
+	]
+	# Two columns on the cover when they fit (they do most months); else one column over pages.
+	space = rp.CONTENT_END - rp.COVER_BODY_TOP
+
+	def height(tables):
+		# Half-width columns wrap about twice as often as the estimate assumes.
+		return sum(t + sum(r) * 1.3 + n + (8 if not tb.rows else 0) for tb in tables for t, r, n in [tb.heights()])
+
+	cover = rp.cover(rp.photo("email/hero-close.jpg"), "Close report", period["label"],
+		f"The books are closed. {task.name}", top=92)
+	title = f"Close report · {period['label']}"
+	if height(left) <= space and height(right) <= space:
+		cols = [''.join(t.render(t.rows) for t in side) for side in (left, right)]
+		body = f"<table class='cols'><tr><td class='c'>{cols[0]}</td><td class='c'>{cols[1]}</td></tr></table>"
+		pages = [[None, None, body]]
+	else:
+		for t in left + right:
+			t.widths = rp.GRID[2]
+		pages = rp.paginate(left + right, space, title, task.name)
+	return rp.document(f"Kiluth Close Report {period['label']}", cover, pages)
