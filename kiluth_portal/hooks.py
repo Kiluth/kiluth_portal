@@ -43,6 +43,9 @@ doctype_js = {
 # in flight, etc.), the hourly tick re-attempts. The function is idempotent:
 # self-skips when the report for the current period has already been sent.
 # So the worst case is a delayed email, never a duplicate or missed month.
+# Notification messages call {{ kiluth_email(...) }} for the designed email.
+jinja = {"methods": ["kiluth_portal.utils.jinja.kiluth_email"]}
+
 scheduler_events = {
 	"daily": [
 		"kiluth_portal.utils.scheduler.recalc_resource_status",

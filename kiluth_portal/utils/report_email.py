@@ -26,7 +26,7 @@ def _rich(text: str) -> str:
 
 def email_html(*, title: str, kicker: str, lines: list[str], hero: str, assets: str,
 		portal_url: str, attachment: str = "", button: str = "", href: str = "",
-		sign_off: str = "— Kiluth Portal") -> str:
+		sign_off: str = "— Kiluth Portal", facts: list | None = None) -> str:
 	"""Build the email.
 
 	title       big white heading, e.g. "Close Report"
@@ -37,6 +37,8 @@ def email_html(*, title: str, kicker: str, lines: list[str], hero: str, assets: 
 	            (https://portal.kiluth.com/assets/kiluth_portal/)
 	attachment  file name of the attached PDF, shown under the words
 	button/href optional white pill
+	facts       optional [(label, value)] rows shown under the words, e.g. a
+	            leave request's dates; empty values show as "—"
 	"""
 	e = html.escape
 	a = e(assets)
@@ -50,6 +52,14 @@ def email_html(*, title: str, kicker: str, lines: list[str], hero: str, assets: 
 <td style="padding:22px 0;vertical-align:top"><div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7a7a">Attached</div><div class="nolink" style="font-size:16px;padding-top:6px;color:#fff;word-break:break-all"><span style="color:#ffffff;text-decoration:none">{e(attachment)}</span></div></td>
 <td align="right" width="60" style="padding:22px 0;vertical-align:middle;font-size:12px;letter-spacing:.14em;color:#7ee2a8">PDF</td>
 </tr></table></td></tr>"""
+	rows = ""
+	if facts:
+		rows = "".join(
+			f'<tr><td style="padding:14px 16px 14px 0;border-bottom:1px solid #1f1f1f;vertical-align:top;width:38%;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7a7a">{e(str(k))}</td>'
+			f'<td class="nolink" style="padding:14px 0;border-bottom:1px solid #1f1f1f;vertical-align:top;font-size:16px;color:#ffffff"><span style="color:#ffffff;text-decoration:none">{e(str(v)) if v not in (None, "") else "—"}</span></td></tr>'
+			for k, v in facts
+		)
+		rows = f"""<tr><td class="gut" style="padding:0 40px 40px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #2a2a2a">{rows}</table></td></tr>"""
 	pill = ""
 	if button and href:
 		pill = f"""<tr><td align="center" style="padding:0 40px 48px"><table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td bgcolor="#fefefe" style="background-color:#fefefe;border-radius:999px">
@@ -87,7 +97,7 @@ body {{ margin: 0; padding: 0; background: #000; }}
 <div class="nolink" style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#7ee2a8"><span style="color:#7ee2a8;text-decoration:none">{e(kicker)}</span></div>
 <div class="h1" style="font-size:52px;line-height:1.1;font-weight:400;letter-spacing:-.02em;padding:14px 0 24px;color:#fff">{e(title)}</div>
 {body}<div style="font-size:16px;line-height:1.7;color:#9a9a9a;padding:10px 0 40px">{e(sign_off)}</div></td></tr></table></td></tr>
-{attached}{pill}<tr><td class="gut" style="padding:48px 40px;border-top:1px solid #1f1f1f"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+{rows}{attached}{pill}<tr><td class="gut" style="padding:48px 40px;border-top:1px solid #1f1f1f"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><span style="color:#fff">Kiluth Portal</span><br>
 <a class="k" href="{e(portal_url)}" style="color:#9a9a9a;text-decoration:none">{e(re.sub(r"^https?://", "", portal_url).rstrip("/"))}</a></td>
 <td align="right" style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><img src="{a}certificate/logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto">Bangkok</td>
