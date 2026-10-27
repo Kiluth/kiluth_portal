@@ -37,6 +37,9 @@ LOGO = '<svg class="logo" viewBox="0 0 80 24" xmlns="http://www.w3.org/2000/svg"
 
 CSS = """
 @page { size: A4; margin: 0; }
+/* Frappe's get_pdf resets the top and bottom margins to 15 mm unless a
+   .print-format rule sets them; this rule is how it reads page margins. */
+.print-format { margin-top: 0mm; margin-bottom: 0mm; margin-left: 0mm; margin-right: 0mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: #000; }
 body { font-family: 'Theinhardt', 'IBM Plex Sans Thai', 'Helvetica Neue', Arial, sans-serif; font-weight: 300; color: #fff; font-size: 9.5pt; line-height: 1.45; }

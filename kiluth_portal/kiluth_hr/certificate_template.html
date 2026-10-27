@@ -13,6 +13,9 @@
 <style>
   {{font_faces}}
   @page { size: A4 landscape; margin: 0; }
+  /* Frappe's get_pdf resets top and bottom margins to 15 mm unless a
+     .print-format rule sets them. */
+  .print-format { margin-top: 0mm; margin-bottom: 0mm; margin-left: 0mm; margin-right: 0mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 297mm; height: 210mm; background: #000; }
   body { font-family: "Theinhardt", "Helvetica Neue", Arial, sans-serif; font-weight: 300; color: #fff; }
