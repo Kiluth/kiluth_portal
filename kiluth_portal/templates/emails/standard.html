@@ -1,0 +1,173 @@
+{#-
+  Kiluth's frame for every email the Portal sends (frappe.sendmail).
+
+  Shadows frappe/templates/emails/standard.html: Frappe's Jinja loader looks in
+  the installed apps last-installed first, so this file wins over Frappe's own.
+  auth_email.html (password reset, welcome, login codes) includes this file too.
+  Context comes from frappe.email.email_body.get_formatted_html: content,
+  header, footer, print_html, subject, site_url, brand_logo, with_container.
+
+  Two modes:
+  - Designed: the body is already a full page (starts with <!doctype or <html>,
+    e.g. the certificate emails). We add nothing around it but black, so it
+    renders exactly as designed.
+  - Framed: everything else (task assigned, Notifications, password reset,
+    HRMS reminders). Black page, white Kiluth logo, the body in light grey on
+    black, a plain footer.
+
+  Frappe runs premailer over the result with its email.css. Rules in the
+  <style> below are inlined the same way; they are scoped to .kf so they only
+  touch framed emails, and are specific enough to beat email.css (which paints
+  links and titles #171717, unreadable on black). @media and @font-face rules
+  stay in a <style> tag. Design: departments/technology/artifacts/email-registry.md
+  in the Kiluth workspace. No gradients, tables and inline styles first.
+-#}
+{%- set _head = ((content or "") | string).lstrip()[:200].lower() -%}
+{%- set designed = _head.startswith("<!doctype") or _head.startswith("<html") -%}
+{%- set assets = (site_url or "") ~ "/assets/kiluth_portal/certificate/" -%}
+{%- set sans = "Theinhardt,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue','Noto Sans Thai',Tahoma,Arial,sans-serif" -%}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="color-scheme" content="dark" />
+	<meta name="supported-color-schemes" content="dark" />
+	<title>{{ subject or "" }}</title>
+	{#- premailer drops @font-face from styles it inlines; data-premailer="ignore" keeps this block as is. #}
+	<style data-premailer="ignore">
+		@font-face { font-family: 'Theinhardt'; src: url('{{ assets }}theinhardt-light.woff2') format('woff2'); font-weight: 300; }
+		@font-face { font-family: 'Theinhardt'; src: url('{{ assets }}theinhardt-regular.woff2') format('woff2'); font-weight: 400; }
+	</style>
+	{%- if not designed %}
+	<style>
+
+		/* Body text. Frappe's email.css paints these #171717 / #525252. */
+		table.kf td.kf-body, table.kf td.kf-body .email-body { color: #d6d6d6; font-size: 16px; }
+		table.kf td.kf-body p { color: #d6d6d6; margin: 0 0 16px !important; line-height: 1.7; }
+		table.kf td.kf-body li { color: #d6d6d6; line-height: 1.7; margin: 0 0 6px; }
+		table.kf td.kf-body td, table.kf td.kf-body th { color: #d6d6d6; font-family: {{ sans }}; }
+		table.kf td.kf-body b, table.kf td.kf-body strong, table.kf td.kf-body th { color: #ffffff; font-weight: 400; }
+		table.kf td.kf-body h1, table.kf td.kf-body h2, table.kf td.kf-body h3, table.kf td.kf-body h4 { color: #ffffff; font-weight: 400; line-height: 1.25; letter-spacing: -0.01em; margin: 0 0 16px; }
+		table.kf td.kf-body h1 { font-size: 30px; }
+		table.kf td.kf-body h2 { font-size: 24px; }
+		table.kf td.kf-body h3 { font-size: 19px; }
+		table.kf td.kf-body hr { border: 0; border-top: 1px solid #2a2a2a; margin: 24px 0; }
+		table.kf td.kf-body img { max-width: 100%; height: auto; }
+		table.kf td.kf-body pre, table.kf td.kf-body code { background-color: #111111; color: #ededed; border-radius: 6px; font-size: 13px; }
+		table.kf td.kf-body pre { padding: 12px 14px; white-space: pre-wrap; word-break: break-word; }
+		table.kf td.kf-body blockquote { border-left: 2px solid #7ee2a8; margin: 16px 0; padding: 2px 0 2px 16px; color: #bdbdbd; }
+		table.kf td.kf-body blockquote p { color: #bdbdbd; margin: 6px 0 !important; }
+
+		/* Links: white and underlined, never Frappe's dark bold. */
+		table.kf td.kf-body a:not(.btn):not(.email-btn) { color: #ffffff; font-weight: 400; text-decoration: underline; word-break: break-word; }
+		table.kf td.kf-body .text-muted a, table.kf td.kf-body .email-copy a { color: #9a9a9a !important; font-weight: 400 !important; word-break: break-all; }
+
+		/* Frappe helper classes that assume a white page. */
+		table.kf td.kf-body .text-muted, table.kf td.kf-body .text-extra-muted { color: #8a8a8a !important; }
+		table.kf td.kf-body .gray-container { background-color: #111111; color: #d6d6d6; }
+		table.kf td.kf-body .table td, table.kf td.kf-body .table th { border-color: #2a2a2a; border-top: 1px solid #2a2a2a; }
+		table.kf td.kf-body .table.table-bordered td, table.kf td.kf-body .table.table-bordered th { border: 1px solid #2a2a2a; }
+		table.kf td.kf-body .email-header-title, table.kf td.kf-body .email-title { color: #ffffff !important; font-size: 30px; font-weight: 400; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 24px !important; }
+		table.kf td.kf-head .email-header-title { color: #ffffff !important; font-size: 30px; font-weight: 400; line-height: 1.2; letter-spacing: -0.02em; margin: 0 !important; }
+		table.kf .indicator { width: 8px; height: 8px; border-radius: 50%; background-color: #7ee2a8; margin: 0 12px 0 0; vertical-align: middle; }
+		table.kf .indicator.indicator-red { background-color: #ff6b6b; }
+		table.kf td.kf-body .email-code { color: #ffffff !important; }
+		table.kf td.kf-body .email-action, table.kf td.kf-body .email-copy, table.kf td.kf-body .email-ignore { margin: 0 0 20px !important; }
+		table.kf td.kf-body .email-copy p { margin: 0 0 4px !important; }
+		table.kf td.kf-body .more-info { font-size: 14px !important; color: #8a8a8a !important; padding-top: 16px; }
+
+		/* Text written in the Portal's editor (emails composed in the desk, comments)
+		   often carries pasted inline black. Keep it readable on black. */
+		table.kf td.kf-body .ql-editor, table.kf td.kf-body .ql-editor p, table.kf td.kf-body .ql-editor span,
+		table.kf td.kf-body .ql-editor li, table.kf td.kf-body .ql-editor div, table.kf td.kf-body .ql-editor td { color: #d6d6d6 !important; }
+		table.kf td.kf-body .ql-editor strong, table.kf td.kf-body .ql-editor b { color: #ffffff !important; }
+		/* premailer can't beat an inline colour, so this one stays a <style> rule (the
+		   :not keeps it from being inlined) and wins in clients that read <style>. */
+		table.kf td.kf-body .ql-editor *:not(a) { color: #d6d6d6 !important; }
+		table.kf td.kf-body .ql-editor strong:not(a), table.kf td.kf-body .ql-editor b:not(a) { color: #ffffff !important; }
+
+		/* Buttons: the white pill. #fefefe because Gmail on iPhone drops #ffffff. */
+		table.kf td.kf-body a.btn, table.kf td.kf-body a.email-btn, table.kf td.kf-body .more-info a {
+			display: inline-block; background-color: #fefefe; color: #000000 !important; border: 0; border-radius: 999px;
+			padding: 13px 26px; font-size: 15px; font-weight: 400 !important; line-height: 1.2; text-decoration: none !important; margin: 8px 0; }
+
+		/* Footer: Frappe's email account footer and unsubscribe link. */
+		table.kf td.kf-foot .email-footer-container { color: #7a7a7a; font-size: 12px; margin: 0; padding: 0; border: 0; }
+		table.kf td.kf-foot a { color: #9a9a9a; text-decoration: underline; font-weight: 400; }
+
+		@media screen {
+			body table.kf td.kf-body a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+		}
+		@media (max-width: 480px) {
+			table.kf td.kf-gut { padding-left: 20px !important; padding-right: 20px !important; }
+		}
+	</style>
+	{%- endif %}
+</head>
+
+<body style="margin:0;padding:0;background-color:#000000;color:#d6d6d6">
+{%- if designed %}
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#000000" style="background-color:#000000;border-collapse:collapse">
+		<tr>
+			<td style="padding:0;margin:0">{{ content }}</td>
+		</tr>
+		{%- if footer or print_html %}
+		<tr>
+			<td align="center" style="padding:0;font-family:{{ sans }};font-size:12px;line-height:1.6;color:#7a7a7a">
+				<div data-email-footer="true">{{ footer }}</div>
+				<div class="print-html">{{ print_html or "" }}</div>
+			</td>
+		</tr>
+		{%- endif %}
+	</table>
+{%- else %}
+	<table role="presentation" class="kf" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#000000" style="background-color:#000000;border-collapse:collapse;width:100%">
+		<tr>
+			<td align="center" valign="top" style="padding:0">
+				<table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:640px;border-collapse:collapse;font-family:{{ sans }};font-weight:300;font-size:16px;line-height:1.7;color:#d6d6d6">
+					<tr>
+						<td class="kf-gut" style="padding:32px 40px 8px">
+							<a href="{{ site_url or 'https://portal.kiluth.com' }}" style="text-decoration:none"><img src="{{ assets }}logo-white.png" width="72" alt="Kiluth" style="display:block;width:72px;height:auto;border:0" /></a>
+						</td>
+					</tr>
+					{%- if header %}
+					<tr>
+						<td class="kf-head kf-gut" valign="top" style="padding:40px 40px 0;color:#ffffff">{{ header }}</td>
+					</tr>
+					{%- endif %}
+					<tr>
+						<td class="kf-body kf-gut" valign="top" style="padding:32px 40px 48px;font-family:{{ sans }};font-weight:300;font-size:16px;line-height:1.7;color:#d6d6d6">
+							<div>{{ content }}</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="kf-gut" style="padding:32px 40px 48px;border-top:1px solid #1f1f1f">
+							<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
+								<tr>
+									<td valign="top" style="font-family:{{ sans }};font-weight:300;font-size:14px;line-height:2;color:#9a9a9a"><span style="color:#ffffff">Kiluth Portal</span><br /><a href="{{ site_url or 'https://portal.kiluth.com' }}" style="color:#9a9a9a;text-decoration:none;font-weight:300">Open the Portal</a></td>
+									<td valign="top" align="right" style="font-family:{{ sans }};font-weight:300;font-size:14px;line-height:2;color:#9a9a9a">Kiluth LTD., Bangkok</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td class="kf-foot kf-gut" valign="top" style="padding:0 40px 32px;font-family:{{ sans }};font-size:12px;line-height:1.6;color:#7a7a7a">
+							<div data-email-footer="true">{{ footer }}</div>
+						</td>
+					</tr>
+					{%- if print_html %}
+					<tr>
+						{#- A document printed into the email (Print Format) is designed for white paper. #}
+						<td class="kf-gut" style="padding:0 40px 48px"><div class="print-html" style="background-color:#ffffff;color:#171717;padding:24px;border-radius:8px">{{ print_html }}</div></td>
+					</tr>
+					{%- endif %}
+				</table>
+			</td>
+		</tr>
+	</table>
+{%- endif %}
+</body>
+
+</html>
