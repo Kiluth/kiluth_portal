@@ -1,0 +1,25 @@
+{#-
+  HRMS's work anniversary email in the Kiluth design. Shadows
+  hrms/templates/emails/anniversary_reminder.html: Frappe's Jinja loader looks
+  in the last-installed app first, and kiluth_portal is installed after hrms.
+  Delete this file to get HRMS's own email back.
+
+  Sent by hrms.controllers.employee_reminders.send_work_anniversary_reminders
+  (daily, when HR Settings > Send Work Anniversary Reminders is on). Context:
+  anniversary_persons  [{name, date_of_joining, image, ...}]
+  reminder_text, message  HRMS's own words, not used here (they carry an emoji)
+  The subject ("Work Anniversary Reminder") is set in HRMS code; it can't be
+  changed from here.
+-#}
+{%- set this_year = frappe.utils.getdate().year -%}
+{%- set ns = namespace(lines=[]) -%}
+{%- for p in anniversary_persons -%}
+	{%- set years = this_year - frappe.utils.getdate(p.date_of_joining).year -%}
+	{%- set ns.lines = ns.lines + ["**" ~ p.name ~ "** has been with us for **" ~ years ~ (" year" if years == 1 else " years") ~ "** today. They joined on " ~ frappe.utils.formatdate(p.date_of_joining, "d MMMM yyyy") ~ "."] -%}
+{%- endfor -%}
+{{ kiluth_email(
+	title="Work anniversary",
+	kicker=frappe.utils.formatdate(frappe.utils.nowdate(), "d MMMM yyyy"),
+	lines=ns.lines + ["Say congratulations when you see them today."],
+	hero="hero-leaf-lit.jpg",
+) }}

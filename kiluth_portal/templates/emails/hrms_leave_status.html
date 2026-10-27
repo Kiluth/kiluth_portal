@@ -1,0 +1,35 @@
+{#-
+  Body of HRMS's "Leave Status Notification" Email Template, sent to the
+  employee when their leave application is submitted (approved or rejected) or
+  cancelled (HR Settings > Send Leave Notification, and the application's
+  "Follow via Email" box). The Email Template's HTML is only an include of this
+  file; patch v2026.hrms_leave_email_templates set that up. Untick "Use HTML" on
+  the Email Template to get HRMS's own body back.
+
+  Context: the Leave Application's fields at the top level (no `doc`).
+-#}
+{%- set state = "Cancelled" if docstatus == 2 else status -%}
+{%- set dates = frappe.utils.formatdate(from_date, "d MMMM yyyy") if from_date|string == to_date|string
+	else frappe.utils.formatdate(from_date, "d MMMM") ~ " to " ~ frappe.utils.formatdate(to_date, "d MMMM yyyy") -%}
+{%- set who = leave_approver_name or leave_approver or "your approver" -%}
+{%- if state == "Approved" -%}
+	{%- set lines = ["Your " ~ leave_type ~ " for **" ~ dates ~ "** is approved."] -%}
+{%- elif state == "Rejected" -%}
+	{%- set lines = ["Your " ~ leave_type ~ " for **" ~ dates ~ "** was rejected.", "Ask " ~ who ~ " if you want to know why."] -%}
+{%- elif state == "Cancelled" -%}
+	{%- set lines = ["Your " ~ leave_type ~ " for **" ~ dates ~ "** is cancelled."] -%}
+{%- else -%}
+	{%- set lines = ["Your " ~ leave_type ~ " for **" ~ dates ~ "** is now " ~ state ~ "."] -%}
+{%- endif -%}
+{{ kiluth_email(
+	title="Leave " ~ (state or "")|lower,
+	kicker=name,
+	lines=lines,
+	facts=[
+		("Days", "%g"|format(total_leave_days or 0)),
+		("Approver", leave_approver_name or leave_approver),
+	],
+	hero="hero-fern-shadow.jpg",
+	button="Open the request",
+	href=frappe.utils.get_url_to_form("Leave Application", name),
+) }}

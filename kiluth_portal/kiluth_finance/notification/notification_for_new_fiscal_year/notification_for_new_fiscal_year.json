@@ -1,0 +1,35 @@
+{
+ "attach_print": 0,
+ "channel": "Email",
+ "condition": "doc.auto_created == 1",
+ "condition_type": "Python",
+ "creation": "2018-04-25 14:19:05.440361",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Fiscal Year",
+ "enabled": 1,
+ "event": "New",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "",
+ "message_type": "HTML",
+ "minutes_offset": 0,
+ "modified": "2026-10-27 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Kiluth Finance",
+ "name": "Notification for new fiscal year",
+ "owner": "Administrator",
+ "recipients": [
+  {
+   "receiver_by_role": "Accounts User"
+  },
+  {
+   "receiver_by_role": "Accounts Manager"
+  }
+ ],
+ "send_system_notification": 0,
+ "send_to_all_assignees": 0,
+ "sender_email": "",
+ "subject": "New fiscal year: {{ doc.name }}"
+}

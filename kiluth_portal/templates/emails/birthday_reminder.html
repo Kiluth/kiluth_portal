@@ -1,0 +1,24 @@
+{#-
+  HRMS's birthday email in the Kiluth design. Shadows
+  hrms/templates/emails/birthday_reminder.html the same way
+  anniversary_reminder.html does; delete this file to get HRMS's back.
+
+  Sent by hrms.controllers.employee_reminders.send_birthday_reminders (daily,
+  when HR Settings > Send Birthday Reminders is on). Context:
+  birthday_persons  [{name, image, ...}]  (no birth date: HRMS doesn't pass it)
+  reminder_text, message  HRMS's own words, not used here (they carry an emoji)
+  The subject ("Birthday Reminder") is set in HRMS code.
+-#}
+{%- set ns = namespace(names=[]) -%}
+{%- for p in birthday_persons -%}{%- set ns.names = ns.names + ["**" ~ p.name ~ "**"] -%}{%- endfor -%}
+{%- if ns.names|length == 1 -%}
+	{%- set first = "It's " ~ ns.names[0] ~ "'s birthday today." -%}
+{%- else -%}
+	{%- set first = ns.names[:-1]|join(", ") ~ " and " ~ ns.names[-1] ~ " have their birthday today." -%}
+{%- endif -%}
+{{ kiluth_email(
+	title="Birthday",
+	kicker=frappe.utils.formatdate(frappe.utils.nowdate(), "d MMMM yyyy"),
+	lines=[first, "Wish them a happy birthday when you see them."],
+	hero="hero-leaf-lit.jpg",
+) }}

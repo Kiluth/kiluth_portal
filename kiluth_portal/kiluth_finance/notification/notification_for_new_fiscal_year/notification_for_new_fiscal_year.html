@@ -1,0 +1,23 @@
+{#- ERPNext's "Notification for new fiscal year", owned by kiluth_portal since
+    2026-10-27 so it sends in the Kiluth design. Our JSON next to this file has a
+    newer `modified` than ERPNext's, so `bench migrate` keeps ours. -#}
+{%- set ns = namespace(companies=[]) -%}
+{%- for row in doc.companies or [] -%}{%- set ns.companies = ns.companies + [row.company] -%}{%- endfor -%}
+{%- set lines = ["The Portal created fiscal year **" ~ doc.name ~ "** on its own."] -%}
+{%- if doc.disabled -%}
+	{%- set lines = lines + ["It's **disabled**, because last year's was too. Turn it on when you need it."] -%}
+{%- endif -%}
+{%- set lines = lines + ["Check the dates and companies, then finish any setup the new year needs."] -%}
+{{ kiluth_email(
+	title="New fiscal year",
+	kicker=doc.name,
+	lines=lines,
+	facts=[
+		("Starts", frappe.utils.formatdate(doc.year_start_date, "d MMMM yyyy")),
+		("Ends", frappe.utils.formatdate(doc.year_end_date, "d MMMM yyyy")),
+		("Companies" if ns.companies|length > 1 else "Company", ns.companies|join(", ")),
+	],
+	hero="hero-bark-moss.jpg",
+	button="Open the fiscal year",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

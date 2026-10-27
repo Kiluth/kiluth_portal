@@ -1,0 +1,24 @@
+{#- ERPNext's "Material Request Receipt Notification", owned by kiluth_portal
+    since 2026-10-27 so it sends in the Kiluth design. Our JSON next to this file
+    has a newer `modified` than ERPNext's, so `bench migrate` keeps ours. -#}
+{%- set partly = doc.status != "Received" -%}
+{%- set ns = namespace(facts=[("Type", doc.material_request_type)]) -%}
+{%- for item in doc.items -%}
+	{%- set got = frappe.utils.flt(item.received_qty, 2) -%}
+	{%- if got > 0 -%}
+		{%- set ns.facts = ns.facts + [(item.item_name or item.item_code, "%g of %g %s"|format(got, frappe.utils.flt(item.stock_qty or item.qty, 2), item.stock_uom or item.uom or ""))] -%}
+	{%- endif -%}
+{%- endfor -%}
+{{ kiluth_email(
+	title="Partly received" if partly else "Received",
+	kicker=doc.name,
+	lines=[
+		("Part of **" ~ doc.name ~ "** has arrived. The rest is still on its way.") if partly
+			else ("Everything on **" ~ doc.name ~ "** has arrived."),
+		"Here's what came in so far:" if partly else "Here's what came in:",
+	],
+	facts=ns.facts,
+	hero="hero-leaf-rock.jpg",
+	button="Open the request",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

@@ -1,0 +1,28 @@
+{#-
+  Body of HRMS's "Leave Approval Notification" Email Template, sent to the leave
+  approver when an Open leave application is saved (HR Settings > Send Leave
+  Notification, and the application's "Follow via Email" box). The Email
+  Template's HTML is only an include of this file; patch
+  v2026.hrms_leave_email_templates set that up. Untick "Use HTML" on the Email
+  Template to get HRMS's own body back.
+
+  Context: the Leave Application's fields at the top level (no `doc`).
+-#}
+{%- set day_word = " day" if total_leave_days == 1 else " days" -%}
+{%- set days = ("%g"|format(total_leave_days or 0)) ~ day_word -%}
+{{ kiluth_email(
+	title="Leave request",
+	kicker=name,
+	lines=[
+		"**" ~ (employee_name or employee) ~ "** asked for **" ~ days ~ "** of " ~ leave_type ~ ".",
+		"Approve or reject it in the Portal.",
+	],
+	facts=[
+		("From", frappe.utils.formatdate(from_date, "d MMMM yyyy")),
+		("To", frappe.utils.formatdate(to_date, "d MMMM yyyy")),
+		("Reason", description),
+	],
+	hero="hero-fern-shadow.jpg",
+	button="Review the request",
+	href=frappe.utils.get_url_to_form("Leave Application", name),
+) }}
