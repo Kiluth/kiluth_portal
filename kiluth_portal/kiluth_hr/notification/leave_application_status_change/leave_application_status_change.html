@@ -1,0 +1,22 @@
+{%- set days = "%g"|format(doc.total_leave_days or 0) -%}
+{%- set approved = doc.status == "Approved" -%}
+{{ kiluth_email(
+	title="Leave approved" if approved else "Leave rejected",
+	kicker=doc.name,
+	lines=[
+		"Hi " ~ (doc.employee_name or doc.employee) ~ ",",
+		("Your leave from **" ~ frappe.utils.formatdate(doc.from_date, "d MMMM") ~ "** to **" ~ frappe.utils.formatdate(doc.to_date, "d MMMM yyyy") ~ "** is approved.")
+			if approved else
+		("Your leave from **" ~ frappe.utils.formatdate(doc.from_date, "d MMMM") ~ "** to **" ~ frappe.utils.formatdate(doc.to_date, "d MMMM yyyy") ~ "** was not approved. Talk to " ~ (doc.leave_approver_name or "your manager") ~ " if you want to know why."),
+	],
+	facts=[
+		("Leave type", doc.leave_type),
+		("From", frappe.utils.formatdate(doc.from_date, "d MMMM yyyy")),
+		("To", frappe.utils.formatdate(doc.to_date, "d MMMM yyyy")),
+		("Days", days ~ (" (half day)" if doc.half_day else "")),
+	],
+	hero="hero-leaf-lit.jpg",
+	button="Open the request",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+	sign_off="— Kiluth HR",
+) }}

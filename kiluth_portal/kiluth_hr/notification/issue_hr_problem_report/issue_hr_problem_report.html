@@ -1,0 +1,16 @@
+{%- set details = (doc.description or "")|striptags|trim|truncate(600) -%}
+{{ kiluth_email(
+	title="HR problem report",
+	kicker=doc.name,
+	lines=[
+		"**" ~ (doc.raised_by or doc.owner) ~ "** reported a problem: **" ~ doc.subject ~ "**",
+	] + ([details] if details else []) + [
+		"Read it and reply in the Portal.",
+	],
+	facts=[
+		("Priority", doc.priority),
+	],
+	hero="hero-bark-moss.jpg",
+	button="Open the report",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

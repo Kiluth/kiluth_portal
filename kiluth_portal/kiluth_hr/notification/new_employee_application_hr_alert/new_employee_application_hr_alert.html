@@ -1,0 +1,18 @@
+{%- set who = doc.first_name ~ " " ~ doc.last_name ~ (" (" ~ doc.nickname ~ ")" if doc.nickname else "") -%}
+{{ kiluth_email(
+	title="New employee form",
+	kicker=doc.name,
+	lines=[
+		"**" ~ who ~ "** filled in the new employee form.",
+		"Check their details before you continue onboarding.",
+	],
+	facts=[
+		("Start date", frappe.utils.formatdate(doc.date_of_joining, "d MMMM yyyy") if doc.date_of_joining else ""),
+		("Department", doc.department),
+		("Job title", doc.job_title),
+		("Employment", doc.employment_type),
+	],
+	hero="hero-fern-shadow.jpg",
+	button="Review the form",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

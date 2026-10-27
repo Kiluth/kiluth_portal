@@ -1,0 +1,20 @@
+{%- set who = doc.employee_name or doc.employee -%}
+{%- set days = "%g"|format(doc.total_leave_days or 0) -%}
+{{ kiluth_email(
+	title="Leave request",
+	kicker=doc.name,
+	lines=[
+		"**" ~ who ~ "** asked for **" ~ days ~ (" day" if days == "1" else " days") ~ "** of " ~ (doc.leave_type or "leave") ~ ".",
+		"Approve or reject it in the Portal.",
+	],
+	facts=[
+		("Leave type", doc.leave_type),
+		("From", frappe.utils.formatdate(doc.from_date, "d MMMM yyyy")),
+		("To", frappe.utils.formatdate(doc.to_date, "d MMMM yyyy")),
+		("Days", days ~ (" (half day)" if doc.half_day else "")),
+		("Reason", doc.description),
+	],
+	hero="hero-leaf-lit.jpg",
+	button="Open the request",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

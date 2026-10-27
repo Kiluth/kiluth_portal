@@ -1,0 +1,13 @@
+{{ kiluth_email(
+	title="Thanks, " ~ doc.first_name,
+	kicker="Welcome to Kiluth",
+	lines=[
+		"We've got your new employee form. HR will contact you soon about the next steps.",
+		"Need to fix something? Reply to this email and we'll update it.",
+	],
+	facts=[
+		("Reference", doc.name),
+	],
+	hero="hero-fern-shadow.jpg",
+	sign_off="— Kiluth HR",
+) }}
