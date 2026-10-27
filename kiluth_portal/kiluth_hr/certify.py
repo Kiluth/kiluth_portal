@@ -506,7 +506,7 @@ def email_html(signed, course, first_name, assets, portal_url, cert_id="", expir
 </td></tr></table>
 <div style="font-size:16px;line-height:1.8;color:#9a9a9a;padding-top:32px;text-align:center">Nothing counts against you.</div></td></tr>"""
 	pill = f"""<table role="presentation" cellpadding="0" cellspacing="0" align="center" class="pill"><tr><td bgcolor="#fefefe" style="background-color:#fefefe;border-radius:999px">
-<a href="{e(href)}" style="display:inline-block;padding:15px 30px;font-size:16px;font-family:{SANS};font-weight:300;text-decoration:none"><span style="color:#000000;text-decoration:none">{e(button)}</span></a></td></tr></table>"""
+<a class="k" href="{e(href)}" style="display:inline-block;padding:15px 30px;font-size:16px;font-family:{SANS};font-weight:300;text-decoration:none"><span style="color:#000000;text-decoration:none">{e(button)}</span></a></td></tr></table>"""
 	return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
@@ -516,10 +516,14 @@ def email_html(signed, course, first_name, assets, portal_url, cert_id="", expir
 @font-face {{ font-family: 'Theinhardt'; src: url('{a}theinhardt-light.woff2') format('woff2'); font-weight: 300; }}
 @font-face {{ font-family: 'Theinhardt'; src: url('{a}theinhardt-regular.woff2') format('woff2'); font-weight: 400; }}
 body {{ margin: 0; padding: 0; background: #000; }}
-/* iPhone Mail turns dates into dark, underlined links; keep them as written */
-a[x-apple-data-detectors], .nolink a {{ color: inherit !important; text-decoration: none !important;
-  font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }}
-u + #body a, .pill a {{ text-decoration: none !important; }}
+/* frappe.sendmail wraps this in its standard template, whose email.css forces
+   `.email-body a:not(.btn)` dark, bold and underlined, and its CSS inliner drops
+   plain rules from this block. Rules inside @media survive, and these outrank
+   that selector. They also cover the links iPhone Mail adds around dates. */
+@media screen {{
+  body .email-body a.k, body .email-body a[x-apple-data-detectors], body .email-body .nolink a {{
+    color: inherit !important; font-weight: inherit !important; text-decoration: none !important; }}
+}}
 @media (max-width: 480px) {{
   .hero {{ padding-top: 200px !important; }}
   .h1 {{ font-size: 48px !important; }}
@@ -539,7 +543,7 @@ u + #body a, .pill a {{ text-decoration: none !important; }}
 {"" if signed else middle}<tr><td align="center" style="padding:8px 40px 48px">{pill}</td></tr>
 {middle if signed else ""}<tr><td class="gut" style="padding:48px 40px;border-top:1px solid #1f1f1f"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><span style="color:#fff">Certification</span><br>
-<a href="{DOCS}/hr/certification" style="color:#9a9a9a;text-decoration:none">How it works</a></td>
+<a class="k" href="{DOCS}/hr/certification" style="color:#9a9a9a;text-decoration:none">How it works</a></td>
 <td align="right" style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><img src="{a}logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto">Kiluth LTD., Bangkok</td>
 </tr></table></td></tr>
 </table></td></tr></table></body></html>"""
