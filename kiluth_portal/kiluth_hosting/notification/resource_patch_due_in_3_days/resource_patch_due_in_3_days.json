@@ -1,0 +1,23 @@
+{
+ "channel": "Email",
+ "condition": "doc.resource_type=='Hosting' and doc.status=='Active'",
+ "condition_type": "Python",
+ "date_changed": "next_patch_due",
+ "days_in_advance": 3,
+ "doctype": "Notification",
+ "document_type": "Resource",
+ "enabled": 1,
+ "event": "Days Before",
+ "is_standard": 1,
+ "message_type": "HTML",
+ "modified": "2026-10-27 20:00:00.000000",
+ "module": "Kiluth Hosting",
+ "name": "Resource Patch Due in 3 Days",
+ "recipients": [
+  {
+   "receiver_by_document_field": "patch_owner"
+  }
+ ],
+ "send_system_notification": 1,
+ "subject": "Patch due in 3 days: {{ doc.name }}"
+}

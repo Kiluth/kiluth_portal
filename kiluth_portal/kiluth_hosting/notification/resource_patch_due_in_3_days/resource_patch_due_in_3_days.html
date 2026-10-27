@@ -1,0 +1,19 @@
+{{ kiluth_email(
+	title="Patch due in 3 days",
+	kicker=doc.name,
+	lines=[
+		"Security patching for **" ~ doc.name ~ "** is due on **" ~ frappe.utils.formatdate(doc.next_patch_due, "d MMMM yyyy") ~ "**.",
+		"Patch the server. Then set **Last patched** to today and **Next patch due** to the first working week of next month.",
+		"How to patch: docs.kiluth.com/technology/server-patching",
+	],
+	facts=[
+		("Identifier", doc.identifier),
+		("Customer", doc.customer),
+		("Environment", doc.environment),
+		("Last patched", frappe.utils.formatdate(doc.last_patched_date, "d MMMM yyyy") if doc.last_patched_date else ""),
+		("Due", frappe.utils.formatdate(doc.next_patch_due, "d MMMM yyyy")),
+	],
+	hero="hero-bark-moss.jpg",
+	button="Open the resource",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

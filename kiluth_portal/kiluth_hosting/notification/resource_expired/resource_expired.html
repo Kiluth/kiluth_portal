@@ -1,17 +1,18 @@
-<p>
-The following resource has expired.
-</p>
-
-<table style="border-collapse: collapse; margin-top: 10px;">
-  <tr><td style="padding: 6px 10px; font-weight: bold;">Resource:</td><td style="padding: 6px 10px;">{{ doc.name }}</td></tr>
-  <tr><td style="padding: 6px 10px; font-weight: bold;">Resource Type:</td><td style="padding: 6px 10px;">{{ doc.resource_type }}</td></tr>
-  <tr><td style="padding: 6px 10px; font-weight: bold;">Customer:</td><td style="padding: 6px 10px;">{{ doc.customer or "-" }}</td></tr>
-  <tr><td style="padding: 6px 10px; font-weight: bold;">Environment:</td><td style="padding: 6px 10px;">{{ doc.environment or "-" }}</td></tr>
-  <tr><td style="padding: 6px 10px; font-weight: bold;">Expiry Date:</td><td style="padding: 6px 10px;">{{ doc.expiry_date }}</td></tr>
-</table>
-
-<p style="margin-top: 15px;">
-Please confirm whether renewal is required. If you have already renewed, please update the expiry date in the resource record.
-</p>
-
-<p><strong>View Resource:</strong> <a href="https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}">https://portal.kiluth.com/app/resource/{{ doc.name | urlencode }}</a></p>
+{{ kiluth_email(
+	title="Expired",
+	kicker=doc.name,
+	lines=[
+		"**" ~ doc.name ~ "** expired on **" ~ frappe.utils.formatdate(doc.expiry_date, "d MMMM yyyy") ~ "**.",
+		"Decide today: renew it, or archive it if it's no longer needed.",
+		"If you already renewed it, update the expiry date in the Portal.",
+	],
+	facts=[
+		("Type", doc.resource_type),
+		("Customer", doc.customer),
+		("Environment", doc.environment),
+		("Expires", frappe.utils.formatdate(doc.expiry_date, "d MMMM yyyy")),
+	],
+	hero="hero-water-wave.jpg",
+	button="Open the resource",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}
