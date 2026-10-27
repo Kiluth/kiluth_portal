@@ -1,0 +1,18 @@
+{{ kiluth_email(
+	title="Still waiting on you",
+	kicker=doc.name,
+	lines=[
+		"Hi " ~ (doc.employee_name or doc.employee) ~ ". HR is still waiting for you to acknowledge your equipment loan.",
+		"The equipment can't be handed over until you do. Open the agreement and click **I Acknowledge**.",
+		"Questions about the terms? Reply to this email and HR will help.",
+	],
+	facts=[
+		("Items", (doc.assets or [])|length),
+		("Accessories", doc.accessories),
+	] if doc.accessories else [
+		("Items", (doc.assets or [])|length),
+	],
+	hero="hero-leaf-rock.jpg",
+	button="Review and acknowledge",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

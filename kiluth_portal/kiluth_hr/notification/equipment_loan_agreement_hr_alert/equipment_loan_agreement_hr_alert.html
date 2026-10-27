@@ -1,0 +1,21 @@
+{%- set facts = [
+	("Borrower", doc.employee_name or doc.employee),
+	("Signed", frappe.utils.formatdate(doc.date_signed, "d MMMM yyyy") if doc.date_signed else ""),
+] -%}
+{%- for a in (doc.assets or [])[:8] -%}
+{%- set _ = facts.append((a.asset or "Asset", (a.asset_name or "") ~ (" · S/N " ~ a.serial_number if a.serial_number else ""))) -%}
+{%- endfor -%}
+{%- if (doc.assets or [])|length > 8 -%}
+{%- set _ = facts.append(("More", "and " ~ ((doc.assets|length) - 8) ~ " more")) -%}
+{%- endif -%}
+{{ kiluth_email(
+	title="Equipment loaned",
+	kicker=doc.name,
+	lines=[
+		"**" ~ (doc.employee_name or doc.employee) ~ "** acknowledged the agreement and it's now submitted. " ~ ((doc.assets or [])|length) ~ " item" ~ ("" if (doc.assets or [])|length == 1 else "s") ~ " out on loan.",
+	],
+	facts=facts,
+	hero="hero-leaf-rock.jpg",
+	button="Open the agreement",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

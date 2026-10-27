@@ -1,0 +1,23 @@
+{%- set facts = [] -%}
+{%- for a in (doc.assets or [])[:8] -%}
+{%- set _ = facts.append((a.asset or "Asset", (a.asset_name or "") ~ (" · S/N " ~ a.serial_number if a.serial_number else ""))) -%}
+{%- endfor -%}
+{%- if (doc.assets or [])|length > 8 -%}
+{%- set _ = facts.append(("More", "and " ~ ((doc.assets|length) - 8) ~ " more")) -%}
+{%- endif -%}
+{%- if doc.accessories -%}
+{%- set _ = facts.append(("Accessories", doc.accessories)) -%}
+{%- endif -%}
+{{ kiluth_email(
+	title="Acknowledge your loan",
+	kicker=doc.name,
+	lines=[
+		"Hi " ~ (doc.employee_name or doc.employee) ~ ". HR is lending you the equipment below.",
+		"Open the agreement, check the items and terms, then click **I Acknowledge**. The loan isn't complete until you do.",
+		"We log your account and the time as the record. If anything looks wrong, reply to this email and HR will fix it.",
+	],
+	facts=facts,
+	hero="hero-leaf-rock.jpg",
+	button="Review and acknowledge",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

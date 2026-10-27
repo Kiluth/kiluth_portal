@@ -6,6 +6,8 @@
  "event": "Submit",
  "is_standard": 1,
  "message": "<p>A new Equipment Loan Agreement has been signed and submitted.</p>\n<ul>\n  <li><b>Agreement:</b> {{ doc.name }}</li>\n  <li><b>Borrower:</b> {{ doc.employee_name or doc.employee }}</li>\n  <li><b>Date signed:</b> {{ doc.date_signed }}</li>\n  <li><b>Assets loaned:</b> {{ doc.assets|length }}</li>\n</ul>\n<p>{{ frappe.utils.get_link_to_form(doc.doctype, doc.name, 'Open agreement') }}</p>",
+ "message_type": "HTML",
+ "modified": "2026-10-27 20:00:00.000000",
  "module": "Kiluth HR",
  "name": "Equipment Loan Agreement HR Alert",
  "recipients": [

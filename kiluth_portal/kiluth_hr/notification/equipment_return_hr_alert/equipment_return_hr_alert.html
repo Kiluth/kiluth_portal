@@ -1,0 +1,26 @@
+{%- set facts = [
+	("Returned by", doc.employee_name or doc.employee),
+	("Date", frappe.utils.formatdate(doc.return_date, "d MMMM yyyy") if doc.return_date else ""),
+] -%}
+{%- for a in (doc.assets_returned or [])[:8] -%}
+{%- set _ = facts.append((a.asset or "Asset", (a.asset_name or "") ~ (" · " ~ a.condition_on_return if a.condition_on_return else ""))) -%}
+{%- endfor -%}
+{%- if (doc.assets_returned or [])|length > 8 -%}
+{%- set _ = facts.append(("More", "and " ~ ((doc.assets_returned|length) - 8) ~ " more")) -%}
+{%- endif -%}
+{%- set _ = facts.append(("Accessories", "All returned" if doc.all_accessories_returned else "Not all returned")) -%}
+{%- if doc.damage_details -%}
+{%- set _ = facts.append(("Damage", doc.damage_details)) -%}
+{%- endif -%}
+{{ kiluth_email(
+	title="Equipment returned",
+	kicker=doc.name,
+	lines=[
+		"**" ~ (doc.employee_name or doc.employee) ~ "** returned " ~ ((doc.assets_returned or [])|length) ~ " item" ~ ("" if (doc.assets_returned or [])|length == 1 else "s") ~ ".",
+		"Check the condition photos and note any damage before you close the loan.",
+	],
+	facts=facts,
+	hero="hero-leaf-rock.jpg",
+	button="Open the return",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}

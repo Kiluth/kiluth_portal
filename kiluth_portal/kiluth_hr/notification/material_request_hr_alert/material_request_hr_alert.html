@@ -1,0 +1,24 @@
+{#- doc["items"], not doc.items: on a plain dict .items is the method -#}
+{%- set items = doc["items"] or [] -%}
+{%- set facts = [
+	("Type", doc.material_request_type),
+	("Requested by", doc.owner),
+	("Needed by", frappe.utils.formatdate(doc.schedule_date, "d MMMM yyyy") if doc.schedule_date else ""),
+] -%}
+{%- for i in items[:8] -%}
+{%- set _ = facts.append(("Item" if loop.first else "", (i.item_name or i.item_code) ~ " × " ~ ("%g"|format(i.qty or 0)) ~ (" " ~ i.uom if i.uom else ""))) -%}
+{%- endfor -%}
+{%- if items|length > 8 -%}
+{%- set _ = facts.append(("", "and " ~ (items|length - 8) ~ " more")) -%}
+{%- endif -%}
+{{ kiluth_email(
+	title="Material request",
+	kicker=doc.name,
+	lines=[
+		"A material request for **" ~ (items|length) ~ " item" ~ ("" if items|length == 1 else "s") ~ "** was submitted. Review it and order what's needed.",
+	],
+	facts=facts,
+	hero="hero-bark-moss.jpg",
+	button="Open the request",
+	href=frappe.utils.get_url_to_form(doc.doctype, doc.name),
+) }}
