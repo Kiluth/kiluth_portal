@@ -1,0 +1,17 @@
+{#-
+  Imported by password_reset.html and new_user.html:
+      {% from "kiluth_portal/templates/emails/_link_expiry.html" import link_expiry %}
+  link_expiry() says how long the set-password link works, from System Settings >
+  reset_password_link_expiry_duration (seconds; 0 or empty means it never
+  expires, the way frappe.core.doctype.user.user._get_user_for_update_password
+  checks it). Either way the link works once: Frappe clears the key when the
+  password is set.
+-#}
+{%- macro link_expiry() -%}
+{%- set secs = (frappe.get_system_settings("reset_password_link_expiry_duration") or 0) | int -%}
+{%- if secs <= 0 -%}The link works once.
+{%- elif secs % 86400 == 0 -%}{%- set n = secs // 86400 -%}The link works once, for {{ n }} {{ "day" if n == 1 else "days" }}.
+{%- elif secs % 3600 == 0 -%}{%- set n = secs // 3600 -%}The link works once, for {{ n }} {{ "hour" if n == 1 else "hours" }}.
+{%- else -%}{%- set n = [secs // 60, 1] | max -%}The link works once, for {{ n }} {{ "minute" if n == 1 else "minutes" }}.
+{%- endif -%}
+{%- endmacro -%}

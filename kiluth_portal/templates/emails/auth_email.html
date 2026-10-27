@@ -1,6 +1,9 @@
 {#-
-  Shadows frappe/templates/emails/auth_email.html (Frappe v16 uses it for the
-  password reset, welcome / set your password, login link and verification
-  code emails). Same Kiluth frame as every other Portal email.
+  Shadows frappe/templates/emails/auth_email.html. Frappe 16.31 no longer
+  renders this file: password reset, welcome and login emails go through
+  frappe.sendmail(template=...) and so through standard.html, like every other
+  email. Their bodies (password_reset.html, new_user.html here) are designed
+  pages starting with <!doctype>, which standard.html passes through with only
+  black around them. Kept as an include so an older caller still gets the frame.
 -#}
 {% include "kiluth_portal/templates/emails/standard.html" %}

@@ -1,0 +1,51 @@
+{#-
+  Shadows frappe/templates/emails/new_notification.html: the email a Notification
+  Log sends (frappe.desk.doctype.notification_log.send_notification_email). The
+  Portal's most frequent email: "X assigned a new task Task TASK-0001 to you",
+  "Your assignment on ... has been removed by X", mentions, shares.
+
+  Frappe passes only: body_content (the log's subject, HTML with <strong>/<b>
+  around names), description (the log's email_content: the task description or
+  the comment, markdown/HTML, may be empty), doc_link, and document_type +
+  document_name when the log points at a document. The header ("Assignment
+  Update on ...") goes to the frame, which drops it for designed bodies, so the
+  title is worked out from the subject's wording here.
+-#}
+{%- set desc = (description or "") | string -%}
+{%- if desc.lstrip()[:9].lower() == "<!doctype" -%}
+{#- A Notification rule whose message is already a designed Kiluth email. -#}
+{{ desc }}
+{%- else -%}
+{%- set raw = (body_content or "") | string -%}
+{%- set said = raw.replace("<strong>", "**").replace("</strong>", "**").replace('<b class="subject-title">', "**").replace("<b>", "**").replace("</b>", "**") | striptags -%}
+{#- "**Task** **Book the statement**" reads as one phrase: "**Book the statement**"
+   for tasks, "**Sales Invoice: ACC-SINV-…**" for anything else. -#}
+{%- if document_type -%}
+{%- set dt = "**" ~ _(document_type) ~ "** **" -%}
+{%- set said = said.replace(dt, "**" if document_type == "Task" else "**" ~ _(document_type) ~ ": ") -%}
+{%- endif -%}
+{%- set said = said.strip() -%}
+{%- if said and said[-1] not in ".?!:" -%}{%- set said = said ~ "." -%}{%- endif -%}
+{%- set low = said.lower() -%}
+{%- if "assigned a new task" in low -%}{%- set title = "New task for you" -%}
+{%- elif "assignment on" in low and "removed" in low -%}{%- set title = "Assignment removed" -%}
+{%- elif "mentioned you" in low -%}{%- set title = "You were mentioned" -%}
+{%- elif "shared a document" in low -%}{%- set title = "Shared with you" -%}
+{%- else -%}{%- set title = "New notification" -%}{%- endif -%}
+{%- set lines = [said] -%}
+{%- set note = (desc | markdown | striptags) if desc.strip() else "" -%}
+{%- if note -%}{%- set lines = lines + [note | truncate(700, true, "…")] -%}{%- endif -%}
+{%- if document_type -%}
+{%- set button = "Open the " ~ _(document_type) | lower -%}
+{%- else -%}
+{%- set button = "Open in the Portal" -%}
+{%- endif -%}
+{{ kiluth_email(
+	title=title,
+	kicker=document_name or document_type or "Kiluth Portal",
+	lines=lines,
+	hero="hero-moss-rock.jpg",
+	button=button,
+	href=doc_link or "",
+) }}
+{%- endif -%}

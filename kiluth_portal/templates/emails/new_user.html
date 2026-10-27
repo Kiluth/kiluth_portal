@@ -1,0 +1,23 @@
+{#-
+  Shadows frappe/templates/emails/new_user.html (User.send_welcome_mail_to_user,
+  subject "Welcome to <site>"). Frappe passes: link (the /update-password?key=...
+  URL), site_url, first_name, user (login ID), created_by, title, login_url. Not
+  used when System Settings > welcome_email_template names an Email Template.
+-#}
+{%- from "kiluth_portal/templates/emails/_link_expiry.html" import link_expiry -%}
+{%- set lines = [
+	"Hi " ~ first_name ~ ". You now have an account on the Kiluth Portal. Set your password to sign in.",
+	link_expiry() | string,
+] -%}
+{%- if created_by and created_by != "Administrator" -%}
+{%- set lines = lines + ["Added by " ~ created_by ~ "."] -%}
+{%- endif -%}
+{{ kiluth_email(
+	title="Welcome to Kiluth",
+	kicker=user,
+	lines=lines,
+	facts=[("Login ID", user), ("Portal", site_url)],
+	hero="hero-fern-black.jpg",
+	button="Set your password",
+	href=link,
+) }}
