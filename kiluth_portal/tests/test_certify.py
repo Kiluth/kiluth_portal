@@ -142,6 +142,19 @@ except ValueError:
 page = cf.certificate_html("Design", "Poom <P>", "17 October 2026", "17 October 2027", "CERT-00035")
 check("certificate filled", "{{" not in page and "Poom &lt;P&gt;" in page and "CERT-00035" in page)
 check("long date", cf.long_date("2026-10-07") == "7 October 2026")
+photo = cf.photo_uri()
+check("certificate photo", photo.startswith("data:image/jpeg;base64,") and photo[23:] in cf.certificate_html(
+	"Design", "P", "a", "b", "c", photo=photo))
+
+# The person's email
+A = "https://portal.kiluth.com/assets/kiluth_portal/certificate/"
+ok = cf.email_html(True, "Design", "Poom", A, "https://portal.kiluth.com/app/document/CERT-00035",
+	cert_id="CERT-00035", expires="17 October 2027")
+check("signed email", "Certified" in ok and "CERT-00035" in ok and "17 October 2027" in ok
+	and "Every answer right, Poom." in ok and A + "hero-signed.jpg" in ok and "#fefefe" in ok)
+no = cf.email_html(False, "Design", "Poom", A, "x", reason="Question 3 <b>is</b> wrong.")
+check("not-signed email", "Not signed" in no and "Question 3 &lt;b&gt;is&lt;/b&gt; wrong." in no
+	and "hr/certification#the-test" in no and "Certified" not in no)
 
 print("FAIL: " + ", ".join(fails) if fails else "OK")
 raise SystemExit(1 if fails else 0)

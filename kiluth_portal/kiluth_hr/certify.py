@@ -11,9 +11,9 @@ A person's AI assistant saves a pass as a Certificate Document at
 2. only if those pass, asks Claude on Amazon Bedrock the questions that need
    reading: the marked answer is what the section says, no other option is
    allowed, it tests a named decision, no unnamed repeats, a fair replacement
-3. signs (certificate PDF attached as `signed_pdf`, status `Signed`; the
-   "Certificate Issued" notification emails the person) or voids with a
-   plain-English comment
+3. signs (certificate PDF attached as `signed_pdf`, status `Signed`) or voids
+   with a plain-English comment. Either way the person gets an email: the
+   certificate attached, or the reason it wasn't signed (`email_html`)
 
 Our own failures (Bedrock error, malformed answer, PDF error, docs site down)
 never void: the certificate stays `Pending signature` and a Task on PROJ-0001
@@ -55,6 +55,8 @@ CERT_RE = re.compile(r"CERT-\d{5}")
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROMPT = os.path.join(HERE, "prompts", "certify_check.md")
 TEMPLATE = os.path.join(HERE, "certificate_template.html")
+PHOTO = os.path.join(HERE, "..", "public", "certificate", "photo.jpg")
+ASSETS = "/assets/kiluth_portal/certificate/"  # email pictures and fonts, served by the Portal
 RETAKE = "Retake the test when you're ready; a retake gets new questions."
 
 
@@ -450,11 +452,19 @@ def evaluate(name, title, record, earlier, certification_html, fetch, ask):
 
 # ─── Certificate PDF ─────────────────────────────────────────────────────────
 
-def certificate_html(course, person, issued, expires, cert_id, font_faces=""):
+def photo_uri():
+	import base64
+
+	with open(PHOTO, "rb") as f:
+		return "data:image/jpeg;base64," + base64.b64encode(f.read()).decode()
+
+
+def certificate_html(course, person, issued, expires, cert_id, font_faces="", photo=""):
 	with open(TEMPLATE) as f:
 		tpl = f.read()
 	fill = {"font_faces": font_faces, "course": html.escape(course), "name": html.escape(person),
-		"issued": html.escape(issued), "expires": html.escape(expires), "id": html.escape(cert_id)}
+		"issued": html.escape(issued), "expires": html.escape(expires), "id": html.escape(cert_id),
+		"photo": photo}
 	for k, v in fill.items():
 		tpl = tpl.replace("{{" + k + "}}", v)
 	return tpl
@@ -463,6 +473,71 @@ def certificate_html(course, person, issued, expires, cert_id, font_faces=""):
 def long_date(d):
 	d = d if isinstance(d, dt.date) else dt.date.fromisoformat(str(d)[:10])
 	return f"{d.day} {d.strftime('%B %Y')}"
+
+
+SANS = "Theinhardt,'Helvetica Neue',Arial,sans-serif"
+
+
+def email_html(signed, course, first_name, assets, portal_url, cert_id="", expires="", reason=""):
+	"""The person's email after Kiluth's check (design approved by Poom, 2026-10-27).
+
+	Same look as the Growth Check email: a photo melting into black, white words,
+	mint only on the "Certified" label. Tables and inline styles so Gmail keeps it;
+	the button's cell is #fefefe because Gmail on iPhone drops pure white."""
+	e = html.escape
+	a = e(assets)
+	if signed:
+		hero, kicker, colour = "hero-signed.jpg", "Certified", "#7ee2a8"
+		line = f"Every answer right, {e(first_name)}.<br>Your certificate is attached."
+		button, href = "Open your certificate", portal_url
+		middle = f"""<tr><td style="padding:0 40px 56px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a"><tr>
+<td width="50%" style="padding:22px 0;vertical-align:top"><div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7a7a">Certificate No.</div><div style="font-size:18px;padding-top:6px;color:#fff">{e(cert_id)}</div></td>
+<td width="50%" style="padding:22px 0 22px 24px;border-left:1px solid #2a2a2a;vertical-align:top"><div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7a7a">Valid until</div><div style="font-size:18px;padding-top:6px;color:#fff">{e(expires)}</div></td>
+</tr></table>
+<div style="font-size:16px;line-height:1.8;color:#9a9a9a;padding-top:24px">Certificates last a year, because the way we work keeps changing. Take the test again before it ends to keep it.</div></td></tr>"""
+	else:
+		hero, kicker, colour = "hero-not-signed.jpg", "Not signed", "#9a9a9a"
+		line = f"Thanks for taking the test, {e(first_name)}.<br>Kiluth's check couldn't sign this one."
+		button, href = "How to retake", f"{DOCS}/hr/certification#the-test"
+		middle = f"""<tr><td style="padding:0 40px 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td background="{a}why.jpg" bgcolor="#0d0d0d" style="background-color:#0d0d0d;background-image:url('{a}why.jpg');background-size:cover;background-position:center;border-radius:14px;padding:32px 30px">
+<div style="font-size:14px;color:#d6d6d6">&#9679;&nbsp;Why</div>
+<div style="font-size:18px;line-height:1.7;color:#ededed;padding-top:12px">{e(reason)}</div>
+</td></tr></table>
+<div style="font-size:16px;line-height:1.8;color:#9a9a9a;padding-top:32px;text-align:center">Nothing counts against you.</div></td></tr>"""
+	pill = f"""<table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td bgcolor="#fefefe" style="background-color:#fefefe;border-radius:999px">
+<a href="{e(href)}" style="display:inline-block;padding:15px 30px;font-size:16px;font-family:{SANS};font-weight:300;text-decoration:none"><span style="color:#000000">{e(button)}</span></a></td></tr></table>"""
+	return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+<title>{e(kicker)}: {e(course)}</title>
+<style>
+@font-face {{ font-family: 'Theinhardt'; src: url('{a}theinhardt-light.woff2') format('woff2'); font-weight: 300; }}
+@font-face {{ font-family: 'Theinhardt'; src: url('{a}theinhardt-regular.woff2') format('woff2'); font-weight: 400; }}
+body {{ margin: 0; padding: 0; background: #000; }}
+@media (max-width: 480px) {{
+  .hero {{ padding-top: 200px !important; }}
+  .h1 {{ font-size: 48px !important; }}
+  .gut {{ padding-left: 20px !important; padding-right: 20px !important; }}
+}}
+</style></head>
+<body style="margin:0;padding:0;background:#000">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#000000" style="background:#000"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;font-family:{SANS};font-weight:300;color:#fff">
+<tr><td background="{a}{hero}" bgcolor="#000000" style="background-color:#000;background-image:url('{a}{hero}');background-position:center top;background-size:100% auto;background-repeat:no-repeat">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td class="gut" style="padding:22px 24px"><img src="{a}logo-white.png" width="78" alt="Kiluth" style="display:block;width:78px;height:auto;border:0"></td></tr>
+<tr><td align="center" class="hero gut" style="padding:300px 40px 0">
+<div style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:{colour}">{e(kicker)}</div>
+<div class="h1" style="font-size:64px;line-height:1.1;font-weight:400;letter-spacing:-.02em;padding:14px 0 18px;color:#fff">{e(course)}</div>
+<div style="font-size:18px;line-height:1.7;color:#d6d6d6;padding-bottom:40px">{line}</div></td></tr></table></td></tr>
+{"" if signed else middle}<tr><td align="center" style="padding:8px 40px 48px">{pill}</td></tr>
+{middle if signed else ""}<tr><td class="gut" style="padding:48px 40px;border-top:1px solid #1f1f1f"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><span style="color:#fff">Certification</span><br>
+<a href="{DOCS}/hr/certification" style="color:#9a9a9a;text-decoration:none">How it works</a></td>
+<td align="right" style="font-size:14px;line-height:2;color:#9a9a9a;vertical-align:top"><img src="{a}logo-white.png" width="64" alt="Kiluth" style="display:block;width:64px;height:auto;border:0;margin-left:auto">Kiluth LTD., Bangkok</td>
+</tr></table></td></tr>
+</table></td></tr></table></body></html>"""
 
 
 # ─── Portal side ─────────────────────────────────────────────────────────────
@@ -536,7 +611,7 @@ def _pdf(doc, course, email):
 	from kiluth_portal.utils.financial_report import _font_face_block
 
 	page = certificate_html(course, _person(doc, email), long_date(doc.effective_date or doc.creation),
-		long_date(doc.expiry_date) if doc.expiry_date else "", doc.name, _font_face_block())
+		long_date(doc.expiry_date) if doc.expiry_date else "", doc.name, _font_face_block(), photo_uri())
 	return get_pdf(page, {"page-size": "A4", "orientation": "Landscape", "margin-top": "0mm",
 		"margin-bottom": "0mm", "margin-left": "0mm", "margin-right": "0mm"})
 
@@ -560,6 +635,27 @@ def _void(doc, reason):
 	doc.flags.ignore_permissions = True
 	doc.save()
 	doc.add_comment("Comment", html.escape(reason))
+	_email(doc, signed=False, reason=reason)
+
+
+def _email(doc, signed, reason=""):
+	"""Tell the person: the certificate attached, or why it wasn't signed."""
+	import frappe
+	from frappe.utils import get_url, get_url_to_form
+
+	m = TITLE_RE.match(doc.title or "")
+	if not m:
+		return
+	course, email = m.group("course"), (doc.get("employee_user") or m.group("email")).lower()
+	first = _person(doc, email).split()[0]
+	page = email_html(signed, course, first, get_url(ASSETS), get_url_to_form("Document", doc.name),
+		cert_id=doc.name, expires=long_date(doc.expiry_date) if doc.expiry_date else "", reason=reason)
+	attachments = []
+	if signed and doc.signed_pdf:
+		f = frappe.get_doc("File", {"file_url": doc.signed_pdf})
+		attachments.append({"fname": f"Kiluth {course} certificate {doc.name}.pdf", "fcontent": f.get_content()})
+	frappe.sendmail(recipients=[email], subject=f"You're certified: {course}" if signed else f"Not signed: {course}",
+		message=page, attachments=attachments, reference_doctype="Document", reference_name=doc.name)
 
 
 def check(cert, dry_run=None):
@@ -627,13 +723,18 @@ def _enqueue(name):
 
 
 def on_document_update(doc, method=None):
-	"""Document.on_update (runs on insert too): a certificate that just became Pending signature."""
-	if doc.document_type != "Certificate" or doc.status != "Pending signature":
+	"""Document.on_update (runs on insert too): a certificate that just became
+	Pending signature gets checked; one that just became Signed, by the check or
+	by hand, emails the person their certificate."""
+	if doc.document_type != "Certificate" or doc.status not in ("Pending signature", "Signed"):
 		return
 	before = doc.get_doc_before_save()
-	if before and before.status == "Pending signature":
+	if before and before.status == doc.status:
 		return
-	_enqueue(doc.name)
+	if doc.status == "Signed":
+		_email(doc, signed=True)
+	else:
+		_enqueue(doc.name)
 
 
 def on_file_insert(doc, method=None):
