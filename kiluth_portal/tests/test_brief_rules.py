@@ -59,9 +59,14 @@ check("data size capped", raises(lambda: br.clean_data({"x": "y" * 70000})))
 check("data passes", br.clean_data({"client": "Baanploypoom"}) == {"client": "Baanploypoom"})
 
 # Names
-check("file base", br.file_base("PROJ-0015", "2026-10-28", False) == "client-brief-PROJ-0015-2026-10-28")
-check("test file base", br.file_base("PROJ-0015", "2026-10-28", True).startswith("TEST-"))
-check("odd date not in the name", br.file_base("PROJ-0015", "../x", False).endswith("-undated"))
+check("file base", br.file_base("Baanploypoom", "2026-10-28", False) == "client-brief-Baanploypoom-2026-10-28")
+check("test file base", br.file_base("Baanploypoom", "2026-10-28", True).startswith("TEST-"))
+check("odd date not in the name", br.file_base("Baanploypoom", "../x", False).endswith("-undated"))
+check("thai name becomes client", br.file_base("บ้านพลอยภูมิ", "2026-10-28", False) == "client-brief-client-2026-10-28")
+check("odd characters dropped", br.file_base("A/B & Co.", "2026-10-28", False) == "client-brief-A-B-Co-2026-10-28")
+check("client cleaned to one line", br.clean_client("  Baan\n ploy  ") == "Baan ploy")
+check("client capped at 100", len(br.clean_client("x" * 400)) == 100)
+check("no client is empty", br.clean_client(None) == "")
 check("project pattern", br.PROJECT_RE.match("PROJ-0015") and not br.PROJECT_RE.match("PROJ-15"))
 
 # The PDF's HTML
@@ -74,6 +79,8 @@ check("empty answer says so", "ยังไม่ระบุ" in html)
 check("sections numbered", "<span class='n'>03</span>" in html)
 check("report design used", "class='page" in html and "Kiluth LTD." in html)
 en = br.build_html(br.clean_summary(SUMMARY), {**meta, "lang": "en", "test": False}, rp)
+nohint = br.build_html(br.clean_summary(SUMMARY), {**meta, "project": ""}, rp)
+check("no project code still builds", "Baanploypoom" in nohint and "PROJ-" not in nohint.split("<body>")[1].split("class='page")[0])
 check("english words", "Client brief" in en and "Not given" in en and "staging" not in en)
 
 with open("/tmp/brief-test.html", "w") as f:

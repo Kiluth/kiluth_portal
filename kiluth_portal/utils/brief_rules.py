@@ -60,9 +60,16 @@ def field(data, key, limit=140):
 	return _text(data.get(key), limit)
 
 
-def file_base(project, date, test):
+def clean_client(name):
+	"""The client's name as typed: one line, at most 100 characters (it goes in a task subject)."""
+	return re.sub(r"\s+", " ", _text(name, 300))[:100].strip()
+
+
+def file_base(client, date, test):
+	"""client-brief-<client>-<date>: the client's Latin letters and digits only; a Thai name becomes "client"."""
 	day = date if re.match(r"^\d{4}-\d{2}-\d{2}$", date or "") else "undated"
-	return ("TEST-" if test else "") + f"client-brief-{project}-{day}"
+	slug = re.sub(r"[^A-Za-z0-9]+", "-", client or "").strip("-")[:40] or "client"
+	return ("TEST-" if test else "") + f"client-brief-{slug}-{day}"
 
 
 def t(s):
@@ -77,8 +84,8 @@ def build_html(summary, meta, rp):
 	"""The brief as the report design's HTML: photo cover, one numbered section per step."""
 	w = WORDS["th" if meta.get("lang") == "th" else "en"]
 	label = w["label"] + (f" · {w['test']}" if meta.get("test") else "")
-	client = meta.get("client") or meta["project"]
-	sub = " · ".join(x for x in (meta["project"], meta.get("by"), meta.get("date")) if x)
+	client = meta["client"]
+	sub = " · ".join(x for x in (meta.get("project"), meta.get("by"), meta.get("date")) if x)
 	none = f"<span class='muted'>{t(w['none'])}</span>"
 	blocks = [
 		rp.Table(t(title), ["", ""], [[t(k), "<br>".join(t(i) for i in items) or none] for k, items in lines], n=n)
@@ -86,4 +93,4 @@ def build_html(summary, meta, rp):
 	]
 	cover = rp.cover(rp.photo(HERO), t(label), t(client), t(sub))
 	pages = rp.paginate(blocks, rp.CONTENT_END - rp.COVER_BODY_TOP, t(client), t(sub))
-	return rp.document(f"{w['label']} {meta['project']}", cover, pages, foot_left=_html.escape(meta["project"]))
+	return rp.document(f"{w['label']} {client}", cover, pages, foot_left=t(meta.get("project") or client))
