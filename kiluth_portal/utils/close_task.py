@@ -19,6 +19,7 @@ import frappe
 from frappe.utils import add_months, getdate, nowdate
 
 from kiluth_portal.utils.close_report import SUBJECT_PREFIX
+from kiluth_portal.utils.task_titles import same_title, with_department
 
 SUPPLIER_KEY = "kiluth_close_statement_supplier"
 DEFAULT_SUPPLIER = "poom.pengcharoen@kiluth.com"
@@ -48,13 +49,13 @@ def _description(month_label: str) -> str:
 def create_close_task():
 	"""Cron: 08:00 on the 1st. Safe to call any time; creates at most one task per month."""
 	subject = _subject_for(nowdate())
-	if frappe.db.exists("Task", {"subject": subject}):
+	if same_title(subject):
 		return None
 
 	month_label = subject[len(SUBJECT_PREFIX):]
 	task = frappe.get_doc({
 		"doctype": "Task",
-		"subject": subject,
+		"subject": with_department(subject, DEPARTMENT),
 		"project": PROJECT,
 		"department": DEPARTMENT,
 		"status": "Open",

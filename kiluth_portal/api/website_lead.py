@@ -37,11 +37,13 @@ import re
 import frappe
 
 from kiluth_portal.utils.lead_routing import (
+	LEADS_DEPARTMENT,
 	LEADS_PROJECT,
-	SUBJECT_PREFIX,
 	account_manager,
 	assign,
 	customer_for_email,
+	lead_task_title,
+	open_lead_task,
 	pick_salesperson,
 	referred_salesperson,
 )
@@ -119,8 +121,7 @@ def create_website_lead(name=None, email=None, company=None, message=None, heard
 		lead.insert(ignore_permissions=True)
 
 	# Their task is still open: add to it rather than starting a second one.
-	subject = f"{SUBJECT_PREFIX}{lead.name}"
-	open_task = frappe.db.get_value("Task", {"subject": subject, "status": "Open"}, "name")
+	open_task = open_lead_task(lead.name)
 	if open_task:
 		frappe.get_doc("Task", open_task).add_comment(
 			"Comment", "New message from the website: see the latest note on the lead."
@@ -131,11 +132,11 @@ def create_website_lead(name=None, email=None, company=None, message=None, heard
 	task = frappe.get_doc(
 		{
 			"doctype": "Task",
-			"subject": subject,
+			"subject": lead_task_title(lead.name),
 			"project": LEADS_PROJECT,
+			"department": LEADS_DEPARTMENT,
 			"status": "Open",
 			"priority": "Medium",
-			"department": "Account Management - K",
 			"description": (
 				f'Lead link: <a href="{link}">{lead.name}</a><br>'
 				f'Contact details: see the lead. Do not add names, email or phone in this task.<br><br>'

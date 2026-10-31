@@ -565,14 +565,16 @@ def _open_task(subject, description, assignee, department=None):
 	import frappe
 	from frappe.desk.form.assign_to import add
 
-	existing = frappe.get_all("Task", filters={"subject": subject, "project": OPS_PROJECT,
-		"status": ["not in", ["Completed", "Cancelled"]]}, pluck="name", limit=1)
+	from kiluth_portal.utils.task_titles import same_title, with_department
+
+	existing = same_title(subject, {"project": OPS_PROJECT, "status": ["not in", ["Completed", "Cancelled"]]})
 	if existing:
 		return existing[0]
 	doc = {"doctype": "Task", "subject": subject, "project": OPS_PROJECT, "status": "Open",
 		"description": description}
 	if department and frappe.db.exists("Department", department):
 		doc["department"] = department
+		doc["subject"] = with_department(subject, department)
 	t = frappe.get_doc(doc).insert(ignore_permissions=True)
 	add({"doctype": "Task", "name": t.name, "assign_to": [assignee]})
 	return t.name
@@ -675,7 +677,9 @@ def send_monthly():
 		_open_task(f"Send the learning reports for {month} — automatic run failed",
 			f"<p>The scheduled learning report for {month} failed. If the checks failed, nothing was sent. "
 			f"Otherwise check the Email Queue for what went out before rerunning, so nobody gets theirs twice. "
-			f"Completing or cancelling this task lets the hourly catch-up try again.</p><pre>{html.escape(frappe.get_traceback())}</pre>", FAILURE_ASSIGNEE)
+			f"Completing or cancelling this task lets the hourly catch-up try again.</p>"
+			f"<p><b>Technical detail, for Technology:</b></p><pre>{html.escape(frappe.get_traceback())}</pre>",
+			FAILURE_ASSIGNEE, "Human Resource - K")
 		frappe.db.commit()
 		frappe.log_error(title=f"Learning report {month} failed")
 	finally:
@@ -695,8 +699,10 @@ def send_monthly_catchup():
 	if frappe.db.get_default(_SENT_KEY) == _last_month():
 		return
 	# After a failure, wait until Poom closes the failure task instead of retrying every hour.
-	if frappe.get_all("Task", filters={"subject": f"Send the learning reports for {_last_month()} — automatic run failed",
-			"project": OPS_PROJECT, "status": ["not in", ["Completed", "Cancelled"]]}, limit=1):
+	from kiluth_portal.utils.task_titles import same_title
+
+	if same_title(f"Send the learning reports for {_last_month()} — automatic run failed",
+			{"project": OPS_PROJECT, "status": ["not in", ["Completed", "Cancelled"]]}):
 		return
 	send_monthly()
 

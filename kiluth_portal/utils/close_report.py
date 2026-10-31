@@ -32,6 +32,7 @@ from kiluth_portal.utils.financial_report import (
 	_cash_balance_on,
 	_fmt,
 )
+from kiluth_portal.utils.task_titles import bare
 
 RECIPIENTS = ("finance@kiluth.com",)
 SUBJECT_PREFIX = "Close the books for "
@@ -44,7 +45,7 @@ SOCIAL_SECURITY_COMPONENT = "Social Security"
 
 def on_task_update(doc, method=None):
 	"""Task on_update: queue the report when a close task becomes Completed."""
-	if not (doc.subject or "").startswith(SUBJECT_PREFIX):
+	if not bare(doc.subject).startswith(SUBJECT_PREFIX):
 		return
 	if doc.status != "Completed":
 		return
@@ -126,7 +127,7 @@ def _email_body(period: dict, task: str, fname: str) -> str:
 # ─── Period ─────────────────────────────────────────────────────────────────
 
 def _period_from_subject(subject: str) -> dict | None:
-	text = (subject or "")[len(SUBJECT_PREFIX):].strip()
+	text = bare(subject)[len(SUBJECT_PREFIX):].strip()
 	text = text.split("(")[0].strip()  # tolerate "(TEST)" and similar suffixes
 	try:
 		start = datetime.datetime.strptime(text, "%B %Y").date()

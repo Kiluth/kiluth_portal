@@ -26,12 +26,14 @@ from frappe.desk.form import assign_to
 from frappe.utils import get_datetime, now_datetime
 
 from kiluth_portal.utils.lead_rules import escalation_target, least_loaded, one_working_day_after
+from kiluth_portal.utils.task_titles import bare, same_title, with_department
 
 SALES_ROLE = "Sales"
 ESCALATION_ROLE = "Executive"
 FALLBACK = "phuttipan.samranruen@kiluth.com"  # Reaw, the only salesperson today
 SUBJECT_PREFIX = "Qualify lead: "
 LEADS_PROJECT = "PROJ-0001"  # Operations: a lead is not a client project yet
+LEADS_DEPARTMENT = "Account Management - K"
 ESCALATED = "Escalated: nobody touched this lead within one working day."
 HOLIDAY_LIST = "Kiluth Thailand Holiday {year}"
 NOT_PEOPLE = ("Administrator", "Guest", "website-bot@kiluth.com")
@@ -83,6 +85,16 @@ def planner_link(user: str | None = None) -> dict:
 	return {"url": url, "qr": b64encode(stream.getvalue()).decode()}
 
 
+def lead_task_title(lead_name: str) -> str:
+	return with_department(f"{SUBJECT_PREFIX}{lead_name}", LEADS_DEPARTMENT)
+
+
+def open_lead_task(lead_name: str) -> str | None:
+	"""The lead's open "Qualify lead" task, if it has one."""
+	names = same_title(f"{SUBJECT_PREFIX}{lead_name}", {"status": "Open"})
+	return names[0] if names else None
+
+
 def pick_salesperson() -> str:
 	"""The Sales user with the fewest open "Qualify lead" tasks, or FALLBACK."""
 	team = users_with_role(SALES_ROLE)
@@ -95,7 +107,7 @@ def pick_salesperson() -> str:
 		where t.reference_type = 'Task' and k.subject like %(prefix)s and t.allocated_to in %(team)s
 		group by t.allocated_to
 		""",
-		{"prefix": SUBJECT_PREFIX + "%", "team": tuple(team)},
+		{"prefix": "%" + SUBJECT_PREFIX + "%", "team": tuple(team)},
 	)
 	seen = {user: (int(open_ or 0), last) for user, open_, last in rows}
 	loads = [(user, *seen.get(user, (0, None))) for user in team]
@@ -194,7 +206,7 @@ def escalate_unanswered_leads():
 	now = now_datetime()
 	tasks = frappe.get_all(
 		"Task",
-		filters={"subject": ("like", SUBJECT_PREFIX + "%"), "status": "Open"},
+		filters={"subject": ("like", "%" + SUBJECT_PREFIX + "%"), "status": "Open"},
 		fields=["name", "subject", "creation"],
 		limit=200,
 	)
@@ -208,7 +220,7 @@ def escalate_unanswered_leads():
 		done = {"reference_doctype": "Task", "reference_name": task.name, "content": ESCALATED}
 		if frappe.db.exists("Comment", done):
 			continue
-		lead_name = task.subject[len(SUBJECT_PREFIX):].strip()
+		lead_name = bare(task.subject)[len(SUBJECT_PREFIX):].strip()
 		if not frappe.db.exists("Lead", lead_name) or _touched(task, lead_name):
 			continue
 		assigned = frappe.get_all(

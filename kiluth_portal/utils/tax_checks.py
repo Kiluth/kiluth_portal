@@ -29,6 +29,8 @@ from __future__ import annotations
 import frappe
 from frappe.utils import add_months, add_to_date, flt, get_first_day, get_last_day, getdate, nowdate
 
+from kiluth_portal.utils.task_titles import same_title, with_department
+
 PROJECT = "PROJ-0001"
 DEPARTMENT = "Finance - K"
 OWNER_KEY = "kiluth_tax_task_owner"
@@ -55,11 +57,11 @@ def _raise_task(subject: str, description: str, priority: str = "Medium") -> str
 	Each subject carries its own period (a month, or a year) so that "never
 	again" means "not again for that period".
 	"""
-	if frappe.db.exists("Task", {"subject": subject}):
+	if same_title(subject):
 		return None
 	task = frappe.get_doc({
 		"doctype": "Task",
-		"subject": subject,
+		"subject": with_department(subject, DEPARTMENT),
 		"project": PROJECT,
 		"department": DEPARTMENT,
 		"status": "Open",

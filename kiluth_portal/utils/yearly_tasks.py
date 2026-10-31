@@ -29,6 +29,8 @@ from __future__ import annotations
 import frappe
 from frappe.utils import getdate, nowdate
 
+from kiluth_portal.utils.task_titles import same_title, with_department
+
 PROJECT = "PROJ-0001"
 DEPARTMENT = "Finance - K"
 OWNER_KEY = "kiluth_tax_task_owner"
@@ -41,11 +43,11 @@ def _owner() -> str:
 
 
 def _create(subject: str, due, description: str) -> str | None:
-	if frappe.db.exists("Task", {"subject": subject}):
+	if same_title(subject):
 		return None
 	task = frappe.get_doc({
 		"doctype": "Task",
-		"subject": subject,
+		"subject": with_department(subject, DEPARTMENT),
 		"project": PROJECT,
 		"department": DEPARTMENT,
 		"status": "Open",

@@ -24,7 +24,14 @@ from __future__ import annotations
 import frappe
 
 from kiluth_portal.api.website_lead import BOT_USER, EMAIL_RE, SOURCE, _clean
-from kiluth_portal.utils.lead_routing import LEADS_PROJECT, SUBJECT_PREFIX, assign, pick_salesperson
+from kiluth_portal.utils.lead_routing import (
+	LEADS_DEPARTMENT,
+	LEADS_PROJECT,
+	assign,
+	lead_task_title,
+	open_lead_task,
+	pick_salesperson,
+)
 
 MEDIUM = "Growth Check"
 
@@ -90,8 +97,7 @@ def create_growth_check_lead(
 	else:
 		lead.insert(ignore_permissions=True)
 
-	subject = f"{SUBJECT_PREFIX}{lead.name}"
-	open_task = frappe.db.get_value("Task", {"subject": subject, "status": "Open"}, "name")
+	open_task = open_lead_task(lead.name)
 	if open_task:
 		frappe.get_doc("Task", open_task).add_comment(
 			"Comment", "New Growth Check result: see the latest note on the lead."
@@ -104,11 +110,11 @@ def create_growth_check_lead(
 	task = frappe.get_doc(
 		{
 			"doctype": "Task",
-			"subject": subject,
+			"subject": lead_task_title(lead.name),
 			"project": LEADS_PROJECT,
+			"department": LEADS_DEPARTMENT,
 			"status": "Open",
 			"priority": "Medium",
-			"department": "Account Management - K",
 			"description": (
 				f'Lead link: <a href="{link}">{lead.name}</a><br>'
 				f'Contact details: see the lead. Do not add names, email or phone in this task.<br><br>'
