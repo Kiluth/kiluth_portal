@@ -18,7 +18,7 @@ app_include_js = ["navbar.bundle.js", "web_push.bundle.js"]
 
 # Form Behavior (versioned client-side)
 # -------------------------------------
-doctype_list_js = {"Task": "public/js/task_list.js"}
+doctype_list_js = {"Task": ["public/js/task_list.js", "public/js/task_board.js"]}
 
 # Prefer doctype_js over DB-stored Client Scripts for stable, load-bearing form
 # behavior. Loose/experimental tweaks can still live as Client Script fixtures.
