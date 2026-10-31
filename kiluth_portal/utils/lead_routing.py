@@ -8,8 +8,11 @@ pick the salesperson. A website lead has no such person, so the Portal picks:
   new "Qualify lead" task goes to whoever has the fewest open ones. With
   nobody in Sales it goes to FALLBACK, so no lead is ever left unassigned.
 - Escalation: if nobody has touched the lead one working day later (Thai
-  public holidays and weekends skipped), the task is also assigned to the
-  "Executive" role, who steps in per Lead Intake.
+  public holidays and weekends skipped), the task moves to the "Executive"
+  role, who steps in per Lead Intake. A task has one assignee, so it moves
+  rather than gaining a second name. It moves only when exactly one person
+  holds the role; with several it stays put and logs an error (Poom decides
+  who, then this gets a rule). See lead_rules.escalation_target.
 
 Not a Frappe Assignment Rule on Task on purpose: in Frappe 16 any rule on a
 doctype reopens closed assignments whenever any document of that type is
@@ -22,7 +25,7 @@ import frappe
 from frappe.desk.form import assign_to
 from frappe.utils import get_datetime, now_datetime
 
-from kiluth_portal.utils.lead_rules import least_loaded, one_working_day_after
+from kiluth_portal.utils.lead_rules import escalation_target, least_loaded, one_working_day_after
 
 SALES_ROLE = "Sales"
 ESCALATION_ROLE = "Executive"
@@ -143,6 +146,12 @@ def assign(task_name: str, subject: str, users: list[str]) -> None:
 	)
 
 
+def move(task_name: str, subject: str, user: str) -> None:
+	"""Hand a task to one person: whoever had it comes off it."""
+	assign_to.clear("Task", task_name, ignore_permissions=True)
+	assign(task_name, subject, [user])
+
+
 def _holidays(*years: int) -> set:
 	days = set()
 	for year in years:
@@ -181,7 +190,7 @@ def _touched(task, lead_name: str) -> bool:
 
 
 def escalate_unanswered_leads():
-	"""Hourly: give untouched "Qualify lead" tasks to the Executive role too, once."""
+	"""Hourly: move untouched "Qualify lead" tasks to the Executive role, once."""
 	now = now_datetime()
 	tasks = frappe.get_all(
 		"Task",
@@ -202,13 +211,19 @@ def escalate_unanswered_leads():
 		lead_name = task.subject[len(SUBJECT_PREFIX):].strip()
 		if not frappe.db.exists("Lead", lead_name) or _touched(task, lead_name):
 			continue
-		assigned = set(frappe.get_all(
+		assigned = frappe.get_all(
 			"ToDo",
 			filters={"reference_type": "Task", "reference_name": task.name, "status": "Open"},
 			pluck="allocated_to",
-		))
-		extra = [u for u in executives if u not in assigned]
-		if extra:
-			assign(task.name, task.subject, extra)
+		)
+		# Comment first, so whoever holds the task hears why it is leaving them.
 		frappe.get_doc("Task", task.name).add_comment("Comment", ESCALATED)
+		target = escalation_target(assigned, executives)
+		if target:
+			move(task.name, task.subject, target)
+		elif len(set(executives)) != 1:
+			frappe.log_error(
+				f"{task.name} stays with {assigned}: {len(set(executives))} users hold {ESCALATION_ROLE}",
+				"Lead escalation needs one person",
+			)
 	frappe.db.commit()

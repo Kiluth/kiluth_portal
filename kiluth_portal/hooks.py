@@ -93,7 +93,7 @@ scheduler_events = {
 		"kiluth_portal.kiluth_hr.certify.sweep",
 		"kiluth_portal.utils.close_task.create_close_task_catchup",
 		"kiluth_portal.utils.tax_checks.withholding_check_catchup",
-		# Website leads nobody touched for one working day go to the Executive role too.
+		# Website leads nobody touched for one working day move to the Executive role.
 		"kiluth_portal.utils.lead_routing.escalate_unanswered_leads",
 		# Kiluth Tasks notifications: retry Failed outbox rows (Dead at 5 tries).
 		"kiluth_portal.task_notify.jobs.retry_failed",

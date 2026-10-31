@@ -1,8 +1,9 @@
-"""The two rules behind website lead routing, kept free of Frappe so they can be
+"""The rules behind website lead routing, kept free of Frappe so they can be
 tested on their own (python3 kiluth_portal/tests/test_lead_rules.py).
 
 - least_loaded: who gets the next lead.
 - one_working_day_after: when an untouched lead escalates.
+- escalation_target: who it escalates to.
 
 The Frappe side (who is in Sales, what counts as touched) is in lead_routing.py.
 """
@@ -21,6 +22,20 @@ def least_loaded(loads: list[tuple[str, int, datetime | None]]) -> str | None:
 	if not loads:
 		return None
 	return min(loads, key=lambda r: (r[1], r[2] or datetime.min, r[0]))[0]
+
+
+def escalation_target(holders: list[str], executives: list[str]) -> str | None:
+	"""Who an untouched lead moves to, or None to leave it where it is.
+
+	Only ever one person, and only when the role names exactly one: picking
+	between several would be a rule nobody has made. None too when that person
+	is already the only one on it.
+	"""
+	people = set(executives)
+	if len(people) != 1:
+		return None
+	person = next(iter(people))
+	return None if set(holders) == {person} else person
 
 
 def is_working_day(day: date, holidays: set[date]) -> bool:

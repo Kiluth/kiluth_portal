@@ -23,6 +23,13 @@ def check(name, cond):
 
 
 t = datetime
+# Who an untouched lead moves to
+check("one executive takes it from sales", r.escalation_target(["s"], ["e"]) == "e")
+check("already theirs: stays", r.escalation_target(["e"], ["e"]) is None)
+check("old task with two names ends with the executive", r.escalation_target(["s", "e"], ["e"]) == "e")
+check("several executives: nobody is picked", r.escalation_target(["s"], ["e", "f"]) is None)
+check("no executives: stays", r.escalation_target(["s"], []) is None)
+check("repeated role row is still one person", r.escalation_target(["s"], ["e", "e"]) == "e")
 # Who gets the next lead
 check("nobody in Sales gives None", r.least_loaded([]) is None)
 check("fewest open wins", r.least_loaded([("a", 3, t(2026, 10, 1)), ("b", 1, t(2026, 10, 20))]) == "b")
