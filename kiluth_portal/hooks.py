@@ -328,6 +328,7 @@ after_migrate = [
     "kiluth_portal.utils.website.apply_website_settings",
     "kiluth_portal.utils.print_defaults.apply_default_print_formats",
     "kiluth_portal.web_push.menu.ensure_menu_item",
+    "kiluth_portal.utils.home.ensure_task_board",
     "kiluth_portal.utils.home.add_kiluth_sidebar_links",
 ]
 
