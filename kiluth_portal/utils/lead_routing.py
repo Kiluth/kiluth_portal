@@ -28,6 +28,7 @@ SALES_ROLE = "Sales"
 ESCALATION_ROLE = "Executive"
 FALLBACK = "phuttipan.samranruen@kiluth.com"  # Reaw, the only salesperson today
 SUBJECT_PREFIX = "Qualify lead: "
+LEADS_PROJECT = "PROJ-0001"  # Operations: a lead is not a client project yet
 ESCALATED = "Escalated: nobody touched this lead within one working day."
 HOLIDAY_LIST = "Kiluth Thailand Holiday {year}"
 NOT_PEOPLE = ("Administrator", "Guest", "website-bot@kiluth.com")

@@ -37,6 +37,7 @@ import re
 import frappe
 
 from kiluth_portal.utils.lead_routing import (
+	LEADS_PROJECT,
 	SUBJECT_PREFIX,
 	account_manager,
 	assign,
@@ -131,6 +132,7 @@ def create_website_lead(name=None, email=None, company=None, message=None, heard
 		{
 			"doctype": "Task",
 			"subject": subject,
+			"project": LEADS_PROJECT,
 			"status": "Open",
 			"priority": "Medium",
 			"department": "Account Management - K",

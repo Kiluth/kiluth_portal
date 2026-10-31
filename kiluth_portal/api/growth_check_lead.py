@@ -24,7 +24,7 @@ from __future__ import annotations
 import frappe
 
 from kiluth_portal.api.website_lead import BOT_USER, EMAIL_RE, SOURCE, _clean
-from kiluth_portal.utils.lead_routing import SUBJECT_PREFIX, assign, pick_salesperson
+from kiluth_portal.utils.lead_routing import LEADS_PROJECT, SUBJECT_PREFIX, assign, pick_salesperson
 
 MEDIUM = "Growth Check"
 
@@ -105,6 +105,7 @@ def create_growth_check_lead(
 		{
 			"doctype": "Task",
 			"subject": subject,
+			"project": LEADS_PROJECT,
 			"status": "Open",
 			"priority": "Medium",
 			"department": "Account Management - K",
