@@ -18,13 +18,13 @@ app_include_js = ["navbar.bundle.js", "web_push.bundle.js"]
 
 # Form Behavior (versioned client-side)
 # -------------------------------------
-doctype_list_js = {"Task": ["public/js/task_list.js", "public/js/task_board.js"]}
+doctype_list_js = {"Task": ["public/js/task_sheet.js", "public/js/task_list.js", "public/js/task_board.js"]}
 
 # Prefer doctype_js over DB-stored Client Scripts for stable, load-bearing form
 # behavior. Loose/experimental tweaks can still live as Client Script fixtures.
 doctype_js = {
 	"Resource": "public/js/resource.js",
-	"Task": "public/js/task.js",
+	"Task": ["public/js/task_sheet.js", "public/js/task.js"],
 	"Sales Invoice": "public/js/sales_invoice.js",
 	"Equipment Loan Agreement": "public/js/equipment_loan_agreement.js",
 	"Material Request": "public/js/material_request.js",

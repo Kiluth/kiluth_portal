@@ -9,7 +9,8 @@
 // `.custom-actions`, which is `hidden-xs hidden-md`, so a phone couldn't filter.
 //
 // Touch screens: cards and columns don't drag, because a finger on a card was enough
-// to change a task's status by accident. Status changes on the task page there.
+// to change a task's status by accident. The status button on each card moves it
+// instead (task_sheet.js), and the tabs jump between columns.
 (() => {
 	const proto = frappe.views.KanbanView?.prototype;
 	if (!proto || proto.kiluth_render) return;
@@ -72,17 +73,34 @@
 			.kb-person.nobody { color: var(--kb-high); font-weight: 600; }
 			.kb-note { flex: none; font-size: 12px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 3px; }
 			.kb-note.bad { color: var(--kb-high); font-weight: 600; }
-			.kb-touch .kanban .add-card, .kb-touch .kanban .column-options { display: none; }
+			.kb-move { position: relative; z-index: 1; flex: none; display: none; align-items: center; gap: 4px; min-height: 32px; padding: 0 10px;
+				border: 1px solid var(--kb-edge); border-radius: 8px; background: transparent; color: var(--text-color); font-size: 13px; }
+			.kb-touch .kb-move { display: inline-flex; }
+			.kb-move::after { content: "▾"; font-size: 10px; color: var(--text-muted); }
+			.kb-id { flex: none; font-size: 12px; color: var(--text-muted); }
+			.kb-tabs { display: none; flex: 1 0 100%; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -2px; padding: 2px; }
+			.kb-tabs::-webkit-scrollbar { display: none; }
+			.kb-touch .kb-tabs { display: flex; }
+			.kb-tabs button { flex: none; display: inline-flex; gap: 5px; align-items: center; height: 34px; padding: 0 12px; border: 1px solid transparent;
+				border-radius: 999px; background: transparent; color: var(--text-muted); font-size: 13px; white-space: nowrap; }
+			.kb-tabs button[aria-current="true"] { color: var(--text-color); font-weight: 600; border-color: var(--kb-edge); background: var(--control-bg); }
+			.kanban .kanban-cards:not(:has(.kanban-card-wrapper))::after { content: attr(data-empty); display: block; padding: 24px 12px; text-align: center;
+				font-size: 13px; color: var(--text-muted); }
+			.kb-touch .kanban .add-card, .kb-touch .kanban .kanban-column-header { display: none; }
+			.kb-touch .kanban { margin: 0; gap: 12px; }
+			.kb-touch .kanban .kanban-column { flex: 0 0 100%; min-width: 0; max-width: 100%; padding: 0; box-sizing: border-box; background: transparent !important; }
+			.kb-touch .kanban .kanban-column .kanban-cards { margin: 0; padding: 0 1px; width: 100%; box-sizing: border-box; }
 			.kb-touch .kanban { scroll-snap-type: x proximity; }
-			.kb-touch .kanban .kanban-column .kanban-cards { max-height: calc(100dvh - 170px); }
-			.kb-touch .kanban .kanban-column { scroll-snap-align: center; }
+			.kb-touch .kanban .kanban-column .kanban-cards { max-height: calc(100dvh - 165px); }
+			.kb-touch .kanban .kanban-column { scroll-snap-align: start; }
 		</style>`).appendTo("head");
 	}
 
 	function due_html(date, status) {
 		if (!date) return "";
-		const late = date < frappe.datetime.get_today() && !["Completed", "Cancelled"].includes(status);
-		const text = frappe.datetime.str_to_user(date);
+		const day = String(date).slice(0, 10); // Task's dates carry a time
+		const late = day < frappe.datetime.get_today() && !["Completed", "Cancelled"].includes(status);
+		const text = moment(day).format("D MMM");
 		return `<span class="kb-due ${late ? "late" : ""}">${late ? __("Late") + " · " : ""}${esc(text)}</span>`;
 	}
 
@@ -103,10 +121,13 @@
 			<div class="kb-top">
 				<span class="kb-priority">${esc(__(priority))}</span>
 				<span class="kb-project" data-project="${esc(doc.project || "")}">${esc(project_names[doc.project] || doc.project || __("No project"))}</span>
-				${due_html(doc.exp_end_date, status)}
+				<span class="kb-id" title="${esc(doc.name)}">#${esc(doc.name.split("-").pop())}</span>
 			</div>
 			<a class="kb-title" href="${frappe.utils.get_form_link("Task", doc.name)}">${esc(doc.subject || doc.name)}</a>
-			<div class="kb-foot">${person_html(doc)}${failing}${comments}<span class="kb-note" title="${esc(doc.name)}">#${esc(doc.name.split("-").pop())}</span></div>
+			<div class="kb-foot">
+				${person_html(doc)}${due_html(doc.exp_end_date, status)}${failing}${comments}
+				<button type="button" class="kb-move" aria-label="${esc(__("Move task, now {0}", [__(status)]))}">${esc(__(status))}</button>
+			</div>
 		</div>`;
 	}
 
@@ -118,6 +139,12 @@
 			const status = $(wrapper).closest(".kanban-column").attr("data-column-value");
 			wrapper.dataset.kb = "1";
 			$(wrapper).find(".kanban-card-body").replaceWith(card_html(doc, status));
+			$(wrapper).find(".kb-move").on("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				const task = { name: doc.name, subject: doc.subject, status, owner: doc.owner };
+				kiluth.tasks.pick_status(task, (to) => kiluth.tasks.move(task, to, () => listview.refresh()));
+			});
 		}
 		for (const column of listview.$result.find(".kanban-column")) {
 			const title = $(column).find(".kanban-column-title .kanban-title");
@@ -127,6 +154,34 @@
 			if (label.length) label.text(count);
 			else title.append(`<span class="kb-count">${count}</span>`);
 		}
+		listview.$result.find(".kanban-cards").attr("data-empty", __("Nothing here"));
+	}
+
+	// Phone: one tab per column, to jump there and show where you are.
+	function sync_tabs(listview, tabs) {
+		const columns = listview.$result.find(".kanban-column").toArray();
+		const signature = columns.map((c) => `${c.dataset.columnValue}:${$(c).find(".kanban-card-wrapper").length}`).join();
+		if (tabs.data("signature") !== signature) {
+			tabs.data("signature", signature).empty();
+			for (const column of columns) {
+				const count = $(column).find(".kanban-card-wrapper").length;
+				$(`<button type="button"><span>${esc(__(column.dataset.columnValue))}</span><span>${count}</span></button>`)
+					.appendTo(tabs)
+					.on("click", () => {
+						// Looked up each time: a refresh replaces the columns.
+						const now = listview.$result.find(".kanban-column").get(columns.indexOf(column));
+						now?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+					});
+			}
+		}
+		const middle = window.innerWidth / 2;
+		const at = columns.findIndex((c) => {
+			const r = c.getBoundingClientRect();
+			return r.left <= middle && r.right >= middle;
+		});
+		tabs.children().each(function (i) {
+			this.setAttribute("aria-current", i === (at < 0 ? 0 : at));
+		});
 	}
 
 	function setup_bar(listview) {
@@ -139,6 +194,7 @@
 		bar.insertBefore(listview.$result);
 		if (frappe.is_mobile()) listview.$filter_section.appendTo(bar);
 		bar.append(total);
+		const tabs = $(`<div class="kb-tabs"></div>`).appendTo(bar);
 
 		const is_mine = () => listview.filter_area.get().some((f) => f[1] === "_assign");
 		const sync = () => {
@@ -148,6 +204,7 @@
 			total.text(__("{0} tasks", [listview.data.length]));
 			draw_cards(listview);
 			if (!is_touch()) return;
+			sync_tabs(listview, tabs);
 			listview.$result.find(".kanban, .kanban-cards").each(function () {
 				Sortable.get(this)?.option("disabled", true);
 			});
@@ -160,6 +217,8 @@
 		// The board redraws its columns on every refresh, which brings back the desk's
 		// cards and new drag handlers.
 		new MutationObserver(sync).observe(listview.$result.get(0), { childList: true, subtree: true });
+		// The element that scrolls sideways sits above $result, and scroll doesn't bubble.
+		document.addEventListener("scroll", () => is_touch() && sync_tabs(listview, tabs), { capture: true, passive: true });
 		sync();
 	}
 
