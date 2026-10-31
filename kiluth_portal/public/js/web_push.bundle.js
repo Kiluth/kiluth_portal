@@ -1,5 +1,6 @@
 // Phone notifications for Kiluth Tasks (loaded via hooks.py -> app_include_js).
-// Adds a "Phone notifications" item to the user menu. Tapping it asks the
+// "Phone notifications" in the user menu (a Navbar Settings item added by
+// web_push/menu.py on migrate) calls kiluth_enable_push(). Tapping it asks the
 // browser for permission (must come from a tap, iPhone insists) and saves the
 // subscription server-side. On iPhone this only works after "Add to Home
 // Screen" and opening the Portal from that icon.
@@ -68,22 +69,9 @@
 		frappe.show_alert({ message: __("Phone notifications are on"), indicator: "green" });
 	}
 
-	function addMenuItem() {
-		const menu = document.querySelector("#toolbar-user, .dropdown-navbar-user .dropdown-menu");
-		if (!menu || menu.querySelector(".kiluth-push-item")) return;
-		const a = document.createElement("a");
-		a.className = "dropdown-item kiluth-push-item";
-		a.href = "#";
-		a.textContent = __("Phone notifications");
-		a.addEventListener("click", (e) => {
-			e.preventDefault();
-			enable().catch((err) => frappe.msgprint(String(err)));
-		});
-		menu.appendChild(a);
-	}
-
 	addHeadLinks();
-	$(document).on("page-change startup", addMenuItem);
-	setTimeout(addMenuItem, 1500);
-	window.kiluth_enable_push = enable;
+	window.kiluth_enable_push = () => {
+		enable().catch((err) => frappe.msgprint(String(err)));
+		return false;
+	};
 })();

@@ -315,6 +315,7 @@ fixtures = [
 after_migrate = [
     "kiluth_portal.utils.website.apply_website_settings",
     "kiluth_portal.utils.print_defaults.apply_default_print_formats",
+    "kiluth_portal.web_push.menu.ensure_menu_item",
 ]
 
 # A completed Task keeps its assignee as holder; ERPNext would clear it.
