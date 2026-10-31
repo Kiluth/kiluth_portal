@@ -26,7 +26,8 @@ frappe.provide("kiluth.tasks");
 			.kt-sheet .kt-hint { font-size: 12px; color: var(--text-muted); font-weight: 400; }
 			.kt-sheet button.kt-cancel { width: 100%; min-height: 44px; margin-top: 8px; border: 0; border-radius: 10px;
 				background: transparent; color: var(--text-muted); font-size: 15px; }
-			.kt-undo { position: fixed; z-index: 1052; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+			/* Sits above the desk's "Saved" toast, which would otherwise cover it. */
+			.kt-undo { position: fixed; z-index: 1100; left: 16px; right: 16px; bottom: calc(88px + env(safe-area-inset-bottom, 0px));
 				max-width: 420px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px;
 				padding: 12px 16px; border-radius: 10px; font-size: 14px; background: var(--gray-900); color: #fff;
 				box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35); }
