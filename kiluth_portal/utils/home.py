@@ -16,7 +16,6 @@ import json
 from urllib.parse import quote
 
 import frappe
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 from frappe.website.page_renderers.base_renderer import BaseRenderer
 from werkzeug.utils import redirect
 
@@ -28,7 +27,6 @@ SECTION_LABEL = "Kiluth"
 BOARD = "Tasks"
 BOARD_PATH = "my-board"
 BOARD_URL = "/desk/task/view/kanban/" + BOARD
-TASK_FILTERS = ("account_manager", "project_manager")
 BOARD_COLUMNS = ("Open", "Working", "Pending Review", "Overdue", "Completed", "Cancelled")
 SIDEBAR_LINKS = [
 	{"label": "My Board", "link_type": "URL", "url": "/" + BOARD_PATH, "icon": "columns-3"},
@@ -88,19 +86,6 @@ def ensure_task_board():
 			"columns": [{"column_name": c} for c in BOARD_COLUMNS],
 		}
 	).insert(ignore_permissions=True)
-
-
-def ensure_task_filters():
-	"""Make Account Manager and Project Manager quick filters on Task.
-
-	These two fields were made by hand on the live site and are not in the
-	fixtures. So this checks they exist first: a fixture pointing at a missing
-	field would stop the migrate.
-	"""
-	meta = frappe.get_meta("Task")
-	for field in TASK_FILTERS:
-		if meta.has_field(field):
-			make_property_setter("Task", field, "in_standard_filter", 1, "Check", validate_fields_for_doctype=False)
 
 
 def add_kiluth_sidebar_links():

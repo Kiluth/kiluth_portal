@@ -129,6 +129,7 @@ doc_events = {
     # "Close the books for <Month YYYY>" task is completed.
     # Implements docs.kiluth.com/finance/monthly-close.
     "Task": {
+        "validate": "kiluth_portal.utils.task_managers.copy_from_project",
         "on_update": [
             "kiluth_portal.utils.close_report.on_task_update",
             "kiluth_portal.task_check.handlers.on_task_update",
@@ -332,7 +333,7 @@ after_migrate = [
     "kiluth_portal.utils.print_defaults.apply_default_print_formats",
     "kiluth_portal.web_push.menu.ensure_menu_item",
     "kiluth_portal.utils.home.ensure_task_board",
-    "kiluth_portal.utils.home.ensure_task_filters",
+    "kiluth_portal.utils.task_managers.ensure_fields",
     "kiluth_portal.utils.home.add_kiluth_sidebar_links",
 ]
 
