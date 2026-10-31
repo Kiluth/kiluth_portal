@@ -126,7 +126,10 @@ doc_events = {
     # "Close the books for <Month YYYY>" task is completed.
     # Implements docs.kiluth.com/finance/monthly-close.
     "Task": {
-        "on_update": "kiluth_portal.utils.close_report.on_task_update",
+        "on_update": [
+            "kiluth_portal.utils.close_report.on_task_update",
+            "kiluth_portal.task_check.handlers.on_task_update",
+        ],
     },
     # Gate User creation to the kiluth.com domain — needed because Website
     # Settings has signup enabled (so Google SSO auto-provisions Kiluth staff
@@ -152,7 +155,10 @@ doc_events = {
     # job; who is told lives in task_notify/recipients.py, delivery in
     # task_notify/channels.py.
     "ToDo": {
-        "on_update": "kiluth_portal.task_notify.handlers.on_todo_change",
+        "on_update": [
+            "kiluth_portal.task_notify.handlers.on_todo_change",
+            "kiluth_portal.task_check.handlers.on_todo_change",
+        ],
     },
     "Comment": {
         "after_insert": "kiluth_portal.task_notify.handlers.on_comment_insert",
