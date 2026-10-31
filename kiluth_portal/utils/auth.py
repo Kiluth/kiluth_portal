@@ -5,8 +5,8 @@ Three responsibilities, all wired in hooks.py:
 1. `restrict_signup_to_kiluth_domain` (doc_events.User.before_insert)
    — only @kiluth.com emails (and the bench Administrator) can become Users.
 2. `get_user_home_page` (get_website_user_home_page)
-   — every logged-in user lands on the portal page (`/welcome`) instead of
-   the desk (`/app`).
+   — every logged-in user lands on their Task list (`/my-tasks`, see
+   utils/home.py) instead of the desk home (`/desk`).
 3. `login_via_google` (override_whitelisted_methods)
    — wraps Frappe's Google OAuth callback. Strips stale `/desk` and `/app`
    values out of the OAuth state's `redirect_to` so they don't override
@@ -22,8 +22,10 @@ import json
 
 import frappe
 
+from kiluth_portal.utils.home import HOME_URL
+
 ALLOWED_DOMAINS = ("@kiluth.com",)
-DEFAULT_HOME_PAGE = "/welcome"
+DEFAULT_HOME_PAGE = HOME_URL
 
 
 def restrict_signup_to_kiluth_domain(doc, method=None):
@@ -64,12 +66,11 @@ def restrict_signup_to_kiluth_domain(doc, method=None):
 
 
 def get_user_home_page(user):
-	"""Land logged-in users on the Kiluth portal page, not the desk.
+	"""Land logged-in users on their Task list, not the desk home.
 
-	Frappe's default `redirect_post_login` sends desk users to `/app`. We want
-	`/welcome` (the Web Page named "portal", route "welcome") to be the
-	universal landing — that's where Kiluth's tile-grid menu lives, and it's
-	the right starting point for both staff and any future portal-only roles.
+	`/my-tasks` redirects to the Task list filtered to the signed-in user.
+	The old `/welcome` tile page is retired (TASK-2026-00083); its useful
+	links sit in the Projects sidebar now.
 
 	Frappe calls `get_website_user_home_page` hooks in
 	`frappe.utils.oauth.get_default_path` *before* falling back to
@@ -95,7 +96,7 @@ def _is_stale_desk_redirect(value: str | None) -> bool:
 
 @frappe.whitelist(allow_guest=True)
 def login_via_google(code: str, state: str):
-	"""Wrap Frappe's Google OAuth callback so logged-in users land on /welcome.
+	"""Wrap Frappe's Google OAuth callback so logged-in users land on /my-tasks.
 
 	Two problems we work around here:
 

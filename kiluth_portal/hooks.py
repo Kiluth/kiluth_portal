@@ -161,13 +161,20 @@ doc_events = {
 
 
 # Serves /kiluth-push-sw.js and /kiluth-manifest.webmanifest from the site root.
-page_renderer = ["kiluth_portal.web_push.renderer.WebPushAssets"]
+# Serves /my-tasks: a redirect to the signed-in user's Task list (utils/home.py).
+page_renderer = [
+    "kiluth_portal.web_push.renderer.WebPushAssets",
+    "kiluth_portal.utils.home.MyTasksRedirect",
+]
+
+# Old bookmarks to the retired tile page.
+website_redirects = [{"source": "/welcome", "target": "/my-tasks"}]
 
 
 # Post-login landing page
 # -----------------------
-# Override Frappe's default redirect (desk users go to /app) so every login
-# lands on the Kiluth portal page (Web Page named "portal", route "welcome").
+# Override Frappe's default redirect (desk users go to /desk) so every login
+# lands on the user's Task list (/my-tasks, see utils/home.py).
 # Frappe's `get_default_path` calls this hook before falling back to /app.
 get_website_user_home_page = "kiluth_portal.utils.auth.get_user_home_page"
 
@@ -192,7 +199,7 @@ override_whitelisted_methods = {
 # accidentally serialize ERPNext / HRMS stock artifacts.
 KILUTH_MODULES = ["Kiluth HR", "Kiluth Hosting", "Kiluth Sales", "Kiluth Legal"]
 
-KILUTH_WEB_PAGES = ["portal", "holidays", "convert-document"]
+KILUTH_WEB_PAGES = ["holidays", "convert-document"]
 KILUTH_HOLIDAY_LISTS = ["Kiluth Thailand Holiday 2025", "Kiluth Thailand Holiday 2026"]
 
 # Kiluth Catalog — the timeless 8-item procurement catalog backing Material
@@ -260,8 +267,7 @@ fixtures = [
         "doctype": "Print Format",
         "filters": [["module", "in", KILUTH_MODULES]],
     },
-    # Portal landing + companion pages (holidays, convert-document) and the
-    # branded welcome page powering /welcome.
+    # Companion pages (holidays, convert-document).
     {
         "doctype": "Web Page",
         "filters": [["name", "in", KILUTH_WEB_PAGES]],
@@ -316,6 +322,7 @@ after_migrate = [
     "kiluth_portal.utils.website.apply_website_settings",
     "kiluth_portal.utils.print_defaults.apply_default_print_formats",
     "kiluth_portal.web_push.menu.ensure_menu_item",
+    "kiluth_portal.utils.home.add_kiluth_sidebar_links",
 ]
 
 # A completed Task keeps its assignee as holder; ERPNext would clear it.

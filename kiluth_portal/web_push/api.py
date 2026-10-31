@@ -34,6 +34,6 @@ def unsubscribe(endpoint):
 def send_test():
 	send_to_user(
 		frappe.session.user,
-		{"title": "Kiluth Portal", "body": "Phone notifications are on.", "url": "/app/todo", "tag": "kiluth-test"},
+		{"title": "Kiluth Portal", "body": "Phone notifications are on.", "url": "/my-tasks", "tag": "kiluth-test"},
 	)
 	return "ok"

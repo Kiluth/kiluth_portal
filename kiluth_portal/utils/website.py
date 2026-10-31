@@ -1,9 +1,8 @@
 """Idempotent Website Settings wiring.
 
 Runs on every `bench migrate` to make sure key website defaults match what the
-rest of the portal stack expects (e.g. home_page points at /welcome so users
-hitting `/` land on the Kiluth Portal tile page, not ERPNext's stock account
-view).
+rest of the portal stack expects (e.g. home_page points at /my-tasks so users
+hitting `/` land on their Task list, and guests on the login page).
 
 Safe to re-run — each setting is only written if the current value differs.
 """
@@ -19,7 +18,7 @@ LOGO_URL = "/assets/kiluth_portal/images/logo-gray.png"
 FAVICON_URL = "/assets/kiluth_portal/images/favicon.ico"
 
 DESIRED_WEBSITE_SETTINGS = {
-	"home_page": "/welcome",
+	"home_page": "my-tasks",
 	"app_name": "Kiluth Portal",
 	"app_logo": LOGO_URL,
 	"banner_image": LOGO_URL,  # load-bearing for the portal/web navbar

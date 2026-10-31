@@ -22,7 +22,7 @@ MANIFEST_PATH = "kiluth-manifest.webmanifest"
 MANIFEST = {
 	"name": "Kiluth Portal",
 	"short_name": "Kiluth",
-	"start_url": "/app/todo",
+	"start_url": "/my-tasks",
 	"scope": "/",
 	"display": "standalone",
 	"background_color": "#000000",

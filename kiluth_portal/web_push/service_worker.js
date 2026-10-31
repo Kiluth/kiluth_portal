@@ -12,7 +12,7 @@ self.addEventListener("push", (event) => {
 		self.registration.showNotification(data.title || "Kiluth Portal", {
 			body: data.body || "",
 			tag: data.tag,
-			data: { url: data.url || "/app/todo" },
+			data: { url: data.url || "/my-tasks" },
 			icon: "/assets/kiluth_portal/images/kiluth-icon-192.png",
 		})
 	);
