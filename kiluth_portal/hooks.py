@@ -18,10 +18,13 @@ app_include_js = ["navbar.bundle.js", "web_push.bundle.js"]
 
 # Form Behavior (versioned client-side)
 # -------------------------------------
+doctype_list_js = {"Task": "public/js/task_list.js"}
+
 # Prefer doctype_js over DB-stored Client Scripts for stable, load-bearing form
 # behavior. Loose/experimental tweaks can still live as Client Script fixtures.
 doctype_js = {
 	"Resource": "public/js/resource.js",
+	"Task": "public/js/task.js",
 	"Sales Invoice": "public/js/sales_invoice.js",
 	"Equipment Loan Agreement": "public/js/equipment_loan_agreement.js",
 	"Material Request": "public/js/material_request.js",
@@ -329,6 +332,7 @@ after_migrate = [
     "kiluth_portal.utils.print_defaults.apply_default_print_formats",
     "kiluth_portal.web_push.menu.ensure_menu_item",
     "kiluth_portal.utils.home.ensure_task_board",
+    "kiluth_portal.utils.home.ensure_task_filters",
     "kiluth_portal.utils.home.add_kiluth_sidebar_links",
 ]
 
