@@ -10,6 +10,10 @@ So completed tasks keep their assignees. A cancelled task carries its
 requester instead: nothing was delivered, so the person who asked for it is the
 one to ask about it (docs.kiluth.com/delivery/working-with-tasks). The requester
 is the task's creator; tasks the system created keep whoever is assigned.
+
+It also records who completed a task in `completed_by`, which the task check
+reads. ERPNext has the field but never fills it, and Task keeps no version
+history, so nothing else says who set the status.
 """
 from contextlib import contextmanager
 
@@ -38,6 +42,13 @@ class KiluthTask(Task):
 		# drops only the assignment closing.
 		with _assignments_kept():
 			super().validate_status()
+		self.record_completer()
+
+	def record_completer(self):
+		if self.status != "Completed":
+			self.completed_by = None
+		elif self.has_value_changed("status"):
+			self.completed_by = frappe.session.user
 
 	def unassign_todo(self):
 		if self.status != "Cancelled":
