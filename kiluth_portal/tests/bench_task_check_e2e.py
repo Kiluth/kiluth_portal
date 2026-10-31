@@ -71,6 +71,13 @@ def run():
 		t.save(ignore_permissions=True)
 		check("description runs", drain() == [a.name])
 
+		verdict(a.name, "Pass")
+		t = frappe.get_doc("Task", a.name)
+		t.status = "Working"
+		t.save(ignore_permissions=True)
+		check("status runs", drain() == [a.name])
+		check("status clears Pass", not frappe.db.get_value("Task", a.name, "hygiene"))
+
 		b = _task("E2E check: blocked")
 		drain()
 		verdict(b.name, "Pass")

@@ -20,7 +20,7 @@ class Row:
 
 
 def state(**over):
-	base = {"subject": "Fix it", "description": "Done when fixed", "depends_on": ["TASK-1"]}
+	base = {"subject": "Fix it", "description": "Done when fixed", "status": "Open", "depends_on": ["TASK-1"]}
 	return {**base, **over}
 
 
@@ -34,6 +34,9 @@ class TestTaskChanged(unittest.TestCase):
 	def test_description_runs(self):
 		self.assertTrue(t.task_changed(state(), state(description="Done when it passes")))
 
+	def test_status_runs(self):
+		self.assertTrue(t.task_changed(state(), state(status="Pending Review")))
+
 	def test_dependency_added_or_removed_runs(self):
 		self.assertTrue(t.task_changed(state(), state(depends_on=["TASK-1", "TASK-2"])))
 		self.assertTrue(t.task_changed(state(), state(depends_on=[])))
@@ -41,8 +44,8 @@ class TestTaskChanged(unittest.TestCase):
 	def test_nothing_else_runs(self):
 		self.assertFalse(t.task_changed(state(), state()))
 
-	def test_checker_fields_status_and_the_rest_do_not_run(self):
-		noisy = state(hygiene="Pass", hygiene_note="x", status="Working", project="PROJ-0001", modified="now")
+	def test_checker_fields_and_the_rest_do_not_run(self):
+		noisy = state(hygiene="Pass", hygiene_note="x", project="PROJ-0001", priority="High", modified="now")
 		self.assertFalse(t.task_changed(state(), noisy))
 
 	def test_blank_and_none_are_the_same(self):
@@ -51,8 +54,8 @@ class TestTaskChanged(unittest.TestCase):
 
 class TestTaskState(unittest.TestCase):
 	def test_dependency_order_does_not_matter(self):
-		a = {"subject": "s", "description": "d", "depends_on": [Row("B"), Row("A")]}
-		b = {"subject": "s", "description": "d", "depends_on": [Row("A"), Row("B")]}
+		a = {"subject": "s", "description": "d", "status": "Open", "depends_on": [Row("B"), Row("A")]}
+		b = {"subject": "s", "description": "d", "status": "Open", "depends_on": [Row("A"), Row("B")]}
 		self.assertEqual(t.task_state(a), t.task_state(b))
 
 	def test_only_listed_fields(self):

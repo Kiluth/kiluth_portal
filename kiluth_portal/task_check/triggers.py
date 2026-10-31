@@ -1,9 +1,9 @@
 """When the task check runs. The one place to change that.
 
-Poom's list (2026-10-31): a task is created, or its title, description,
-dependencies or assignee change. Comments, attachments, status and every other
-save start nothing, and that is also what stops the checker triggering itself:
-it writes only `hygiene` and `hygiene_note`, which are not on this list.
+Poom's list (2026-10-31): a task is created, or its title, description, status,
+dependencies or assignee change. Comments, attachments and every other save
+start nothing, and that is also what stops the checker triggering itself: it
+writes only `hygiene` and `hygiene_note`, which are not on this list.
 
 No Frappe here, so the list can be tested on its own:
 
@@ -12,7 +12,7 @@ No Frappe here, so the list can be tested on its own:
 
 from __future__ import annotations
 
-TASK_FIELDS = ("subject", "description", "depends_on")
+TASK_FIELDS = ("subject", "description", "status", "depends_on")
 ASSIGNEE = True
 
 
