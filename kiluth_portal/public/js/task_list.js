@@ -15,6 +15,25 @@
 	const settings = frappe.listview_settings["Task"];
 	const onload = settings.onload;
 
+	// Each task reads as its own card. In dark mode the desk paints card, border and
+	// column almost the same grey, so tasks ran together (Poom, 2026-11-01). The name
+	// circle also sat half under the + button.
+	if (!document.getElementById("kiluth-board-css")) {
+		$(`<style id="kiluth-board-css">
+			:root { --kiluth-card-edge: var(--gray-400); --kiluth-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+			[data-theme="dark"] {
+				--kiluth-card-edge: var(--gray-600);
+				--kiluth-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+			}
+			.kanban .kanban-column .kanban-cards .kanban-card-wrapper .kanban-card.content {
+				margin-top: 12px;
+				border: 1px solid var(--kiluth-card-edge);
+				box-shadow: var(--kiluth-card-shadow);
+			}
+			.kanban .kanban-assignments .avatar-group.overlap .avatar-action { margin-left: 10px; }
+		</style>`).appendTo("head");
+	}
+
 	function show_assignees(listview) {
 		for (const doc of listview.data) {
 			const row = listview.$result.find(`.list-row-checkbox[data-name="${CSS.escape(doc.name)}"]`).closest(".list-row-container");
