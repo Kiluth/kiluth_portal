@@ -106,7 +106,7 @@
 				${due_html(doc.exp_end_date, status)}
 			</div>
 			<a class="kb-title" href="${frappe.utils.get_form_link("Task", doc.name)}">${esc(doc.subject || doc.name)}</a>
-			<div class="kb-foot">${person_html(doc)}${failing}${comments}</div>
+			<div class="kb-foot">${person_html(doc)}${failing}${comments}<span class="kb-note" title="${esc(doc.name)}">#${esc(doc.name.split("-").pop())}</span></div>
 		</div>`;
 	}
 
