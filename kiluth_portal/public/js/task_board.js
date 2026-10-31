@@ -133,6 +133,9 @@
 		const bar = (listview.kiluth_bar = $(`<div class="kiluth-board-bar"></div>`));
 		const mine = $(`<button type="button" class="btn btn-sm kb-mine"></button>`).appendTo(bar);
 		const total = $(`<span class="kb-total"></span>`);
+		$(`<button type="button" class="btn btn-sm btn-default kb-list">${__("List")}</button>`)
+			.appendTo(bar)
+			.on("click", () => frappe.set_route("List", "Task", "List"));
 		bar.insertBefore(listview.$result);
 		if (frappe.is_mobile()) listview.$filter_section.appendTo(bar);
 		bar.append(total);

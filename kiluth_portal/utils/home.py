@@ -1,12 +1,10 @@
-"""Home: land people on the Task list, filtered to tasks assigned to them.
+"""Home: land people on the Task Board, filtered to tasks assigned to them.
 
-`/my-board` does the same for the Task Board.
-
-`/my-tasks` is one stable address for "my Task list". It redirects a signed-in
-user to `/desk/task?_assign=[like, %<user>%]`, which the desk list view reads as
-an "Assigned To" filter. Sign-in, the site root, the phone app's start page and
-old `/welcome` bookmarks all point here, so the per-user filter is worked out in
-one place, after the user is known.
+`/my-tasks` and `/my-board` are stable addresses for that (Poom, 2026-11-01: the
+board is the default view). They redirect a signed-in user to the board with an
+`_assign=[like, %<user>%]` filter, which the desk reads as "Assigned To". Sign-in,
+the site root, the phone app's start page and old `/welcome` bookmarks all point
+here, so the per-user filter is worked out in one place, after the user is known.
 
 The links that used to live on the `/welcome` tile page are added to the
 Projects sidebar, the one the Task list shows (`add_kiluth_sidebar_links`).
@@ -16,6 +14,7 @@ import json
 from urllib.parse import quote
 
 import frappe
+from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 from frappe.website.page_renderers.base_renderer import BaseRenderer
 from werkzeug.utils import redirect
 
@@ -45,18 +44,13 @@ def _assigned_to(user):
 	return "_assign=" + quote(value, safe="")
 
 
-def task_list_url(user):
-	"""The desk Task list, filtered to tasks assigned to `user`."""
-	return "/desk/task?" + _assigned_to(user)
-
-
 def task_board_url(user):
 	"""The Task Board, filtered to tasks assigned to `user`."""
 	return BOARD_URL + "?" + _assigned_to(user)
 
 
 class MyTasksRedirect(BaseRenderer):
-	TARGETS = {HOME_PATH: task_list_url, BOARD_PATH: task_board_url}
+	TARGETS = {HOME_PATH: task_board_url, BOARD_PATH: task_board_url}
 
 	def can_render(self):
 		return self.path in self.TARGETS
@@ -68,11 +62,13 @@ class MyTasksRedirect(BaseRenderer):
 
 
 def ensure_task_board():
-	"""The Task Board: a card per task, in a column per status.
+	"""The Task Board: a card per task, in a column per status, and the default view
+	of Task, so /desk/task opens it. /desk/task/view/list still opens the list.
 
-	Made once, here rather than as a fixture, so a later migrate never undoes
-	what people change on the board.
+	The board is made once, here rather than as a fixture, so a later migrate never
+	undoes what people change on it.
 	"""
+	make_property_setter("Task", None, "default_view", "Kanban", "Data", for_doctype=True)
 	if frappe.db.exists("Kanban Board", BOARD):
 		return
 	frappe.get_doc(
