@@ -1,0 +1,30 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-10-13 00:00:00",
+ "description": "One row per browser/phone that said yes to Kiluth Task notifications. Written by kiluth_portal.web_push.api.subscribe; deleted when the push service says the subscription is gone.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["user", "endpoint", "p256dh", "auth", "user_agent"],
+ "fields": [
+  {"fieldname": "user", "fieldtype": "Link", "options": "User", "label": "User", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
+  {"fieldname": "endpoint", "fieldtype": "Small Text", "label": "Endpoint", "reqd": 1},
+  {"fieldname": "p256dh", "fieldtype": "Data", "label": "p256dh Key", "reqd": 1},
+  {"fieldname": "auth", "fieldtype": "Data", "label": "Auth Secret", "reqd": 1},
+  {"fieldname": "user_agent", "fieldtype": "Data", "label": "Device", "in_list_view": 1}
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-13 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Kiluth HR",
+ "name": "Web Push Subscription",
+ "owner": "Administrator",
+ "permissions": [
+  {"role": "System Manager", "read": 1, "delete": 1, "report": 1, "export": 1}
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

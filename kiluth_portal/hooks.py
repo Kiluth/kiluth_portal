@@ -12,7 +12,8 @@ app_license = "mit"
 # the entry must be a `.bundle.js` file living under `public/js/`.
 # `navbar.bundle.js` re-routes the Kiluth logo and inserts a dedicated "Portal"
 # link so users can always jump back to the portal home from the desk.
-app_include_js = "navbar.bundle.js"
+# `web_push.bundle.js` adds "Phone notifications" to the user menu (web_push/).
+app_include_js = ["navbar.bundle.js", "web_push.bundle.js"]
 
 
 # Form Behavior (versioned client-side)
@@ -157,6 +158,10 @@ doc_events = {
         "after_insert": "kiluth_portal.task_notify.handlers.on_comment_insert",
     },
 }
+
+
+# Serves /kiluth-push-sw.js and /kiluth-manifest.webmanifest from the site root.
+page_renderer = ["kiluth_portal.web_push.renderer.WebPushAssets"]
 
 
 # Post-login landing page

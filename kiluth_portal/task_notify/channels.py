@@ -2,7 +2,7 @@
 
 Add a channel: subclass Channel, give it a `name`, register it in CHANNELS.
 Which channels run is set once for the whole site in site_config:
-  "kiluth_notify_channels": ["log"]        (default when unset)
+  "kiluth_notify_channels": ["log", "webpush"]   (["log"] when unset)
 Nothing is configured per person on the server.
 """
 
@@ -28,9 +28,14 @@ class LogChannel(Channel):
 
 
 class WebPushChannel(Channel):
-	"""Stub. Real version: the sender on branch sim/web-push (VAPID + pywebpush)."""
+	"""Phone and browser push (VAPID + pywebpush) to every device the person turned on."""
 
 	name = "webpush"
+
+	def send(self, recipient, payload):
+		from kiluth_portal.web_push.sender import send_to_user
+
+		send_to_user(recipient, payload)
 
 
 class ExpoChannel(Channel):
