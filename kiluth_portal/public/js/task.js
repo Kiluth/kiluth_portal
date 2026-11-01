@@ -208,7 +208,8 @@
 	// route_options, so only the URL can filter it.
 	function back_to_board() {
 		const is_tasks = (route) => route?.[0] === "List" && route[1] === "Task";
-		if (is_tasks(frappe.get_prev_route())) history.back();
+		const from = frappe.get_prev_route();
+		if (is_tasks(from) || from[0] === "task-waterfall") history.back();
 		else if (frappe.route_history.some(is_tasks)) frappe.set_route("List", "Task", "Kanban", "Tasks");
 		else window.location.assign("/my-board");
 	}
