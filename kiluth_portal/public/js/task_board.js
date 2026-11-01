@@ -91,7 +91,7 @@
 			.kb-touch .kanban .kanban-column { flex: 0 0 100%; min-width: 0; max-width: 100%; padding: 0; box-sizing: border-box; background: transparent !important; }
 			.kb-touch .kanban .kanban-column .kanban-cards { margin: 0; padding: 0 1px; width: 100%; box-sizing: border-box; }
 			.kb-touch .kanban { scroll-snap-type: x proximity; }
-			.kb-touch .kanban .kanban-column .kanban-cards { max-height: calc(100dvh - 165px); }
+			.kb-touch .kanban .kanban-column .kanban-cards { max-height: calc(100dvh - 194px); }
 			.kb-touch .kanban .kanban-column { scroll-snap-align: start; }
 		</style>`).appendTo("head");
 	}
@@ -247,7 +247,8 @@
 		if (listview.kiluth_bar) return;
 		add_styles();
 		$(document.documentElement).toggleClass("kb-touch", is_touch());
-		listview.page.set_title(__("Task Board"));
+		listview.page.set_title(frappe.is_mobile() ? __("Tasks") : __("Task Board")); // a phone cuts the longer one
+		kiluth.tasks.tall_controls(listview.page);
 		setup_bar(listview);
 		frappe.db.get_list("Project", { fields: ["name", "project_name", "customer"], limit: 0 }).then((rows) => {
 			// Client first: on a phone the end of this label is what gets cut off.
