@@ -145,6 +145,9 @@
 	function draw(frm) {
 		add_styles();
 		add_back(frm);
+		kiluth.tasks.tall_controls(frm.page);
+		// The panel says it in full; beside Back a phone can only show the start of it.
+		frm.page.wrapper.toggleClass("kt-no-title", !frm.is_new());
 		frm.page.main.find(".kt-task").remove();
 		if (frm.is_new()) {
 			frm.page.main.removeClass("kt-folded");

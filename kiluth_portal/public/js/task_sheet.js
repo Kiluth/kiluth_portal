@@ -33,8 +33,28 @@ frappe.provide("kiluth.tasks");
 				box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35); }
 			[data-theme="dark"] .kt-undo { background: var(--gray-100); color: var(--gray-900); }
 			.kt-undo button { border: 0; background: transparent; color: inherit; font-weight: 600; text-decoration: underline; min-height: 28px; }
+			/* Big enough to hit with a thumb (Poom, 2026-11-01). Touch screens only: a mouse doesn't need it. */
+			@media (max-width: 767px), (pointer: coarse) {
+				.kt-tall { --page-head-height: 56px; }
+				.kt-tall .sidebar-toggle-btn, .kt-tall .page-actions .btn:not(.hide), .kt-tall .page-head .custom-actions .btn,
+				.kt-tall .navbar-modal-search-mobile { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+				.kt-tall .sidebar-toggle-btn { margin-left: -12px; }
+				.kt-tall .kt-back, .kt-tall .kt-link, .kt-tall .kiluth-board-bar .btn, .kt-undo button { min-height: 44px; }
+				/* Inside a row: a lighter 36px to look at, the same 44px to hit. */
+				.kt-tall .kt-btn, .kt-tall .kb-move { position: relative; min-height: 36px; overflow: visible; }
+				.kt-tall .kt-btn.kt-more { min-height: 44px; }
+				.kt-tall .kt-btn::before, .kt-tall .kb-move::before { content: ""; position: absolute; inset: -5px 0; }
+				.kt-tall .kb-tabs button { height: 44px; }
+				.kt-no-title .title-area { visibility: hidden; }
+			}
 		</style>`).appendTo("head");
 	}
+
+	/** Touch-sized controls on a Task page or board. */
+	kiluth.tasks.tall_controls = function (page) {
+		add_styles();
+		page.wrapper.addClass("kt-tall");
+	};
 
 	function close_sheet() {
 		$(".kt-backdrop, .kt-sheet").remove();
