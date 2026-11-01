@@ -13,6 +13,15 @@
 			.kt-folded .form-layout { display: none; }
 			.kt-task { max-width: 760px; margin: 0 auto; padding: 12px 16px 8px; color: var(--text-color); }
 			.kt-title { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 600; overflow-wrap: anywhere; }
+			.kt-tap { all: unset; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 32px; cursor: pointer; box-sizing: border-box; }
+			@media (max-width: 767px), (pointer: coarse) { .kt-tap:not(:disabled) { min-height: 44px; } }
+			.kt-tap:disabled { cursor: default; }
+			.kt-tap:focus-visible { outline: 2px solid var(--kt-edge); outline-offset: 2px; border-radius: 6px; }
+			.kt-tap:not(:disabled):hover { opacity: 0.8; }
+			.kt-caret::after { content: "▾"; font-size: 10px; color: var(--text-muted); }
+			.kt-title .kt-tap { display: block; white-space: normal; overflow-wrap: anywhere; }
+			/* Changes save as they're made, so Save is only for All details. */
+			.kt-saves-itself .page-actions .primary-action { display: none !important; }
 			.kt-id { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; color: var(--text-muted); }
 			.kt-id code { padding: 0; background: none; color: inherit; font-size: 13px; user-select: all; }
 			.kt-facts { margin: 16px 0 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 2px 8px; align-items: center; }
@@ -30,7 +39,8 @@
 			.kt-flag { margin-top: 14px; padding: 10px 12px; border-radius: 10px; font-size: 14px; color: var(--kt-high); background: var(--kt-high-bg); white-space: pre-line; }
 			.kt-section { margin-top: 20px; }
 			.kt-section h2 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
-			.kt-done { padding: 10px 12px; border: 1px solid var(--kt-edge); border-radius: 10px; font-size: 15px; line-height: 1.45; }
+			.kt-done { display: block; width: 100%; padding: 10px 12px; border: 1px solid var(--kt-edge); border-radius: 10px; font-size: 15px; line-height: 1.45; white-space: pre-line; }
+			.kt-unset { color: var(--text-muted); }
 			.kt-body { font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
 			.kt-body img { max-width: 100%; height: auto; }
 			.kt-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; padding: 6px 0;
@@ -47,12 +57,23 @@
 	}
 
 	// "Done when" is a line in the description, by house rule. Show it on its own.
+	const DONE_LINE = /(?:<p[^>]*>|<div[^>]*>|<br\s*\/?>|^)\s*(?:<[^>]+>\s*)*done when[\s\S]*?(?=<\/p>|<\/div>|<br|$)/i;
+
 	function split_description(html) {
-		const found = (html || "").match(/(?:<p[^>]*>|<div[^>]*>|<br\s*\/?>|^)\s*(?:<[^>]+>\s*)*done when[\s\S]*?(?=<\/p>|<\/div>|<br|$)/i);
+		const found = (html || "").match(DONE_LINE);
 		if (!found) return { done: "", body: html || "" };
 		const text = frappe.utils.html2text(found[0]).replace(/^\s*done when\b[:\s]*/i, "").trim();
 		const done = text.charAt(0).toUpperCase() + text.slice(1);
 		return { done, body: html.replace(found[0], "") };
+	}
+
+	// Only the Done when line changes: the rest of the description stays as it is.
+	function with_done(html, done) {
+		const line = `${__("Done when")}: ${esc(done.trim().replace(/\s+/g, " "))}`;
+		const found = (html || "").match(DONE_LINE);
+		if (!found) return `<p>${line}</p>${html || ""}`;
+		const opening = found[0].match(/^(?:<p[^>]*>|<div[^>]*>|<br\s*\/?>)?/)[0];
+		return html.replace(found[0], () => opening + line);
 	}
 
 	function fact(label, html) {
@@ -86,6 +107,62 @@
 		const from = frm.doc.status;
 		const set = (value) => frm.set_value("status", value).then(() => frm.save());
 		set(status).then(() => kiluth.tasks.undo_bar(__("Moved to {0}", [__(status)]), () => set(from)));
+	}
+
+	// Every change here needs a deliberate choice and Save, and comes with Undo.
+	function change(frm, field, value, label) {
+		if (frm.is_dirty()) {
+			frappe.show_alert({ message: __("Save your changes first"), indicator: "orange" });
+			return;
+		}
+		const task = frm.docname;
+		const reload = () => frm.docname === task && frm.reload_doc();
+		const set = (to, modified) => frappe.xcall("kiluth_portal.utils.task_page.set_field", { task, field, value: to, modified });
+		const was = frm.doc[field] || "";
+		set(value, frm.doc.modified).then(
+			(modified) => {
+				reload();
+				kiluth.tasks.undo_bar(__("{0} changed", [label]), () => set(was, modified).then(reload, reload));
+			},
+			reload
+		);
+	}
+
+	function ask(frm, label, field, value, df, to_value = (v) => v) {
+		let saved = false; // a double tap lands while the dialog fades out
+		const dialog = new frappe.ui.Dialog({
+			title: __("Change {0}", [label.toLowerCase()]),
+			fields: [{ fieldname: "value", label, ...df }],
+			primary_action_label: __("Save"),
+			primary_action(values) {
+				if (saved) return;
+				saved = true;
+				dialog.hide();
+				if ((values.value || "") !== (value || "")) change(frm, field, to_value(values.value || ""), label);
+			},
+		});
+		dialog.set_value("value", value || "");
+		dialog.show();
+		dialog.$wrapper.find(".form-control").css("font-size", "16px"); // under 16px an iPhone zooms in
+	}
+
+	function setup_edits(frm, panel, title_fixed) {
+		const doc = frm.doc;
+		panel.find(".kt-tap").prop("disabled", false);
+		panel.find(".kt-title .kt-tap").prop("disabled", title_fixed);
+		frm.set_df_property("subject", "read_only", title_fixed ? 1 : 0);
+		panel.find(".kt-title .kt-tap").on("click", () => ask(frm, __("Title"), "subject", doc.subject, { fieldtype: "Data", reqd: 1 }));
+		panel.find(".kt-due").on("click", () => ask(frm, __("Due"), "exp_end_date", String(doc.exp_end_date || "").slice(0, 10), { fieldtype: "Date" }));
+		panel.find(".kt-pri").on("click", () => kiluth.tasks.pick_one({
+			head: __("Priority"),
+			title: doc.subject,
+			choices: frappe.meta.get_docfield("Task", "priority").options.split("\n"),
+			current: doc.priority,
+			done: (priority) => change(frm, "priority", priority, __("Priority")),
+		}));
+		panel.find(".kt-proj").on("click", () => ask(frm, __("Project"), "project", doc.project, { fieldtype: "Link", options: "Project" }));
+		panel.find(".kt-done").on("click", () => ask(frm, __("Done when"), "description", split_description(doc.description).done, { fieldtype: "Small Text", reqd: 1, max_height: "120px" }, (done) => with_done(doc.description, done)));
+		panel.find(".kt-desc").on("click", () => ask(frm, __("Description"), "description", doc.description, { fieldtype: "Text Editor" }));
 	}
 
 	function hand_over(frm) {
@@ -122,6 +199,7 @@
 	function set_fold(frm, folded) {
 		frm.page.main.toggleClass("kt-folded", folded);
 		frm.page.main.find(".kt-more").text(folded ? __("All details") : __("Hide details"));
+		frm.page.wrapper.toggleClass("kt-saves-itself", folded && !frm.is_dirty());
 	}
 
 	// A phone app has no browser Back button (Poom, 2026-11-01). Going back keeps the
@@ -151,26 +229,30 @@
 		frm.page.main.find(".kt-task").remove();
 		if (frm.is_new()) {
 			frm.page.main.removeClass("kt-folded");
+			frm.page.wrapper.removeClass("kt-saves-itself");
 			return;
 		}
 		const doc = frm.doc;
 		const { done, body } = split_description(doc.description);
 		const failing = doc.hygiene === "Fail" && doc.hygiene_note;
+		// A finished task is a record. Controls start disabled: setup_edits turns them on
+		// once the server says whether the title may change.
+		const editable = frm.has_perm("write") && !["Completed", "Cancelled"].includes(doc.status);
 		const panel = $(`<div class="kt-task">
-			<h1 class="kt-title">${esc(doc.subject)}</h1>
+			<h1 class="kt-title"><button type="button" class="kt-tap" disabled>${esc(doc.subject)}</button></h1>
 			<div class="kt-id"><code>${esc(doc.name)}</code><button type="button" class="kt-btn kt-copy" aria-label="${esc(__("Copy {0}", [doc.name]))}">${__("Copy")}</button></div>
 			<dl class="kt-facts">
 				${fact(__("Status"), `<button type="button" class="kt-btn kt-status">${esc(__(doc.status))}</button>`)}
 				${fact(__("Assignee"), assignee_html(frm))}
-				${fact(__("Due"), due_html(frm))}
-				${fact(__("Priority"), `<span class="kt-chip" data-priority="${esc(doc.priority || "")}">${esc(__(doc.priority || "Low"))}</span>`)}
-				${fact(__("Project"), doc.project ? `<a class="kt-project" href="${frappe.utils.get_form_link("Project", doc.project)}">${esc(doc.project)}</a>` : `<span class="text-muted">${__("No project")}</span>`)}
+				${fact(__("Due"), `<button type="button" class="kt-tap kt-due ${editable ? "kt-caret" : ""}" disabled>${due_html(frm)}</button>`)}
+				${fact(__("Priority"), `<button type="button" class="kt-tap kt-pri ${editable ? "kt-caret" : ""}" disabled><span class="kt-chip" data-priority="${esc(doc.priority || "")}">${esc(__(doc.priority || "Low"))}</span></button>`)}
+				${fact(__("Project"), `${doc.project ? `<a class="kt-project" href="${frappe.utils.get_form_link("Project", doc.project)}">${esc(doc.project)}</a>` : `<span class="text-muted">${__("No project")}</span>`}${editable ? `<button type="button" class="kt-btn kt-proj">${__("Change")}</button>` : ""}`)}
 				${doc.account_manager ? fact(__("Account Manager"), name_of(doc.account_manager)) : ""}
 				${doc.project_manager ? fact(__("Project Manager"), name_of(doc.project_manager)) : ""}
 			</dl>
 			${failing ? `<div class="kt-flag">${esc(doc.hygiene_note)}</div>` : ""}
-			${done ? `<div class="kt-section"><h2>${__("Done when")}</h2><div class="kt-done">${esc(done)}</div></div>` : ""}
-			${frappe.utils.html2text(body).trim() ? `<div class="kt-section"><h2>${__("Description")}</h2><div class="kt-body">${frappe.dom.remove_script_and_style(body)}</div></div>` : ""}
+			${done || editable ? `<div class="kt-section"><h2>${__("Done when")}</h2><button type="button" class="kt-tap kt-done" disabled>${done ? esc(done) : `<span class="kt-unset">${__("Say what done means")}</span>`}</button></div>` : ""}
+			${frappe.utils.html2text(body).trim() || editable ? `<div class="kt-section"><h2><span>${__("Description")}</span>${editable ? `<button type="button" class="kt-btn kt-desc">${__("Edit")}</button>` : ""}</h2><div class="kt-body">${frappe.utils.html2text(body).trim() ? frappe.dom.remove_script_and_style(body) : `<span class="kt-unset">${__("Nothing")}</span>`}</div></div>` : ""}
 			<div class="kt-section"><h2><span>${__("Waits on")}</span><button type="button" class="kt-btn kt-deps">${__("Edit")}</button></h2><div class="kt-waits"></div></div>
 			<div class="kt-section"><h2>${__("Blocks")}</h2><div class="kt-blocks"></div></div>
 			<button type="button" class="kt-btn kt-more"></button>
@@ -192,6 +274,7 @@
 			panel.find(".kt-waits").html(links_html(r.waits_on));
 			panel.find(".kt-blocks").html(links_html(r.blocks));
 			if (r.project) panel.find(".kt-project").text(r.project);
+			if (editable) setup_edits(frm, panel, r.title_fixed);
 		});
 		// The panel says these in full; a phone cuts the title short and shows the
 		// status as a bare dot. Deferred: the toolbar sets them again after this.
@@ -202,5 +285,9 @@
 		});
 	}
 
-	frappe.ui.form.on("Task", { refresh: draw });
+	frappe.ui.form.on("Task", {
+		refresh: draw,
+		// An unsaved edit always gets its Save, whatever the page is showing.
+		onload: (frm) => frm.$wrapper.on("dirty", () => frm.page.wrapper.removeClass("kt-saves-itself")),
+	});
 })();
