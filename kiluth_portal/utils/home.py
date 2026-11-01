@@ -69,6 +69,8 @@ def ensure_task_board():
 	undoes what people change on it.
 	"""
 	make_property_setter("Task", None, "default_view", "Kanban", "Data", for_doctype=True)
+	# Where task_quick_entry.js isn't loaded, Add still shouldn't offer a template.
+	make_property_setter("Task", "is_template", "allow_in_quick_entry", 0, "Check")
 	if frappe.db.exists("Kanban Board", BOARD):
 		return
 	frappe.get_doc(
