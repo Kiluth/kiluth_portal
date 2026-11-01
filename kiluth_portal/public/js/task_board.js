@@ -11,6 +11,9 @@
 // Touch screens: cards and columns don't drag, because a finger on a card was enough
 // to change a task's status by accident. The status button on each card moves it
 // instead (task_sheet.js), and the tabs jump between columns.
+//
+// Touch screens scroll once: the page goes up and down and the board only sideways.
+// The desk gave each column its own scroll inside the page's (see one_scroll).
 (() => {
 	const proto = frappe.views.KanbanView?.prototype;
 	if (!proto || proto.kiluth_render) return;
@@ -78,7 +81,8 @@
 			.kb-touch .kb-move { display: inline-flex; }
 			.kb-move::after { content: "▾"; font-size: 10px; color: var(--text-muted); }
 			.kb-id { flex: none; font-size: 12px; color: var(--text-muted); }
-			.kb-tabs { display: none; flex: 1 0 100%; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -2px; padding: 2px; }
+			.kb-tabs { display: none; position: sticky; z-index: 5; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none;
+				margin: 0 -2px; padding: 2px 2px 6px; background: var(--bg-color); }
 			.kb-tabs::-webkit-scrollbar { display: none; }
 			.kb-touch .kb-tabs { display: flex; }
 			.kb-tabs button { flex: none; display: inline-flex; gap: 5px; align-items: center; height: 34px; padding: 0 12px; border: 1px solid transparent;
@@ -90,9 +94,17 @@
 			.kb-touch .kanban { margin: 0; gap: 12px; }
 			.kb-touch .kanban .kanban-column { flex: 0 0 100%; min-width: 0; max-width: 100%; padding: 0; box-sizing: border-box; background: transparent !important; }
 			.kb-touch .kanban .kanban-column .kanban-cards { margin: 0; padding: 0 1px; width: 100%; box-sizing: border-box; }
-			.kb-touch .kanban { scroll-snap-type: x proximity; }
-			.kb-touch .kanban .kanban-column .kanban-cards { max-height: calc(100dvh - 194px); }
-			.kb-touch .kanban .kanban-column { scroll-snap-align: start; }
+			.kb-touch .kanban { align-items: flex-start; scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+			/* Keeps the page scrollable on a short list: with nothing to scroll, iOS stops the board swiping too. */
+			.kb-touch .kanban { min-height: 100dvh; }
+			.kb-touch .kanban .kanban-column { min-height: 0; scroll-snap-align: start; transition: none; }
+			.kb-touch .kanban .kanban-column .kanban-cards { height: auto; max-height: none; overflow: visible; }
+			/* Frappe lifts a hovered card to 1001, and a finger leaves a card hovered: it slid over the head. */
+			.kb-touch .kanban .kanban-card-wrapper:hover { z-index: auto; }
+			/* In a browser tab 100vh is taller than the screen, so past the end of the list the whole page, head included, moved up. */
+			.kb-touch body[data-route^="List/Task/Kanban"] .main-section { height: 100dvh; overscroll-behavior-y: contain; }
+			/* The page is as long as the column on screen: the others stop counting, without measuring anything. */
+			.kb-touch .kanban:has(.kb-here):not(.kb-swiping) .kanban-column:not(.kb-here) { margin-bottom: -100000px; }
 		</style>`).appendTo("head");
 	}
 
@@ -157,6 +169,14 @@
 		listview.$result.find(".kanban-cards").attr("data-empty", __("Nothing here"));
 	}
 
+	const column_on_screen = (columns) => {
+		const middle = window.innerWidth / 2;
+		return columns.findIndex((c) => {
+			const r = c.getBoundingClientRect();
+			return r.left <= middle && r.right >= middle;
+		});
+	};
+
 	// Phone: one tab per column, to jump there and show where you are.
 	function sync_tabs(listview, tabs) {
 		const columns = listview.$result.find(".kanban-column").toArray();
@@ -170,18 +190,69 @@
 					.on("click", () => {
 						// Looked up each time: a refresh replaces the columns.
 						const now = listview.$result.find(".kanban-column").get(columns.indexOf(column));
-						now?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+						const board = now?.parentElement;
+						if (board) board.scrollLeft += now.getBoundingClientRect().left - board.getBoundingClientRect().left;
 					});
 			}
 		}
-		const middle = window.innerWidth / 2;
-		const at = columns.findIndex((c) => {
-			const r = c.getBoundingClientRect();
-			return r.left <= middle && r.right >= middle;
-		});
+		const at = Math.max(column_on_screen(columns), 0);
 		tabs.children().each(function (i) {
-			this.setAttribute("aria-current", i === (at < 0 ? 0 : at));
+			this.setAttribute("aria-current", i === at);
 		});
+		// There are more tabs than fit, and the lit one has to stay in sight.
+		if (tabs.data("at") === at) return;
+		tabs.data("at", at);
+		const tab = tabs.children().get(at);
+		tabs.scrollLeft(tab.offsetLeft - (tabs.width() - tab.offsetWidth) / 2);
+	}
+
+	// The page is the only thing that scrolls up and down, so a long column and an
+	// empty one share it. Each column keeps its own place: during a swipe the others
+	// are shifted to where they'd be, and when the board stops the page moves to that
+	// place and the shift goes, so nothing on screen jumps.
+	function one_scroll(listview, tabs) {
+		const page = document.querySelector(".main-section");
+		const board = () => listview.$result.find(".kanban").get(0);
+		const columns = () => listview.$result.find(".kanban-column").toArray();
+		const tops = {};
+		let timer = null;
+
+		// A column not opened yet starts with its first card under the tabs.
+		const place_of = (column) => {
+			const tabs_end = parseFloat(tabs.css("top")) + tabs.outerHeight();
+			const start = page.scrollTop + board().getBoundingClientRect().top - tabs_end;
+			return tops[column.dataset.columnValue] ?? Math.min(page.scrollTop, start);
+		};
+		const mark = () => {
+			if (!is_touch() || !board() || board().classList.contains("kb-swiping") || !listview.$result.is(":visible")) return;
+			const all = columns();
+			const now = all[column_on_screen(all)] || all[0];
+			all.forEach((c) => c.classList.toggle("kb-here", c === now));
+			tabs.css("top", listview.page.wrapper.find(".page-head").outerHeight());
+		};
+		const settle = () => {
+			const old = columns().find((c) => c.classList.contains("kb-here"));
+			if (old) tops[old.dataset.columnValue] = page.scrollTop;
+			const shifted = columns().map((c) => [c, place_of(c)]);
+			board().classList.remove("kb-swiping");
+			columns().forEach((c) => (c.style.transform = ""));
+			mark();
+			const now = shifted.find(([c]) => c.classList.contains("kb-here"));
+			if (now && now[0] !== old) page.scrollTop = now[1];
+		};
+		const swiped = () => {
+			if (!board().classList.contains("kb-swiping")) {
+				for (const column of columns()) {
+					if (column.classList.contains("kb-here")) continue;
+					column.style.transform = `translateY(${page.scrollTop - place_of(column)}px)`;
+				}
+				board().classList.add("kb-swiping");
+			}
+			clearTimeout(timer);
+			timer = setTimeout(settle, 150);
+		};
+		window.addEventListener("resize", mark);
+		return { mark, swiped, is_board: (el) => el === board() };
 	}
 
 	function setup_bar(listview) {
@@ -194,7 +265,9 @@
 		bar.insertBefore(listview.$result);
 		if (frappe.is_mobile()) listview.$filter_section.appendTo(bar);
 		bar.append(total);
-		const tabs = $(`<div class="kb-tabs"></div>`).appendTo(bar);
+		// Beside the bar, not in it: stuck to the top, they'd leave with the bar.
+		const tabs = $(`<div class="kb-tabs"></div>`).insertAfter(bar);
+		const scroll = one_scroll(listview, tabs);
 
 		const is_mine = () => listview.filter_area.get().some((f) => f[1] === "_assign");
 		const sync = () => {
@@ -205,6 +278,7 @@
 			draw_cards(listview);
 			if (!is_touch()) return;
 			sync_tabs(listview, tabs);
+			scroll.mark();
 			listview.$result.find(".kanban, .kanban-cards").each(function () {
 				Sortable.get(this)?.option("disabled", true);
 			});
@@ -218,7 +292,11 @@
 		// the columns. So the place is noted on the way out and put back after.
 		let place = null;
 		listview.$result.on("click", ".kb-title", () => {
-			place = { left: listview.$result.find(".kanban").scrollLeft(), tops: {} };
+			place = {
+				left: listview.$result.find(".kanban").scrollLeft(),
+				page: $(".main-section").scrollTop(),
+				tops: {},
+			};
 			for (const column of listview.$result.find(".kanban-column")) {
 				place.tops[column.dataset.columnValue] = $(column).find(".kanban-cards").scrollTop();
 			}
@@ -229,6 +307,8 @@
 			for (const column of listview.$result.find(".kanban-column")) {
 				$(column).find(".kanban-cards").scrollTop(place.tops[column.dataset.columnValue] || 0);
 			}
+			scroll.mark();
+			if (is_touch()) $(".main-section").scrollTop(place.page);
 			clearTimeout(place.timer);
 			place.timer = setTimeout(() => (place = null), 1000);
 		};
@@ -238,8 +318,13 @@
 			sync();
 			restore_place();
 		}).observe(listview.$result.get(0), { childList: true, subtree: true });
-		// The element that scrolls sideways sits above $result, and scroll doesn't bubble.
-		document.addEventListener("scroll", () => is_touch() && sync_tabs(listview, tabs), { capture: true, passive: true });
+		// Scroll doesn't bubble. Only the board's own matters, so a page scroll costs nothing.
+		document.addEventListener("scroll", (e) => {
+			if (!is_touch() || !scroll.is_board(e.target)) return;
+			sync_tabs(listview, tabs);
+			scroll.swiped();
+		}, { capture: true, passive: true });
+		$(window).on("resize", () => is_touch() && sync_tabs(listview, tabs));
 		sync();
 	}
 
