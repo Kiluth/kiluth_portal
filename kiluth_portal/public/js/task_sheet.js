@@ -41,31 +41,43 @@ frappe.provide("kiluth.tasks");
 		$(document).off("keydown.ktsheet");
 	}
 
-	/** Ask for a new status. `task`: {name, subject, status, owner}. Calls `done(status)`. */
-	kiluth.tasks.pick_status = function (task, done) {
+	/** A sheet of choices. Tapping the current one, Cancel or outside changes nothing. */
+	kiluth.tasks.pick_one = function ({ head, title, choices, current, hint_for, done }) {
 		add_styles();
 		close_sheet();
 		const backdrop = $(`<div class="kt-backdrop"></div>`).appendTo("body").on("click", close_sheet);
-		const sheet = $(`<div class="kt-sheet" role="dialog" aria-modal="true" aria-label="${__("Move task")}">
+		const sheet = $(`<div class="kt-sheet" role="dialog" aria-modal="true">
 			<div class="kt-sheet-title"></div>
-			<div class="kt-sheet-head">${__("Move to")}</div>
-		</div>`).appendTo("body");
-		sheet.find(".kt-sheet-title").text(task.subject || task.name);
-		const not_requester = task.owner && task.owner !== frappe.session.user;
-		for (const status of CHOICES) {
-			const here = status === task.status;
-			const hint = status === "Completed" && not_requester ? `<span class="kt-hint">${__("The requester completes a task")}</span>` : "";
-			$(`<button type="button" class="kt-choice" aria-current="${here}"><span>${__(status)}</span>${here ? "✓" : hint}</button>`)
+			<div class="kt-sheet-head"></div>
+		</div>`).attr("aria-label", head).appendTo("body");
+		sheet.find(".kt-sheet-title").text(title);
+		sheet.find(".kt-sheet-head").text(head);
+		for (const choice of choices) {
+			const here = choice === current;
+			$(`<button type="button" class="kt-choice" aria-current="${here}"><span>${__(choice)}</span>${here ? "✓" : hint_for?.(choice) || ""}</button>`)
 				.appendTo(sheet)
 				.on("click", () => {
 					close_sheet();
-					if (!here) done(status);
+					if (!here) done(choice);
 				});
 		}
 		$(`<button type="button" class="kt-cancel">${__("Cancel")}</button>`).appendTo(sheet).on("click", close_sheet);
 		$(document).on("keydown.ktsheet", (e) => e.key === "Escape" && close_sheet());
 		sheet.find(".kt-choice").first().trigger("focus");
 		return backdrop;
+	};
+
+	/** Ask for a new status. `task`: {name, subject, status, owner}. Calls `done(status)`. */
+	kiluth.tasks.pick_status = function (task, done) {
+		const not_requester = task.owner && task.owner !== frappe.session.user;
+		return kiluth.tasks.pick_one({
+			head: __("Move to"),
+			title: task.subject || task.name,
+			choices: CHOICES,
+			current: task.status,
+			hint_for: (status) => status === "Completed" && not_requester ? `<span class="kt-hint">${__("The requester completes a task")}</span>` : "",
+			done,
+		});
 	};
 
 	/** Show "Moved to X · Undo". `undo` runs if the person taps it. */
