@@ -20,7 +20,7 @@ def get_data(show_finished=0):
 	show_finished = frappe.utils.cint(show_finished)
 	rows = frappe.get_list(
 		"Task",
-		fields=["name", "subject", "status", "project", "_assign"],
+		fields=["name", "subject", "status", "project", "_assign", "priority", "exp_end_date"],
 		filters=[["status", "!=", "Template"]],
 		order_by="name asc",
 		limit_page_length=0,
@@ -37,7 +37,7 @@ def get_data(show_finished=0):
 	for r in rows:
 		by_project.setdefault(r.project or "", []).append(r)
 
-	titles = dict(frappe.get_all("Project", fields=["name", "project_name"], as_list=True))
+	projects = {p.name: p for p in frappe.get_all("Project", fields=["name", "project_name", "customer"])}
 	out = []
 	for project, tasks in by_project.items():
 		shown = [t for t in tasks if show_finished or t.status not in FINISHED]
@@ -46,14 +46,18 @@ def get_data(show_finished=0):
 		names = [t.name for t in shown]
 		inside = {t.name for t in tasks}
 		placed = layout(names, through_hidden(names, [(a, b) for a, b in links if a in inside and b in inside]))
+		info = projects.get(project) or frappe._dict()
 		out.append({
 			"project": project,
-			"title": titles.get(project) or "",
+			"title": info.project_name or "",
+			"client": info.customer or "",
 			"tasks": {
 				t.name: {
 					"subject": t.subject,
 					"status": t.status,
 					"assignees": json.loads(t._assign or "[]"),
+					"priority": t.priority,
+					"due": str(t.exp_end_date or "")[:10],
 				}
 				for t in shown
 			},
