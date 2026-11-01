@@ -228,8 +228,9 @@
 		$(document.documentElement).toggleClass("kb-touch", is_touch());
 		listview.page.set_title(__("Task Board"));
 		setup_bar(listview);
-		frappe.db.get_list("Project", { fields: ["name", "project_name"], limit: 0 }).then((rows) => {
-			for (const row of rows) project_names[row.name] = row.project_name;
+		frappe.db.get_list("Project", { fields: ["name", "project_name", "customer"], limit: 0 }).then((rows) => {
+			// Client first: on a phone the end of this label is what gets cut off.
+			for (const row of rows) project_names[row.name] = row.customer ? `${row.customer} · ${row.project_name}` : row.project_name;
 			listview.$result.find(".kb-project[data-project]").each(function () {
 				this.textContent = project_names[this.dataset.project] || this.textContent;
 			});
