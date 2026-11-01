@@ -214,9 +214,30 @@
 			else await listview.filter_area.add([[listview.doctype, "_assign", "like", `%${frappe.session.user}%`]]);
 			sync();
 		});
+		// Opening a task hides the board, which loses its scroll, and coming back redraws
+		// the columns. So the place is noted on the way out and put back after.
+		let place = null;
+		listview.$result.on("click", ".kb-title", () => {
+			place = { left: listview.$result.find(".kanban").scrollLeft(), tops: {} };
+			for (const column of listview.$result.find(".kanban-column")) {
+				place.tops[column.dataset.columnValue] = $(column).find(".kanban-cards").scrollTop();
+			}
+		});
+		const restore_place = () => {
+			if (!place || !listview.$result.is(":visible")) return;
+			listview.$result.find(".kanban").scrollLeft(place.left);
+			for (const column of listview.$result.find(".kanban-column")) {
+				$(column).find(".kanban-cards").scrollTop(place.tops[column.dataset.columnValue] || 0);
+			}
+			clearTimeout(place.timer);
+			place.timer = setTimeout(() => (place = null), 1000);
+		};
 		// The board redraws its columns on every refresh, which brings back the desk's
 		// cards and new drag handlers.
-		new MutationObserver(sync).observe(listview.$result.get(0), { childList: true, subtree: true });
+		new MutationObserver(() => {
+			sync();
+			restore_place();
+		}).observe(listview.$result.get(0), { childList: true, subtree: true });
 		// The element that scrolls sideways sits above $result, and scroll doesn't bubble.
 		document.addEventListener("scroll", () => is_touch() && sync_tabs(listview, tabs), { capture: true, passive: true });
 		sync();

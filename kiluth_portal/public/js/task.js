@@ -40,6 +40,9 @@
 			.kt-link .kt-s { flex: none; font-size: 12px; color: var(--text-muted); }
 			.kt-none { font-size: 14px; color: var(--text-muted); }
 			.kt-more { margin: 20px 0 8px; width: 100%; justify-content: center; min-height: 40px; }
+			.kt-back { display: none; flex: none; align-items: center; gap: 2px; min-height: 40px; margin-right: 8px; padding: 0 10px 0 4px; border: 1px solid var(--kt-edge); border-radius: 8px;
+				background: transparent; color: var(--text-color); font-size: 14px; }
+			@media (max-width: 767px), (pointer: coarse) { .kt-back { display: inline-flex; } }
 		</style>`).appendTo("head");
 	}
 
@@ -121,8 +124,27 @@
 		frm.page.main.find(".kt-more").text(folded ? __("All details") : __("Hide details"));
 	}
 
+	// A phone app has no browser Back button (Poom, 2026-11-01). Going back keeps the
+	// board's filter. A task opened from a link or an alert has no board behind it, so
+	// this opens the one Home opens. A full load: a board's first show drops
+	// route_options, so only the URL can filter it.
+	function back_to_board() {
+		const is_tasks = (route) => route?.[0] === "List" && route[1] === "Task";
+		if (is_tasks(frappe.get_prev_route())) history.back();
+		else if (frappe.route_history.some(is_tasks)) frappe.set_route("List", "Task", "Kanban", "Tasks");
+		else window.location.assign("/my-board");
+	}
+
+	function add_back(frm) {
+		if (frm.page.kt_back) return;
+		frm.page.kt_back = $(`<button type="button" class="kt-back">${frappe.utils.icon("es-line-left-chevron", "md")}${__("Back")}</button>`)
+			.insertBefore(frm.page.wrapper.find(".page-head .title-area"))
+			.on("click", back_to_board);
+	}
+
 	function draw(frm) {
 		add_styles();
+		add_back(frm);
 		frm.page.main.find(".kt-task").remove();
 		if (frm.is_new()) {
 			frm.page.main.removeClass("kt-folded");
