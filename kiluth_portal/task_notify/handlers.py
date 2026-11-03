@@ -8,6 +8,12 @@ import frappe
 
 from kiluth_portal.task_notify.dispatch import guarded
 from kiluth_portal.task_notify.events import assignment_event, comment_event
+from kiluth_portal.utils.task_requester import requester_of
+
+# The task check's comments start with this (kiluth-infra
+# modules/task-check/lambda/check_tasks.py, MARK) and come from this address.
+CHECK_MARK = "Task check:"
+CHECK_EMAIL = "swarm@kiluth.com"
 
 
 def _enqueue(event):
@@ -55,16 +61,20 @@ def on_comment_insert(doc, method=None):
 	if doc.reference_doctype != "Task":
 		return
 	commenter = doc.comment_email or doc.owner
+	from_check = commenter == CHECK_EMAIL and CHECK_MARK in (doc.content or "")
+	task = frappe.db.get_value("Task", doc.reference_name, ["subject", "_assign", "owner"], as_dict=True) or {}
 	_enqueue(
 		comment_event(
 			comment=doc.name,
 			reference_doctype=doc.reference_doctype,
 			task=doc.reference_name,
-			task_subject=_subject(doc.reference_name),
+			task_subject=task.get("subject"),
 			comment_type=doc.comment_type,
 			commenter=commenter,
-			commenter_name=frappe.utils.get_fullname(commenter),
+			commenter_name=doc.comment_by if from_check else frappe.utils.get_fullname(commenter),
 			text=frappe.utils.strip_html(doc.content or ""),
-			task_assign_json=frappe.db.get_value("Task", doc.reference_name, "_assign"),
+			task_assign_json=task.get("_assign"),
+			requester=requester_of(task.get("owner")),
+			from_check=from_check,
 		)
 	)

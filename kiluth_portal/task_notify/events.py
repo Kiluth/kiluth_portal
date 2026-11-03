@@ -54,13 +54,15 @@ def assignment_event(*, todo, reference_type, task, task_subject, allocated_to, 
 	}
 
 
-def comment_event(*, comment, reference_doctype, task, task_subject, comment_type, commenter, commenter_name, text, task_assign_json):
+def comment_event(*, comment, reference_doctype, task, task_subject, comment_type, commenter, commenter_name, text, task_assign_json, requester=None, from_check=False):
 	"""Event for a new Comment row, or None. A Comment is inserted once, so its name is the id."""
 	recipients = comment_recipients(
 		reference_doctype=reference_doctype,
 		comment_type=comment_type,
 		commenter=commenter,
 		task_assign_json=task_assign_json,
+		requester=requester,
+		from_check=from_check,
 	)
 	if not recipients:
 		return None

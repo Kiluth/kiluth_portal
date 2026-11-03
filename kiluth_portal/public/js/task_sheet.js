@@ -119,7 +119,11 @@ frappe.provide("kiluth.tasks");
 		const set = (value) => frappe.xcall("frappe.client.set_value", {
 			doctype: "Task", name: task.name, fieldname: "status", value,
 		});
-		await set(status);
+		try {
+			await set(status);
+		} catch {
+			return; // refused: Frappe already showed why
+		}
 		after();
 		kiluth.tasks.undo_bar(__("Moved to {0}", [__(status)]), async () => {
 			await set(task.status);

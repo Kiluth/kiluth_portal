@@ -14,13 +14,20 @@ is the task's creator; tasks the system created keep whoever is assigned.
 It also records who completed a task in `completed_by`, which the task check
 reads. ERPNext has the field but never fills it, and Task keeps no version
 history, so nothing else says who set the status.
+
+Only the requester, or an admin, may set Completed (utils/task_requester.py).
+The check runs here, on every save, so the form, the board, the phone sheet and
+the API all meet it. Tasks already completed are not touched.
 """
 from contextlib import contextmanager
 
 from erpnext.projects.doctype.task import task as erpnext_task
 from erpnext.projects.doctype.task.task import Task
 import frappe
+from frappe import _
 from frappe.desk.form.assign_to import add, clear
+
+from kiluth_portal.utils.task_requester import may_complete, requester_of
 
 SYSTEM_USERS = {"Administrator", "Guest"}
 
@@ -42,7 +49,20 @@ class KiluthTask(Task):
 		# drops only the assignment closing.
 		with _assignments_kept():
 			super().validate_status()
+		self.check_completer()
 		self.record_completer()
+
+	def check_completer(self):
+		if self.status != "Completed" or not self.has_value_changed("status"):
+			return
+		if may_complete(frappe.session.user, self.owner):
+			return
+		requester = requester_of(self.owner)
+		who = frappe.utils.get_fullname(requester) if requester else _("an admin")
+		frappe.throw(
+			_("Only {0} can complete this. Set it to Pending Review so they can check it.").format(who),
+			title=_("Not completed"),
+		)
 
 	def record_completer(self):
 		if self.status != "Completed":

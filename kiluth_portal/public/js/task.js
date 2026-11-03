@@ -105,8 +105,19 @@
 			return;
 		}
 		const from = frm.doc.status;
-		const set = (value) => frm.set_value("status", value).then(() => frm.save());
-		set(status).then(() => kiluth.tasks.undo_bar(__("Moved to {0}", [__(status)]), () => set(from)));
+		// Completed On is required with Completed, and the form checks that before
+		// the server could fill it in, so even the requester could not complete here.
+		const set = (value) => frm.set_value(value === "Completed" && !frm.doc.completed_on
+			? { status: value, completed_on: frappe.datetime.get_today() }
+			: { status: value }).then(() => frm.save()).then(() => {
+				// A refused save still resolves, with the change left unsaved on the form.
+				if (frm.is_dirty()) throw new Error("not saved");
+			});
+		set(status).then(
+			() => kiluth.tasks.undo_bar(__("Moved to {0}", [__(status)]), () => set(from)),
+			// Refused (only the requester or an admin completes): drop the unsaved change.
+			() => frm.reload_doc()
+		);
 	}
 
 	// Every change here needs a deliberate choice and Save, and comes with Undo.

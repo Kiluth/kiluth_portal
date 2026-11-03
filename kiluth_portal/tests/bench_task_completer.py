@@ -5,7 +5,8 @@
 
 import frappe
 
-ONE, TWO = "e2e-sales@kiluth.com", "e2e-exec@kiluth.com"
+# ONE asks for the task; TWO is an admin. Only they may complete it (bench_requester_completes.py).
+ONE, TWO = "e2e-sales@kiluth.com", "e2e-assigner@kiluth.com"
 
 
 def _set_status(name, status, user):
@@ -17,9 +18,10 @@ def _set_status(name, status, user):
 
 
 def run():
-	frappe.set_user("Administrator")
+	frappe.set_user(ONE)
 	results = []
 	task = frappe.get_doc({"doctype": "Task", "subject": "E2E completer", "status": "Open"}).insert(ignore_permissions=True)
+	frappe.set_user("Administrator")
 	who = lambda: frappe.db.get_value("Task", task.name, "completed_by")
 
 	results.append(("open has none", who() is None))

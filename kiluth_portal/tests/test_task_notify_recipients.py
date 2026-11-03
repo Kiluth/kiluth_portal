@@ -101,6 +101,29 @@ class Comments(unittest.TestCase):
 		self.assertEqual(comment(task_assign_json=assign(POOM)), [POOM])
 
 
+class CheckComments(unittest.TestCase):
+	"""TASK-2026-00089: Reaw completed Poom's task, the check flagged it, and Poom heard nothing."""
+
+	def check(self, **kw):
+		return comment(commenter=SWARM, task_assign_json=assign(REAW), requester=POOM, from_check=True, **kw)
+
+	def test_check_comment_tells_the_requester_too(self):
+		self.assertEqual(self.check(), sorted([POOM, REAW]))
+
+	def test_requester_who_is_the_assignee_is_told_once(self):
+		self.assertEqual(comment(commenter=SWARM, task_assign_json=assign(POOM), requester=POOM, from_check=True), [POOM])
+
+	def test_task_with_no_requester_tells_the_assignee_only(self):
+		self.assertEqual(comment(commenter=SWARM, task_assign_json=assign(REAW), requester=None, from_check=True), [REAW])
+
+	def test_unassigned_task_still_tells_the_requester(self):
+		self.assertEqual(comment(commenter=SWARM, task_assign_json=assign(), requester=POOM, from_check=True), [POOM])
+
+	def test_people_comments_never_add_the_requester(self):
+		self.assertEqual(comment(commenter=SWARM, task_assign_json=assign(REAW), requester=POOM), [REAW])
+		self.assertEqual(comment(task_assign_json=assign(SWARM), requester=POOM), [SWARM])
+
+
 class ParseAssign(unittest.TestCase):
 	def test_garbage_is_empty(self):
 		for raw in ("", None, "not json", "{}", "42", '[null, 3]'):

@@ -8,6 +8,9 @@ The rules (from Poom, 2026-10-13):
 1. Only the assignee is notified. Nobody else, ever.
 2. You are never notified about your own action (self-assign, own comment).
 3. A comment by someone else on a Task notifies that Task's assignee(s).
+4. A task check comment also notifies the Task's requester (Poom, 2026-11-03).
+   The check posts with Poom's own key, and the requester is often not the
+   assignee, so a finding about their task reached nobody who could act on it.
 """
 
 import json
@@ -53,9 +56,13 @@ def assignment_recipients(*, reference_type, allocated_to, actor, status, is_new
 	return [assignee]
 
 
-def comment_recipients(*, reference_doctype, comment_type, commenter, task_assign_json):
-	"""Recipients for a new Comment row: the Task's assignees minus the commenter."""
+def comment_recipients(*, reference_doctype, comment_type, commenter, task_assign_json, requester=None, from_check=False):
+	"""Recipients for a new Comment row: the Task's assignees minus the commenter,
+	plus the requester when the comment is the task check's."""
 	if reference_doctype != TASK_DOCTYPE or comment_type not in NOTIFY_COMMENT_TYPES:
 		return []
 	commenter = _clean(commenter)
-	return sorted({u for u in parse_assign(task_assign_json) if u != commenter})
+	told = {u for u in parse_assign(task_assign_json) if u != commenter}
+	if from_check and _clean(requester):
+		told.add(_clean(requester))
+	return sorted(told)
