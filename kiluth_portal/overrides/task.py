@@ -55,10 +55,11 @@ class KiluthTask(Task):
 	def check_completer(self):
 		if self.status != "Completed" or not self.has_value_changed("status"):
 			return
-		if may_complete(frappe.session.user, self.owner):
+		assignees = frappe.parse_json(self.get("_assign") or "[]") or []
+		if may_complete(frappe.session.user, self.owner, assignees):
 			return
 		requester = requester_of(self.owner)
-		who = frappe.utils.get_fullname(requester) if requester else _("an admin")
+		who = frappe.utils.get_fullname(requester) if requester else _("its assignee or an admin")
 		frappe.throw(
 			_("Only {0} can complete this. Set it to Pending Review so they can check it.").format(who),
 			title=_("Not completed"),

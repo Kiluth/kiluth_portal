@@ -150,6 +150,16 @@ def create_website_lead(name=None, email=None, company=None, message=None, heard
 	return {"lead": lead.name}
 
 
+def _client_project(customer: str) -> str:
+	"""The customer's project when they have exactly one open, else Operations.
+
+	With two or more the message could be about any of them, so it waits on
+	Operations for the AE to move, like a lead's task.
+	"""
+	projects = frappe.get_all("Project", filters={"customer": customer, "status": "Open"}, pluck="name", limit=2)
+	return projects[0] if len(projects) == 1 else LEADS_PROJECT
+
+
 def _client_message(customer: str, note: str) -> dict:
 	"""An existing customer wrote in: a comment on the Customer and a task for their AE."""
 	frappe.get_doc("Customer", customer).add_comment(
@@ -168,6 +178,7 @@ def _client_message(customer: str, note: str) -> dict:
 		{
 			"doctype": "Task",
 			"subject": subject,
+			"project": _client_project(customer),
 			"status": "Open",
 			"priority": "Medium",
 			"department": "Account Management - K",

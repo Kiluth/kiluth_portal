@@ -59,8 +59,14 @@ def run():
 		made.append(t3)
 		frappe.db.set_value("Task", t3, "owner", "swarm@kiluth.com", update_modified=False)
 		msg = _set(t3, DOER, status="Completed")
-		out.append(("a task with no requester: others are refused", msg == REFUSED.format("an admin"), msg))
-		out.append(("a task with no requester: an admin completes it", _set(t3, ADMIN, status="Completed") is None, _status(t3)))
+		out.append(("a task with no requester: others are refused", msg == REFUSED.format("its assignee or an admin"), msg))
+		frappe.db.set_value("Task", t3, "_assign", frappe.as_json([DOER]), update_modified=False)
+		out.append(("a task with no requester: its assignee completes it", _set(t3, DOER, status="Completed") is None, _status(t3)))
+
+		t3b = _task("Administrator", "E2E system task, admin")
+		made.append(t3b)
+		frappe.db.set_value("Task", t3b, "owner", "website-bot@kiluth.com", update_modified=False)
+		out.append(("a task with no requester: an admin completes it", _set(t3b, ADMIN, status="Completed") is None, _status(t3b)))
 
 		# Completed before the rule, by someone who was not the requester.
 		t4 = _task(REQUESTER, "E2E completed before the rule")

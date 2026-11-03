@@ -16,6 +16,8 @@ person to link (Poom, 2026-10-28):
      design, and the raw answers as JSON for processing later.
   3. The AE sets the task's Project (or notes the Lead) and completes it. A
      second brief for the same client while the task is open lands on it too.
+     Until then the task waits on Operations, as a lead's task does: every task
+     has a project, and the typed code stays a hint (Poom, 2026-11-04).
 
 A brief sent from staging.kiluth.com (test=1) is filed the same way, marked
 TEST in the file names, the task and the PDF.
@@ -34,7 +36,7 @@ import frappe
 
 from kiluth_portal.api.website_lead import BOT_USER
 from kiluth_portal.utils import brief_rules as br
-from kiluth_portal.utils.lead_routing import assign, pick_salesperson
+from kiluth_portal.utils.lead_routing import LEADS_PROJECT, assign, pick_salesperson
 
 SUBJECT = "Link client brief: "
 
@@ -95,6 +97,7 @@ def _link_task(client, hint, is_test):
 		{
 			"doctype": "Task",
 			"subject": subject,
+			"project": LEADS_PROJECT,
 			"status": "Open",
 			"priority": "Medium",
 			"department": "Account Management - K",
@@ -102,6 +105,7 @@ def _link_task(client, hint, is_test):
 				f"A client brief for {esc(client)}, filled in at kiluth.com/brief (the Briefing Doc in the Client Onboarding Pack). "
 				"The brief is attached as a PDF, with the answers as data beside it.<br><br>"
 				+ (f"Project code typed on the form: {esc(hint)}. Check it before you link.<br><br>" if hint else "No project code was given.<br><br>")
+				+ "It waits on Operations until you link it.<br><br>"
 				+ "<b>Done when</b> this task's Project is set to the client's project (or the Lead is named in a comment, "
 				"when there is no project yet) and the brief has been checked with the client."
 				+ where
