@@ -160,6 +160,16 @@ doc_events = {
         "before_insert": "kiluth_portal.utils.customer.block_duplicate",
         "validate": "kiluth_portal.utils.customer.english_name",  # the name must be English
     },
+    # Kiluth isn't VAT-registered: refuse a VAT taxes row (utils/vat.py).
+    "Quotation": {
+        "validate": "kiluth_portal.utils.vat.no_vat_rows",
+    },
+    "Sales Order": {
+        "validate": "kiluth_portal.utils.vat.no_vat_rows",
+    },
+    "Sales Invoice": {
+        "validate": "kiluth_portal.utils.vat.no_vat_rows",
+    },
     # Kiluth Tasks notifications. Hooks only queue a
     # job; who is told lives in task_notify/recipients.py, delivery in
     # task_notify/channels.py.
