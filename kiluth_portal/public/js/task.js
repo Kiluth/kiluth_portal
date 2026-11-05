@@ -36,13 +36,15 @@
 			.kt-late { color: var(--kt-high); font-weight: 600; }
 			.kt-person { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 			.kt-nobody { color: var(--kt-high); font-weight: 600; }
-			.kt-flag { margin-top: 14px; padding: 10px 12px; border-radius: 10px; font-size: 14px; color: var(--kt-high); background: var(--kt-high-bg); white-space: pre-line; }
+			.kt-flag { margin-top: 14px; padding: 10px 12px; border-radius: 10px; font-size: 14px; color: var(--kt-high); background: var(--kt-high-bg); white-space: pre-line; overflow-wrap: anywhere; }
 			.kt-section { margin-top: 20px; }
 			.kt-section h2 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
-			.kt-done { display: block; width: 100%; padding: 10px 12px; border: 1px solid var(--kt-edge); border-radius: 10px; font-size: 15px; line-height: 1.45; white-space: pre-line; }
+			.kt-done { display: block; width: 100%; padding: 10px 12px; border: 1px solid var(--kt-edge); border-radius: 10px; font-size: 15px; line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
 			.kt-unset { color: var(--text-muted); }
 			.kt-body { font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
 			.kt-body img { max-width: 100%; height: auto; }
+			/* Comments are the desk's own; long paths and links wrap there too, on the Task page only. */
+			.page-container:has(.kt-task) .timeline-message-box .content { overflow-wrap: anywhere; }
 			.kt-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; padding: 6px 0;
 				border-top: 1px solid var(--kt-edge); color: var(--text-color); font-size: 14px; text-decoration: none; }
 			.kt-link:hover { color: var(--text-color); text-decoration: none; }
