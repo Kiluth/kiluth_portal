@@ -299,6 +299,17 @@
 		});
 	}
 
+	// The desk scrolls .main-section, not the window, and a new page keeps the last
+	// one's place: a task opened from far down the board opened at its comments
+	// (Poom, 2026-11-06). A task opens at the top, unless its link names a field or
+	// an anchor to go to.
+	$(document).off("page-change.kt-task").on("page-change.kt-task", () => {
+		const [view, doctype] = frappe.get_route();
+		if (view !== "Form" || doctype !== "Task") return;
+		if (window.location.hash || frappe.route_options?.scroll_to) return;
+		$(".main-section").scrollTop(0);
+	});
+
 	frappe.ui.form.on("Task", {
 		refresh: draw,
 		// An unsaved edit always gets its Save, whatever the page is showing.
