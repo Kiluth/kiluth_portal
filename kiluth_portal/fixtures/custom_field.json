@@ -951,9 +951,9 @@
   "fieldname": "custom_legal_name",
   "fieldtype": "Data",
   "label": "Legal name (for documents)",
-  "description": "The name as registered, e.g. in Thai: โรงเรียนอนุบาลบ้านพลอยภูมิ. Quotations, invoices and receipts print this instead of the client name. Keep the client name in English.",
+  "description": "Any language. The name as registered, e.g. in Thai: โรงเรียนอนุบาลบ้านพลอยภูมิ. Quotations, invoices and receipts print this instead of the client name; leave it blank to print the client name. The client name itself must be in English.",
   "insert_after": "customer_name",
   "length": 240,
-  "modified": "2026-10-25 22:30:00.000000"
+  "modified": "2026-11-05 15:15:00.000000"
  }
 ]
