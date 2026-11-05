@@ -151,6 +151,10 @@ doc_events = {
     "File": {
         "after_insert": "kiluth_portal.kiluth_hr.certify.on_file_insert",
     },
+    # A project's tasks follow its customer (utils/task_customer.py).
+    "Project": {
+        "on_update": "kiluth_portal.utils.task_customer.follow_project",
+    },
     # Refuse a new customer whose name matches one we have (utils/customer.py).
     "Customer": {
         "before_insert": "kiluth_portal.utils.customer.block_duplicate",
@@ -334,6 +338,7 @@ after_migrate = [
     "kiluth_portal.web_push.menu.ensure_menu_item",
     "kiluth_portal.utils.home.ensure_task_board",
     "kiluth_portal.utils.task_managers.ensure_fields",
+    "kiluth_portal.utils.task_customer.ensure_field",
     "kiluth_portal.utils.home.add_kiluth_sidebar_links",
 ]
 
