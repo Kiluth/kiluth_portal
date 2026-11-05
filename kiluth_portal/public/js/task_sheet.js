@@ -38,6 +38,8 @@ frappe.provide("kiluth.tasks");
 				.kt-tall { --page-head-height: 56px; }
 				.kt-tall .sidebar-toggle-btn, .kt-tall .page-actions .btn:not(.hide), .kt-tall .page-head .custom-actions .btn,
 				.kt-tall .navbar-modal-search-mobile { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+				/* The grey box is the icon's own, 28px: drawn at 44px it matches the buttons beside it. */
+				.kt-tall .navbar-modal-search-mobile .search-icon { box-sizing: border-box; width: 44px; height: 44px; justify-content: center; color: var(--text-color); }
 				.kt-tall .sidebar-toggle-btn { margin-left: -12px; }
 				.kt-tall .kt-back, .kt-tall .kt-link, .kt-tall .kiluth-board-bar .btn, .kt-undo button { min-height: 44px; }
 				/* Inside a row: a lighter 36px to look at, the same 44px to hit. */
