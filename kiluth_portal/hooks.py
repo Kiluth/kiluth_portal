@@ -13,7 +13,8 @@ app_license = "mit"
 # `navbar.bundle.js` re-routes the Kiluth logo and inserts a dedicated "Portal"
 # link so users can always jump back to the portal home from the desk.
 # `web_push.bundle.js` adds "Phone notifications" to the user menu (web_push/).
-app_include_js = ["navbar.bundle.js", "web_push.bundle.js"]
+# `notification_bell.bundle.js` shows past notifications on a phone: count on the menu button, list as a sheet.
+app_include_js = ["navbar.bundle.js", "web_push.bundle.js", "notification_bell.bundle.js"]
 
 
 # Form Behavior (versioned client-side)

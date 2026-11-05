@@ -8,7 +8,7 @@ An event is a plain dict (it has to survive the trip through the RQ queue):
   task        Task name
   actor       user who did it (never a recipient)
   recipients  users to tell, from recipients.py
-  payload     what any channel needs to show it: title, body, url, tag, task
+  payload     what any channel needs to show it: title, body, url, tag, task, kind
 """
 
 from kiluth_portal.task_notify.recipients import assignment_recipients, comment_recipients
@@ -18,13 +18,14 @@ COMMENTED = "task.commented"
 BODY_LIMIT = 180
 
 
-def _payload(*, title, body, task):
+def _payload(*, title, body, task, kind):
 	return {
 		"title": title,
 		"body": body,
 		"url": f"/app/task/{task}",
 		"tag": f"task-{task}",
 		"task": task,
+		"kind": kind,
 	}
 
 
@@ -50,7 +51,7 @@ def assignment_event(*, todo, reference_type, task, task_subject, allocated_to, 
 		"task": task,
 		"actor": actor,
 		"recipients": recipients,
-		"payload": _payload(title=f"{actor_name} assigned you a task", body=task_subject or task, task=task),
+		"payload": _payload(title=f"{actor_name} assigned you a task", body=task_subject or task, task=task, kind=ASSIGNED),
 	}
 
 
@@ -76,5 +77,6 @@ def comment_event(*, comment, reference_doctype, task, task_subject, comment_typ
 			title=f"{commenter_name} on {task_subject or task}",
 			body=(text or "").strip()[:BODY_LIMIT],
 			task=task,
+			kind=COMMENTED,
 		),
 	}

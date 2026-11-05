@@ -221,14 +221,17 @@ class FailureIsolation(unittest.TestCase):
 
 
 class Channels(unittest.TestCase):
-	def test_default_is_log_only(self):
-		self.assertEqual([c.name for c in enabled(None)], ["log"])
+	def test_default_is_log_and_the_bell(self):
+		self.assertEqual([c.name for c in enabled(None)], ["log", "bell"])
 
 	def test_unknown_names_are_skipped(self):
-		self.assertEqual([c.name for c in enabled(["log", "carrier-pigeon"])], ["log"])
+		self.assertEqual([c.name for c in enabled(["log", "carrier-pigeon"])], ["log", "bell"])
+
+	def test_bell_is_not_doubled(self):
+		self.assertEqual([c.name for c in enabled(["bell", "webpush"])], ["bell", "webpush"])
 
 	def test_named_stubs_exist(self):
-		self.assertEqual(set(CHANNELS), {"log", "webpush", "expo"})
+		self.assertEqual(set(CHANNELS), {"log", "webpush", "bell", "expo"})
 
 	def test_log_channel_sends(self):
 		with self.assertLogs("kiluth_portal.task_notify", level="INFO") as logs:
