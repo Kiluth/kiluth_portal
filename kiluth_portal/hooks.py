@@ -158,6 +158,7 @@ doc_events = {
     # Refuse a new customer whose name matches one we have (utils/customer.py).
     "Customer": {
         "before_insert": "kiluth_portal.utils.customer.block_duplicate",
+        "validate": "kiluth_portal.utils.customer.english_name",  # the name must be English
     },
     # Kiluth Tasks notifications. Hooks only queue a
     # job; who is told lives in task_notify/recipients.py, delivery in

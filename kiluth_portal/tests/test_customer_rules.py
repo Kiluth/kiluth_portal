@@ -33,6 +33,16 @@ check("different client", r.similar_customer("Bonsoir", have) is None)
 check("only legal words", r.similar_customer("Co., Ltd.", have) is None)
 check("farm is not Idol Farm", r.similar_customer("Farm", have) is None)
 
+check("English with punctuation", r.not_english("Mary Manufacturing Co., Ltd. (HQ) & Sons - O'Brien 2/1 +") == [])
+check("accented Latin", r.not_english("Café Crème Société") == [])
+check("typographic quote and dash", r.not_english("Rak’s Guesthouse – Chiang Mai") == [])
+check("Thai name", r.not_english("บริษัท แมรี่แมนูแฟ็คเจอริ่ง จำกัด") != [])
+check("one Thai word in English", r.not_english("Baanploypoom บ้าน") == ["บ", "้", "า", "น"])
+check("Thai digits", r.not_english("Shop ๑๒") == ["๑", "๒"])
+check("other scripts", all(r.not_english(n) for n in ("東京株式会社", "ООО Ромашка", "شركة")))
+check("emoji", r.not_english("Idol Farm 🐄") == ["🐄"])
+check("blank is not this rule's job", r.not_english("") == [] and r.not_english(None) == [])
+
 if fails:
 	print("FAIL:", *fails, sep="\n  ")
 	sys.exit(1)
