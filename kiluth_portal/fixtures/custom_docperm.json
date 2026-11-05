@@ -288,7 +288,7 @@
  {
   "amend": 0,
   "cancel": 0,
-  "create": 0,
+  "create": 1,
   "delete": 0,
   "docstatus": 0,
   "doctype": "Custom DocPerm",
@@ -298,7 +298,7 @@
   "impersonate": 0,
   "import": 0,
   "mask": 0,
-  "modified": "2026-04-22 01:50:04.474171",
+  "modified": "2026-11-05 17:00:00.000000",
   "name": "h4slrool3u",
   "parent": "Project",
   "permlevel": 0,
@@ -309,7 +309,7 @@
   "select": 0,
   "share": 1,
   "submit": 0,
-  "write": 0
+  "write": 1
  },
  {
   "amend": 0,
