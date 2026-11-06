@@ -8,7 +8,8 @@ attached test record, and the task checker's verdicts (Task.hygiene), then:
   to act on: an attempt that month, a certificate expiring within two months,
   or a task-habit finding
 - emails management@kiluth.com a company summary with no names, but only when
-  someone took a test that month
+  someone took a test that month; per-doc detail only when MIN_GROUP or more
+  people did
 - opens one Task per department on PROJ-0001 listing its docs to check
 
 Ported from the HR builder script (departments/hr/artifacts/learning-report/
@@ -50,6 +51,9 @@ _SENT_KEY = "kiluth_learning_report_last_sent_period"
 # Reports start with October 2026 (first run 6 Nov, per hr/state). Never send or catch up on earlier
 # months: on first deploy the hourly catch-up would otherwise send September's reports.
 _FIRST_PERIOD = "2026-10"
+# Below this many people tested in a month, the summary shows totals only: per-doc
+# detail would point to them (2026-11-06).
+MIN_GROUP = 3
 
 
 # ─── Records ─────────────────────────────────────────────────────────────────
@@ -99,11 +103,21 @@ def _norm(x):
 	return re.sub(r"[^a-z0-9 ]", "", x.lower().replace("&", "and")).strip()
 
 
+def _where(source):
+	"""The step or rule a source names, for when it names no heading: 'Step 5', 'Rule 2'."""
+	m = re.search(r"\b(step|rule)s?\s*(\d+(?:\s*[–-]\s*\d+)?)", source, re.I)
+	if m:
+		return f"{m.group(1).title()} {m.group(2)}"
+	m = re.search(r"§\s*(\d+)", source)
+	return f"Section {m.group(1)}" if m else None
+
+
 def resolve(source, pages):
-	"""Map a free-text test-record source to (page title, url, heading or None).
+	"""Map a free-text test-record source to (page title, url, section or None).
 	Records write sources many ways: 'Retiring — step 5', 'How a task moves',
-	'Working with Tasks §2'. Step and rule numbers are dropped; the page and
-	heading are read from Kiluth Docs itself. pages: [(title, url, [headings])]."""
+	'Working with Tasks §2'. The page and heading are read from Kiluth Docs
+	itself; a source with no heading keeps its step or rule ('Step 5').
+	pages: [(title, url, [headings])]."""
 	s = re.sub(r"(§\s*\d+|\brules?\s*\d+|\bsteps?\s*[\d–-]+|\(.*?\))", "", source, flags=re.I)
 	parts = [_norm(x) for x in re.split(r"\s+—\s+|[:;,]", s) if _norm(x)]
 	if not parts:
@@ -119,7 +133,7 @@ def resolve(source, pages):
 	whole = _norm(s)
 	exact = [p for p in pages if _norm(p[0]) == whole]
 	if exact:
-		return exact[0][0], exact[0][1], None
+		return exact[0][0], exact[0][1], _where(source)
 	head = parts[0]
 	cands = [p for p in pages if _norm(p[0]) == head] or [p for p in pages if _norm(p[0]).startswith(head)]
 	rest = parts[1:]
@@ -131,7 +145,7 @@ def resolve(source, pages):
 	if len(cands) > 1 and rest:
 		cands = [p for p in cands if heading_in(p, rest[0])] or cands
 	page = cands[0]
-	return page[0], page[1], (heading_in(page, rest[0]) if rest else None)
+	return page[0], page[1], (heading_in(page, rest[0]) if rest else None) or _where(source)
 
 
 def missed_by_page(rows, pages):
@@ -155,7 +169,7 @@ def sections_cell(sections):
 	named = [html.escape(k) + (f" ×{n}" if n > 1 else "") for k, n in sections.most_common() if k]
 	rest = sections.get("", 0)
 	if rest:
-		named.append("a step or rule on the page" + (f" ×{rest}" if rest > 1 else ""))
+		named.append("Other" + (f" ×{rest}" if rest > 1 else ""))
 	return "<br>".join(named)
 
 
@@ -212,13 +226,13 @@ def person_view(email, p, a):
 				fixed.add(k)
 	progress = collections.defaultdict(list)
 	for c in sorted(p["all"], key=lambda c: str(c["creation"])):
-		progress[c["course"]].append(c["score"].split("—")[0].strip() or c["status"])
+		progress[c["course"]].append(plain_score(c["score"]).split("—")[0].strip() or c["status"])
 	expiring = [c for c in p["held"] if c["expiry_date"] and dt.date.fromisoformat(c["expiry_date"]) <= a["soon"]]
 	tasks = a["findings"].get(email, [])
 	nxt = []
 	for title, url, sections, _, _ in missed[:2]:
 		top = sections.most_common(1)[0][0]
-		where = f", section “{html.escape(top)}”" if top else ""
+		where = (f", {top.lower()}" if re.fullmatch(r"(Step|Rule|Section) [\d–-]+", top) else f", section “{html.escape(top)}”") if top else ""
 		nxt.append(f"Reread {page_cell(title, url)}{where}.")
 	for c in expiring:
 		nxt.append(f"Renew your {html.escape(c['course'])} certificate before {c['expiry_date']}.")
@@ -232,9 +246,22 @@ def person_view(email, p, a):
 		"tasks": tasks, "next": nxt[:3]}
 
 
+def plain_score(score):
+	"""'8/10 counted — not yet.' → '8/10* — not yet.': a question was scored after the test."""
+	return re.sub(r"^(\d+\s*/\s*\d+)\s+counted\b", r"\1*", score.strip())
+
+
+ADJUSTED = "* A question was scored after the test, because it was flawed or a rule changed. Your test record says which."
+
+
 def has_action(p, v):
 	"""Poom, 2026-10-26: email a person only when there is something to act on."""
 	return bool(p["month"] or v["expiring"] or v["tasks"])
+
+
+def small_group(a):
+	"""Too few people tested this month to show anything per doc."""
+	return len({c["email"] for c in a["certs"] if c["in_month"]}) < MIN_GROUP
 
 
 def summary_due(a):
@@ -242,11 +269,15 @@ def summary_due(a):
 	return any(c["in_month"] for c in a["certs"])
 
 
+def _misses(a):
+	"""Every wrong answer this month: [(source, email)]."""
+	return [(r["source"], c["email"]) for c in a["certs"] if c["in_month"]
+		for r in c["rows"] if r["counted"] and not r["right"] and r["source"]]
+
+
 def docs_to_check(a):
 	"""Sections missed by more than one person, or more than once: [(title, url, Counter, times, people)]."""
-	misses = [(r["source"], c["email"]) for c in a["certs"] if c["in_month"]
-		for r in c["rows"] if r["counted"] and not r["right"] and r["source"]]
-	return [x for x in missed_by_page(misses, a["pages"]) if x[4] > 1 or x[3] > 1]
+	return [x for x in missed_by_page(_misses(a), a["pages"]) if x[4] > 1 or x[3] > 1]
 
 
 # ─── HTML ────────────────────────────────────────────────────────────────────
@@ -288,7 +319,7 @@ def _others_hidden(text, email):
 def person_html(email, p, v, a):
 	month = a["start"].strftime("%B %Y")
 	held = [(html.escape(c["course"]), c["name"], c["expiry_date"] or "—") for c in p["held"]]
-	att = [(html.escape(c["course"]), c["name"], html.escape(c["score"] or c["status"])) for c in p["month"]]
+	att = [(html.escape(c["course"]), str(c["creation"])[:10], html.escape(plain_score(c["score"]) or c["status"])) for c in p["month"]]
 	topics = [(page_cell(t, u), sections_cell(sec), n) for t, u, sec, n, _ in v["missed"]]
 	prog = [(html.escape(k), " → ".join(html.escape(x) for x in vals)) for k, vals in v["progress"].items()]
 	tasks = [(t["name"], html.escape(_others_hidden(t["subject"] or "", email)),
@@ -296,15 +327,17 @@ def person_html(email, p, v, a):
 	rp = _rp()
 	T = rp.Table
 	expiring = ("Expiring within two months: " + ", ".join(html.escape(c["course"]) for c in v["expiring"]) + ".") if v["expiring"] else ""
+	adjusted = ADJUSTED if any("*" in x[2] for x in att) else ""
+	adjusted_p = ADJUSTED if any("*" in x[1] for x in prog) else ""
 	fixed = ("Docs once missed, now answered right: " + ", ".join(html.escape(s) for s in sorted(v["fixed"])) + ".") if v["fixed"] else ""
 	nxt = rp.Block(rp.heading("What to do next", 6) + ("<ol>" + "".join(f"<li>{x}</li>" for x in v["next"]) + "</ol>"
 		if v["next"] else "<div class='empty'>Nothing to do. Keep going.</div>"), 16 + 9 * max(len(v["next"]), 1))
 	return _report(f"Kiluth Learning Report {month}", "learning/hero-person.jpg", "Learning report", month,
 		f"For {html.escape(email)}. Only you get this report.",
 		[T("Certificates you hold", ["Course", "Certificate", "Valid until"], held, 1, "None yet.", expiring),
-			T(f"Attempts in {month}", ["Course", "Record", "Result"], att, 2, "No attempts this month.")],
+			T(f"Attempts in {month}", ["Course", "Date", "Result"], att, 2, "No attempts this month.", adjusted)],
 		[T("Topics to study", ["Doc", "Sections", "Questions missed"], topics, 3, "Nothing missed this month."),
-			T("Progress", ["Course", "Results, oldest first"], prog, 4, "No attempts yet.", fixed),
+			T("Progress", ["Course", "Results, oldest first"], prog, 4, "No attempts yet.", " ".join(x for x in (fixed, adjusted_p) if x)),
 			T("Task habits", ["Task", "Title", "What the checker found"], tasks, 5,
 				"The task checker found nothing on your tasks this month."),
 			nxt],
@@ -324,30 +357,34 @@ def summary_html(a):
 		if y0 <= d <= a["end"]:
 			per[c["course"]][2] += 1; per[c["course"]][3] += passed
 	rows = [(html.escape(k), f"{v[0]} / {v[1]}", f"{v[2]} / {v[3]}") for k, v in sorted(per.items())]
-	misses, flawed = [], []
+	flawed = []
 	for c in a["certs"]:
 		if not c["in_month"]:
 			continue
 		for r in c["rows"]:
-			if r["counted"] and not r["right"] and r["source"]:
-				misses.append((r["source"], c["email"]))
 			if not r["counted"] and "flawed" in r["question"].lower():
-				flawed.append((html.escape(c["course"]), html.escape(r["question"][:90])))
-	pages = missed_by_page(misses, a["pages"])
-	missed = [(page_cell(t, u), sections_cell(sec), n, ppl) for t, u, sec, n, ppl in pages]
-	check = [(page_cell(t, u), sections_cell(sec), n, ppl) for t, u, sec, n, ppl in pages if ppl > 1 or n > 1]
+				q = re.sub(r"^\(flawed[^)]*\)\s*", "", r["question"], flags=re.I)
+				if (html.escape(c["course"]), html.escape(q)) not in flawed:
+					flawed.append((html.escape(c["course"]), html.escape(q)))
+	small = small_group(a)
+	check = {x[0] for x in docs_to_check(a)}
+	missed = [(page_cell(t, u) + ("<br><span class='good'>Check</span>" if t in check else ""), sections_cell(sec), n, ppl)
+		for t, u, sec, n, ppl in missed_by_page(_misses(a), a["pages"])]
 	exp = collections.Counter(c["course"] for c in a["certs"] if c["status"] == "Signed" and c["expiry_date"]
 		and dt.date.fromisoformat(c["expiry_date"]) <= a["soon"])
 	rp = _rp()
 	T = rp.Table
+	if small:
+		docs = rp.Block(rp.heading("Most-missed docs", 2) + f"<div class='empty'>Fewer than {MIN_GROUP} people took a test in "
+			f"{month}, so this summary shows totals only. Doc and section detail would point to them.</div>", 32)
+	else:
+		docs = T("Most-missed docs", ["Doc", "Sections", "Times missed", "People"], missed, 2, "Nothing missed.",
+			"Check: missed by more than one person, or more than once. The department that owns the doc decides whether to fix it.")
 	return _report(f"Kiluth Learning Summary {month}", "learning/hero-summary.jpg", "Learning summary", month,
 		"The whole company. No names.",
-		[T("Attempts and passes", ["Course", f"{month}: attempts / passes", "Year to date"], rows, 1, "No attempts."),
-			T("Most-missed docs", ["Doc", "Sections", "Times missed", "People"], missed, 2, "Nothing missed.")],
-		[T("Docs to check", ["Doc", "Sections", "Times missed", "People"], check, 3, "No doc stands out.",
-			"Docs missed by more than one person, or more than once. The department that owns the doc decides whether to fix it."),
-			T("Flawed questions", ["Course", "Question"], flawed, 4, "None this month."),
-			T("Certificates expiring in the next two months", ["Course", "Count"], [(html.escape(k), n) for k, n in exp.items()], 5, "None.")],
+		[T("Attempts and passes", ["Course", f"{month}: attempts / passes", "Year to date"], rows, 1, "No attempts."), docs],
+		[T("Flawed questions", ["Course", "Question"], flawed, 3, "None this month."),
+			T("Certificates expiring in the next two months", ["Course", "Count"], [(html.escape(k), n) for k, n in exp.items()], 4, "None.")],
 		"Docs and questions",
 		f"No names in this summary. How it's made: {DOCS}/hr/learning-report")
 
@@ -532,8 +569,9 @@ def _open_task(subject, description, assignee, department=None):
 	return t.name
 
 
-def _flag_docs(month, flagged):
-	"""One Task per owning department listing its docs to check. No names."""
+def _flag_docs(month, flagged, small=False):
+	"""One Task per owning department listing its docs to check. No names, and no
+	head count when so few tested that it would point to them."""
 	by_dept = collections.defaultdict(list)
 	for title, url, sections, times, people in flagged:
 		if url:
@@ -543,8 +581,8 @@ def _flag_docs(month, flagged):
 		dept = "HR" if folder == "hr" else folder.replace("-", " ").title()
 		lines = "".join(
 			f"<li><a href='{DOCS}/{url}'>{html.escape(t)}</a>: "
-			f"{sections_cell(sec).replace('<br>', '; ')}. Missed {n} time{'s' if n > 1 else ''} by {ppl} "
-			f"{'people' if ppl > 1 else 'person'}.</li>"
+			f"{sections_cell(sec).replace('<br>', '; ')}. Missed {n} time{'s' if n > 1 else ''}"
+			+ ("" if small else f" by {ppl} {'people' if ppl > 1 else 'person'}") + ".</li>"
 			for t, url, sec, n, ppl in items)
 		desc = (f"<p>The {month} learning report flagged these {dept} docs: many test answers missed the same "
 			f"section, so it may be unclear.</p><ul>{lines}</ul><p>Check each section. Fix it if it's unclear, "
@@ -588,7 +626,7 @@ def build(month, send=False, only=None):
 	if summary_pdf:
 		_send(SUMMARY_TO, f"Kiluth learning report, company summary — {label}", email_html(True, label, assets),
 			f"Kiluth-Learning-Report-{month}-company.pdf", summary_pdf)
-		result["flagged_tasks"] = _flag_docs(month, docs_to_check(a))
+		result["flagged_tasks"] = _flag_docs(month, docs_to_check(a), small_group(a))
 	result["sent"] = True
 	return result
 

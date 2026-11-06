@@ -177,7 +177,10 @@ def _row_height(cells, widths):
 	lines = 1
 	for x, w in zip(cells, widths):
 		per_line = max(int(w / 100 * WIDTH * 0.52), 8)
-		lines = max(lines, -(-_text_len(x) // per_line))
+		# Each <br> starts a line, and each part wraps on its own: a list of short
+		# sections counted as one run overflowed into the footer (2026-11-06).
+		parts = re.split(r"<br\s*/?>", str(x))
+		lines = max(lines, sum(max(1, -(-_text_len(part) // per_line)) for part in parts))
 	return 3.4 + 4.9 * lines  # measured on the Portal's wkhtmltopdf: 8.3 mm a one-line row
 
 

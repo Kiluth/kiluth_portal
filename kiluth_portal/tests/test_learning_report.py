@@ -78,6 +78,26 @@ check("full name caught in summary",
 	lr.check_reports(a, {}, lr.summary_html(a) + "Bee Person", {B: "Bee Person"}) == [f"the company summary names {B}"])
 check("one-word names ignored", lr.check_reports(a, {}, lr.summary_html(a) + " Bee ", {B: "Bee"}) == [])
 check("docs to check: one section missed twice", [x[0] for x in lr.docs_to_check(a)] == ["Estimation"])
+check("summary hides doc detail below the minimum group", "Fewer than 3 people" in lr.summary_html(a)
+	and "Times missed" not in lr.summary_html(a))
+check("step kept when no heading", lr.resolve("Bug Reports — step 3", PAGES)[2] == "Step 3")
+check("page with no section is Other", lr.resolve("Bug Reports", PAGES)[2] is None
+	and lr.sections_cell(__import__("collections").Counter({"": 2})) == "Other ×2")
+check("placeholder gone", "a step or rule" not in lr.summary_html(a) + "".join(reports.values()))
+check("counted score made plain", lr.plain_score("8/10 counted — not yet.") == "8/10* — not yet.")
+check("attempts show a date, not a certificate number", "DOC-2" not in reports[B] and "2026-10-04" in reports[B])
+
+FLAWED = RECORD.replace("Flawed question, replaced", "(flawed, replaced) A feature is Optimistic 6, Likely 9, Pessimistic 18 hours. What are its PERT and its σ?")
+D, E = "d2@kiluth.com", "e2@kiluth.com"
+big = lr.analyse("2026-10", certs + [cert("DOC-5", D, "Void", "2026-10-05 10:00:00", record=FLAWED),
+	cert("DOC-6", E, "Void", "2026-10-06 10:00:00", record=FLAWED)], {}, PAGES)
+s = lr.summary_html(big)
+check("full flawed question, once, no prefix", s.count("What are its PERT and its σ?") == 1 and "(flawed" not in s)
+check("one docs table, checked docs marked", "Docs to check" not in s and "Times missed" in s and "Check</span>" in s)
+
+rp = lr._rp()
+check("each line break is a line", rp._row_height(["x", "a<br>b<br>c<br>d"], rp.GRID[2]) > rp._row_height(["x", "a b c d"], rp.GRID[2]) * 2)
+
 check("heading parser", lr._heading_texts('<h2 id="x">Who&#x27;s in<a role="anchor" href="#x"></a></h2><h3>Table</h3>') == ["Who's in"])
 
 mail = lr.email_html(False, "October 2026", "https://portal.kiluth.com/assets/kiluth_portal/")
