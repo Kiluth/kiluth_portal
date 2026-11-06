@@ -103,11 +103,17 @@ def _norm(x):
 	return re.sub(r"[^a-z0-9 ]", "", x.lower().replace("&", "and")).strip()
 
 
-def _where(source):
-	"""The step or rule a source names, for when it names no heading: 'Step 5', 'Rule 2'."""
+def _where(source, page=None):
+	"""The step or rule a source names, for when it names no heading: the page's own
+	heading for that step ('5. Destroy the VM') if it has one, else 'Step 5', 'Rule 2'."""
 	m = re.search(r"\b(step|rule)s?\s*(\d+(?:\s*[–-]\s*\d+)?)", source, re.I)
 	if m:
-		return f"{m.group(1).title()} {m.group(2)}"
+		n = m.group(2)
+		if m.group(1).lower() == "step" and page:
+			for h in page[2]:
+				if re.match(rf"{n}\.\s", h):
+					return h
+		return f"{m.group(1).title()}{'s' if not n.isdigit() else ''} {n}"
 	m = re.search(r"§\s*(\d+)", source)
 	return f"Section {m.group(1)}" if m else None
 
@@ -133,7 +139,7 @@ def resolve(source, pages):
 	whole = _norm(s)
 	exact = [p for p in pages if _norm(p[0]) == whole]
 	if exact:
-		return exact[0][0], exact[0][1], _where(source)
+		return exact[0][0], exact[0][1], _where(source, exact[0])
 	head = parts[0]
 	cands = [p for p in pages if _norm(p[0]) == head] or [p for p in pages if _norm(p[0]).startswith(head)]
 	rest = parts[1:]
@@ -145,7 +151,7 @@ def resolve(source, pages):
 	if len(cands) > 1 and rest:
 		cands = [p for p in cands if heading_in(p, rest[0])] or cands
 	page = cands[0]
-	return page[0], page[1], (heading_in(page, rest[0]) if rest else None) or _where(source)
+	return page[0], page[1], (heading_in(page, rest[0]) if rest else None) or _where(source, page)
 
 
 def missed_by_page(rows, pages):
@@ -232,7 +238,7 @@ def person_view(email, p, a):
 	nxt = []
 	for title, url, sections, _, _ in missed[:2]:
 		top = sections.most_common(1)[0][0]
-		where = (f", {top.lower()}" if re.fullmatch(r"(Step|Rule|Section) [\d–-]+", top) else f", section “{html.escape(top)}”") if top else ""
+		where = (f", {top.lower()}" if re.fullmatch(r"(Steps?|Rule|Section) [\d–-]+", top) else f", section “{html.escape(top)}”") if top else ""
 		nxt.append(f"Reread {page_cell(title, url)}{where}.")
 	for c in expiring:
 		nxt.append(f"Renew your {html.escape(c['course'])} certificate before {c['expiry_date']}.")
@@ -356,6 +362,9 @@ def summary_html(a):
 			per[c["course"]][0] += 1; per[c["course"]][1] += passed
 		if y0 <= d <= a["end"]:
 			per[c["course"]][2] += 1; per[c["course"]][3] += passed
+	small = small_group(a)
+	if small:  # per course would be one person's own attempts
+		per = {"All courses": [sum(v[i] for v in per.values()) for i in range(4)]}
 	rows = [(html.escape(k), f"{v[0]} / {v[1]}", f"{v[2]} / {v[3]}") for k, v in sorted(per.items())]
 	flawed = []
 	for c in a["certs"]:
@@ -366,7 +375,6 @@ def summary_html(a):
 				q = re.sub(r"^\(flawed[^)]*\)\s*", "", r["question"], flags=re.I)
 				if (html.escape(c["course"]), html.escape(q)) not in flawed:
 					flawed.append((html.escape(c["course"]), html.escape(q)))
-	small = small_group(a)
 	check = {x[0] for x in docs_to_check(a)}
 	missed = [(page_cell(t, u) + ("<br><span class='good'>Check</span>" if t in check else ""), sections_cell(sec), n, ppl)
 		for t, u, sec, n, ppl in missed_by_page(_misses(a), a["pages"])]
@@ -376,7 +384,7 @@ def summary_html(a):
 	T = rp.Table
 	if small:
 		docs = rp.Block(rp.heading("Most-missed docs", 2) + f"<div class='empty'>Fewer than {MIN_GROUP} people took a test in "
-			f"{month}, so this summary shows totals only. Doc and section detail would point to them.</div>", 32)
+			f"{month}, so this summary shows company totals only. Detail by course, doc or section would point to them.</div>", 32)
 	else:
 		docs = T("Most-missed docs", ["Doc", "Sections", "Times missed", "People"], missed, 2, "Nothing missed.",
 			"Check: missed by more than one person, or more than once. The department that owns the doc decides whether to fix it.")
@@ -528,7 +536,8 @@ def _load_pages():
 		url = "/".join(parts[:2])
 		r = requests.get(f"{DOCS}/{url}", timeout=30)
 		r.raise_for_status()
-		pages.append((entry["title"].strip().strip('"'), url, _heading_texts(r.text)))
+		# The site sends no charset, and requests then reads it as Latin-1: ’ broke every heading with one.
+		pages.append((entry["title"].strip().strip('"'), url, _heading_texts(r.content.decode("utf-8"))))
 	if not pages:
 		raise RuntimeError("Kiluth Docs returned no pages")
 	return pages

@@ -81,6 +81,11 @@ check("docs to check: one section missed twice", [x[0] for x in lr.docs_to_check
 check("summary hides doc detail below the minimum group", "Fewer than 3 people" in lr.summary_html(a)
 	and "Times missed" not in lr.summary_html(a))
 check("step kept when no heading", lr.resolve("Bug Reports — step 3", PAGES)[2] == "Step 3")
+STEPS = [("Retiring a Hosting Resource", "technology/retiring", ["Steps", "4. Clean up", "5. Destroy the VM"])]
+check("step uses the page's own step heading", lr.resolve("Retiring — step 5", STEPS)[2] == "5. Destroy the VM")
+check("step range kept", lr.resolve("Retiring a Hosting Resource — Steps 2–3", STEPS)[2] == "Steps 2–3")
+check("small group: one company total, no per-course rows", "All courses" in lr.summary_html(a)
+	and not __import__("re").search(r">Sales</td><td>\d+ / ", lr.summary_html(a)))
 check("page with no section is Other", lr.resolve("Bug Reports", PAGES)[2] is None
 	and lr.sections_cell(__import__("collections").Counter({"": 2})) == "Other ×2")
 check("placeholder gone", "a step or rule" not in lr.summary_html(a) + "".join(reports.values()))
@@ -93,6 +98,7 @@ big = lr.analyse("2026-10", certs + [cert("DOC-5", D, "Void", "2026-10-05 10:00:
 	cert("DOC-6", E, "Void", "2026-10-06 10:00:00", record=FLAWED)], {}, PAGES)
 s = lr.summary_html(big)
 check("full flawed question, once, no prefix", s.count("What are its PERT and its σ?") == 1 and "(flawed" not in s)
+check("big group: per course again", "All courses" not in s)
 check("one docs table, checked docs marked", "Docs to check" not in s and "Times missed" in s and "Check</span>" in s)
 
 rp = lr._rp()
