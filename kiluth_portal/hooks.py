@@ -14,7 +14,8 @@ app_license = "mit"
 # link so users can always jump back to the portal home from the desk.
 # `web_push.bundle.js` adds "Phone notifications" to the user menu (web_push/).
 # `notification_bell.bundle.js` shows past notifications on a phone: count on the menu button, list as a sheet.
-app_include_js = ["navbar.bundle.js", "web_push.bundle.js", "notification_bell.bundle.js"]
+# `touch_taps.bundle.js` goes first: on iPhone a tap that stops a scroll must not click, and Notification opens in one tap.
+app_include_js = ["touch_taps.bundle.js", "navbar.bundle.js", "web_push.bundle.js", "notification_bell.bundle.js"]
 
 
 # Form Behavior (versioned client-side)
