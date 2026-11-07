@@ -84,7 +84,7 @@ check("no project code still builds", "Baanploypoom" in nohint and "PROJ-" not i
 check("english words", "Client brief" in en and "Not given" in en and "staging" not in en)
 
 with open("/tmp/brief-test.html", "w") as f:
-	f.write(html.replace(rp.FONTS_TOKEN, rp.font_faces("https://portal.kiluth.com")))
+	f.write(html.replace(rp.FONTS_TOKEN, rp.font_faces()))
 
 if fails:
 	print("FAIL:", *fails, sep="\n  ")

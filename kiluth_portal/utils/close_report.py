@@ -35,8 +35,7 @@ from kiluth_portal.utils.financial_report import (
 
 RECIPIENTS = ("finance@kiluth.com",)
 SUBJECT_PREFIX = "Close the books for "
-CLIENT_WHT_ACCOUNT = "Tax Assets - K"  # tax clients withhold from Kiluth
-KILUTH_WHT_ACCOUNT = "Withholding Tax Payable - K"  # tax Kiluth withholds from others
+from kiluth_portal.utils.close_wht import CLIENT_WHT_ACCOUNT, KILUTH_WHT_ACCOUNT, by_form, invoices_in, is_certificate, split
 SALARY_TAX_COMPONENTS = ("Income Tax", "Withholding Tax")
 SOCIAL_SECURITY_COMPONENT = "Social Security"
 
@@ -158,49 +157,32 @@ def _collect(period: dict, task) -> dict:
 	# bank balance of exactly 0 is not a case Kiluth has, so 0 = not entered.
 	bank = float(task.get("close_bank_balance") or 0) or None
 
-	client_wht = frappe.db.sql(
+	gl = frappe.db.sql(
 		"""
-		SELECT voucher_type, voucher_no, party, SUM(debit - credit) AS amt
+		SELECT account, voucher_type, voucher_no, party_type, party, debit, credit
 		FROM `tabGL Entry`
-		WHERE company = %s AND is_cancelled = 0 AND account = %s
+		WHERE company = %s AND is_cancelled = 0 AND account IN (%s, %s)
 			AND posting_date BETWEEN %s AND %s
-		GROUP BY voucher_type, voucher_no, party
-		HAVING amt > 0
+		ORDER BY posting_date, creation
 		""",
-		(COMPANY, CLIENT_WHT_ACCOUNT, start, end),
+		(COMPANY, CLIENT_WHT_ACCOUNT, KILUTH_WHT_ACCOUNT, start, end),
 		as_dict=True,
 	)
+	client_wht, kiluth_wht = split(gl)
 	for row in client_wht:
-		row["certificate"] = bool(frappe.db.exists(
-			"File", {"attached_to_doctype": row.voucher_type, "attached_to_name": row.voucher_no}
-		))
-		if not row.party and row.voucher_type == "Payment Entry":
-			row.party = frappe.db.get_value("Payment Entry", row.voucher_no, "party")
-
-	kiluth_wht = frappe.db.sql(
-		"""
-		SELECT voucher_type, voucher_no, party_type, party, SUM(credit - debit) AS amt
-		FROM `tabGL Entry`
-		WHERE company = %s AND is_cancelled = 0 AND account = %s
-			AND posting_date BETWEEN %s AND %s
-		GROUP BY voucher_type, voucher_no, party_type, party
-		HAVING amt > 0
-		""",
-		(COMPANY, KILUTH_WHT_ACCOUNT, start, end),
-		as_dict=True,
-	)
-	pnd3 = pnd53 = unknown = 0.0
+		invoices = _client_invoices(row)
+		if not row["party"]:
+			if row["voucher_type"] == "Payment Entry":
+				row["party"] = frappe.db.get_value("Payment Entry", row["voucher_no"], "party")
+			elif invoices:
+				row["party"] = frappe.db.get_value("Sales Invoice", invoices[0], "customer")
+		row["certificate"] = any(is_certificate(f) for dt, dn in [(row["voucher_type"], row["voucher_no"])]
+			+ [("Sales Invoice", i) for i in invoices]
+			for f in frappe.get_all("File", {"attached_to_doctype": dt, "attached_to_name": dn}, pluck="file_name"))
 	for row in kiluth_wht:
-		party_type, party = row.party_type, row.party
-		if not party and row.voucher_type == "Payment Entry":
-			party_type, party = frappe.db.get_value("Payment Entry", row.voucher_no, ["party_type", "party"])
-		kind = frappe.db.get_value("Supplier", party, "supplier_type") if party_type == "Supplier" and party else None
-		if kind == "Individual":
-			pnd3 += row.amt
-		elif kind == "Company":
-			pnd53 += row.amt
-		else:
-			unknown += row.amt
+		if not row["party"] and row["voucher_type"] == "Payment Entry":
+			row["party_type"], row["party"] = frappe.db.get_value("Payment Entry", row["voucher_no"], ["party_type", "party"])
+	pnd3, pnd53, unknown = by_form(kiluth_wht, lambda party: frappe.db.get_value("Supplier", party, "supplier_type"))
 
 	slips = frappe.db.sql(
 		"""
@@ -236,6 +218,14 @@ def _collect(period: dict, task) -> dict:
 	}
 
 
+def _client_invoices(row) -> list[str]:
+	"""Sales Invoices a client-tax journal names in its remark: where its customer and certificate are."""
+	if row["voucher_type"] != "Journal Entry":
+		return []
+	remark = frappe.db.get_value("Journal Entry", row["voucher_no"], "user_remark")
+	return [i for i in invoices_in(remark) if frappe.db.exists("Sales Invoice", i)]
+
+
 # ─── HTML ───────────────────────────────────────────────────────────────────
 # Design: kiluth_portal/utils/report_pdf.py (design A, 2026-10-27).
 
@@ -256,11 +246,11 @@ def _render_html(period: dict, d: dict, task) -> str:
 		bank = [["Cash - K at month end", _fmt(d["cash"])], ["Bank balance at month end", _fmt(d["bank"])], (["Result", status], "total")]
 		bank_note = ""
 
-	client = [[rp.esc(r.party or r.voucher_no),
-		f"{_fmt(r.amt)} · " + ("certificate attached" if r.certificate else "<span class='bad'>no certificate</span>")]
+	client = [[rp.esc(r["party"] or r["voucher_no"]) + (" " + muted("· moved from earlier months") if r["moved"] else ""),
+		f"{_fmt(r['amt'])} · " + ("certificate attached" if r["certificate"] else "<span class='bad'>no certificate</span>")]
 		for r in d["client_wht"]]
 	if client:
-		client.append((["Total withheld by clients", _fmt(sum(r.amt for r in d["client_wht"]))], "total"))
+		client.append((["Total withheld by clients", _fmt(sum(r["amt"] for r in d["client_wht"]))], "total"))
 
 	kiluth = [
 		[rp.th("ภ.ง.ด.3") + " " + muted("individuals"), _fmt(d["pnd3"]) if d["pnd3"] else muted("Nothing to file")],
@@ -291,7 +281,8 @@ def _render_html(period: dict, d: dict, task) -> str:
 	]
 	right = [
 		rp.Table("Tax clients withheld", ["", ""], client, 3, "No client withheld tax this month.",
-			"Each certificate (50 " + rp.th("ทวิ") + ") should be attached to its payment.", widths=w, right=(1,)),
+			"Attach each certificate (50 " + rp.th("ทวิ") + ") to its payment, journal or invoice, "
+			"with 50 " + rp.th("ทวิ") + " or certificate in the file name.", widths=w, right=(1,)),
 		rp.Table("Tax Kiluth withheld", ["", ""], kiluth, 4, note=kw_note, widths=w, right=(1,)),
 		rp.Table("Salaries", ["", ""], salaries, 5, "No salary slips for this month.", sal_note, widths=w, right=(1,)),
 	]

@@ -106,24 +106,35 @@ def photo(rel):
 		return "data:image/jpeg;base64," + base64.b64encode(f.read()).decode()
 
 
-def font_faces(base_url):
-	"""Theinhardt and IBM Plex Sans Thai, served by the Portal at /files/.
+FONTS = (("Theinhardt", "theinhardt-light-webfont.ttf", 300), ("Theinhardt", "theinhardt-regular-webfont.ttf", 400),
+	("IBM Plex Sans Thai", "IBMPlexSansThai-Light.ttf", 300), ("IBM Plex Sans Thai", "IBMPlexSansThai-Regular.ttf", 400))
 
-	wkhtmltopdf is flaky with data-URI fonts; a same-origin URL loads reliably.
-	Plex is its own family listed after Theinhardt, so Thai and ฿ fall back to it."""
-	base = base_url.rstrip("/")
-	faces = [("Theinhardt", "theinhardt-light-webfont.ttf", 300), ("Theinhardt", "theinhardt-regular-webfont.ttf", 400),
-		("IBM Plex Sans Thai", "IBMPlexSansThai-Light.ttf", 300), ("IBM Plex Sans Thai", "IBMPlexSansThai-Regular.ttf", 400)]
-	return "\n".join(f"@font-face {{ font-family: '{fam}'; src: url('{base}/files/{f}') format('truetype'); "
-		f"font-weight: {w}; font-style: normal; }}" for fam, f, w in faces)
+
+def font_faces():
+	"""Theinhardt and IBM Plex Sans Thai, put in the page as data URIs from public/fonts/.
+
+	They used to load from the Portal's /files/ URL, but the live Portal's
+	wkhtmltopdf couldn't fetch it: the October 2026 Close Report came out in
+	DejaVu Sans only, Thai as empty boxes (TASK-2026-00106). Inline fonts need
+	no network. Plex is its own family listed after Theinhardt, so Thai falls back to it.
+
+	The line break after `src:` matters. Frappe's get_pdf runs scrub_urls, whose
+	URL_NOTATION_PATTERN, `(:[\\s]?url)(...)`, puts " !important" after any
+	non-http `: url(...)`, and that makes the whole @font-face invalid."""
+	out = []
+	for fam, f, w in FONTS:
+		with open(os.path.join(PUBLIC, "fonts", f), "rb") as fh:
+			data = base64.b64encode(fh.read()).decode()
+		out.append(f"@font-face {{ font-family: '{fam}'; src:\n\t\turl(data:font/truetype;charset=utf-8;base64,{data}) "
+			f"format('truetype'); font-weight: {w}; font-style: normal; }}")
+	return "\n".join(out)
 
 
 def pdf(page_html):
 	"""Render with the Portal's wkhtmltopdf: zero margins, fonts in."""
-	from frappe.utils import get_url
 	from frappe.utils.pdf import get_pdf
 
-	return get_pdf(page_html.replace(FONTS_TOKEN, font_faces(get_url())),
+	return get_pdf(page_html.replace(FONTS_TOKEN, font_faces()),
 		{"page-size": "A4", "margin-top": "0mm", "margin-bottom": "0mm", "margin-left": "0mm", "margin-right": "0mm"})
 
 
