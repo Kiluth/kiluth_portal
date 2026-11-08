@@ -36,7 +36,7 @@
    "fieldname": "event_type",
    "fieldtype": "Select",
    "label": "Event Type",
-   "options": "task.assigned\ntask.commented",
+   "options": "task.assigned\ntask.commented\ntask.due",
    "in_list_view": 1,
    "read_only": 1
   },
@@ -105,7 +105,7 @@
  ],
  "in_create": 1,
  "links": [],
- "modified": "2026-10-13 00:00:00",
+ "modified": "2026-11-08 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Kiluth HR",
  "name": "Task Notification Outbox",

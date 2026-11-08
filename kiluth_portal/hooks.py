@@ -69,6 +69,10 @@ scheduler_events = {
 		"0 8 * * 1": [
 			"kiluth_portal.kiluth_hr.holiday_reminder.send_weekly",
 		],
+		# People-only notifications: one summary email + due-today pushes (task_notify/quiet.py).
+		"0 8 * * *": [
+			"kiluth_portal.task_notify.digest.send_daily",
+		],
 		# Monthly Close step 1: create "Close the books for <last month>".
 		"0 8 1 * *": [
 			"kiluth_portal.utils.close_task.create_close_task",
@@ -359,4 +363,6 @@ after_migrate = [
 # See kiluth_portal/overrides/task.py.
 override_doctype_class = {
 	"Task": "kiluth_portal.overrides.task.KiluthTask",
+	# People-only notifications: no "assignment removed", no per-row email.
+	"Notification Log": "kiluth_portal.overrides.notification_log.KiluthNotificationLog",
 }

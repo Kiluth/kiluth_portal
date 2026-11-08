@@ -29,15 +29,21 @@ def _attempt(store, row, channel):
 	return status
 
 
-def process_event(event, store, channels):
+def process_event(event, store, channels, who=None, allow=None):
 	"""Write one outbox row per recipient per channel, then deliver each.
+
+	`who(event)` gives the recipients (event["recipients"] when None).
+	`allow(channel_name, recipient, event)` skips a pair when it returns False.
+	jobs.py passes both from quiet.py; the oracle can leave them out.
 
 	Returns {dedupe_key: status} for rows written by this call. Rows that
 	already existed (the same event seen again) are skipped, not re-sent.
 	"""
 	results = {}
-	for recipient in event["recipients"]:
+	for recipient in who(event) if who else event["recipients"]:
 		for channel in channels:
+			if allow and not allow(channel.name, recipient, event):
+				continue
 			row = {
 				"dedupe_key": outbox.dedupe_key(event["event_id"], recipient, channel.name),
 				"event_id": event["event_id"],

@@ -5,6 +5,7 @@ The job is queued after commit: a rolled-back save never notifies anyone.
 """
 
 import frappe
+from frappe.desk.notifications import extract_mentions
 
 from kiluth_portal.task_notify.dispatch import guarded
 from kiluth_portal.task_notify.events import assignment_event, comment_event
@@ -76,5 +77,6 @@ def on_comment_insert(doc, method=None):
 			task_assign_json=task.get("_assign"),
 			requester=requester_of(task.get("owner")),
 			from_check=from_check,
+			mentioned=extract_mentions(doc.content or ""),
 		)
 	)

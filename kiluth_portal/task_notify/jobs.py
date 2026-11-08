@@ -4,7 +4,7 @@ import json
 
 import frappe
 
-from kiluth_portal.task_notify import channels, dispatch, outbox
+from kiluth_portal.task_notify import channels, dispatch, outbox, quiet
 
 DOCTYPE = "Task Notification Outbox"
 FIELDS = ["dedupe_key", "event_id", "event_type", "task", "actor", "recipient", "channel", "payload", "status", "attempts"]
@@ -38,7 +38,14 @@ def _channels():
 
 
 def process(notify_event):
-	dispatch.process_event(notify_event, FrappeStore(), _channels())
+	people_only, bots = quiet.settings(frappe.conf)
+	dispatch.process_event(
+		notify_event,
+		FrappeStore(),
+		_channels(),
+		who=lambda e: quiet.recipients(e, people_only),
+		allow=lambda channel, recipient, e: quiet.allowed(channel, recipient, e, people_only, bots),
+	)
 
 
 def retry_failed():
