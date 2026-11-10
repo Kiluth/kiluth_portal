@@ -50,7 +50,12 @@ doctype_js = {
 # self-skips when the report for the current period has already been sent.
 # So the worst case is a delayed email, never a duplicate or missed month.
 # Notification messages call {{ kiluth_email(...) }} for the designed email.
-jinja = {"methods": ["kiluth_portal.utils.jinja.kiluth_email"]}
+jinja = {"methods": [
+	"kiluth_portal.utils.jinja.kiluth_email",
+	"kiluth_portal.utils.jinja.kiluth_money_doc",
+	"kiluth_portal.utils.jinja.kiluth_money_fonts",
+	"kiluth_portal.utils.jinja.kiluth_money_logo",
+], "filters": ["kiluth_portal.utils.jinja.kiluth_thai"]}
 
 scheduler_events = {
 	"daily": [

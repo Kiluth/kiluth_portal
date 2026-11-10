@@ -1,0 +1,238 @@
+{#- The one layout for Kiluth's quotation, invoice and receipt (TASK-2026-00157).
+    Each print format is one line:
+        {% from "kiluth_portal/templates/print/money_doc.html" import page %}{{ page(kiluth_money_doc(doc)) }}
+    Values come from kiluth_portal/utils/money_docs.py. Rules for wkhtmltopdf:
+    tables, no flexbox, no gradients; fonts and logo inline. -#}
+
+{% macro label(th, en) -%}
+<div class="kd-l"><span class="kd-lt">{{ th }}</span>{% if en %}<span class="kd-le">{{ en }}</span>{% endif %}</div>
+{%- endmacro %}
+
+{% macro page(m) -%}
+{% filter kiluth_thai %}
+<style>
+{{ kiluth_money_fonts() }}
+/* Frappe reads the PDF page margins from this exact rule. The rule after it stops
+   the same values (and Frappe's 0.75in padding) applying again inside the page. */
+.print-format { margin-top: 30mm; margin-bottom: 24mm; margin-left: 16mm; margin-right: 16mm; }
+.print-format { margin: 0 !important; padding: 0 !important; max-width: none !important; min-height: 0 !important; }
+.kd, .kd-head, .kd-foot { font-family: 'Kiluth Latin', 'Kiluth Thai', sans-serif; font-weight: normal; color: #2D2D2D; }
+.kt { font-family: 'Kiluth Thai', sans-serif; }
+.kd-strong, .kd b, .kd strong { font-weight: normal; color: #000; }
+.kd { font-size: 8.5pt; line-height: 1.5; }
+.kd table { width: 100%; border-collapse: collapse; }
+.kd td, .kd th { padding: 0; vertical-align: top; text-align: left; font-weight: normal; border: 0; }
+.kd .r { text-align: right; }
+.kd-l { line-height: 1.25; margin-bottom: 1mm; }
+.kd-lt { display: block; font-size: 7pt; color: #2D2D2D; font-weight: normal; }
+.kd-le { display: block; font-size: 6.5pt; color: #898989; letter-spacing: 0.04em; }
+.kd-title td { vertical-align: bottom; padding-bottom: 3mm; border-bottom: 0.5pt solid #2D2D2D; }
+.kd-title .t1 { font-size: 20pt; font-weight: normal; line-height: 1.1; letter-spacing: -0.01em; }
+.kd-title .t2 { font-size: 11pt; color: #898989; margin-top: 1mm; }
+.kd td.kd-mark { border: 0.5pt solid #2D2D2D; padding: 1mm 3mm; font-size: 7.5pt; font-weight: normal; }
+.kd-parties > tbody > tr > td { width: 50%; padding: 4mm 0 3mm; }
+.kd-parties > tbody > tr > td + td { padding-left: 8mm; border-left: 0.5pt solid #ECECEC; }
+.kd-party .n { font-size: 9.5pt; font-weight: normal; line-height: 1.35; }
+.kd-party .s { color: #555; font-size: 8pt; line-height: 1.45; }
+.kd-party .k { color: #898989; }
+.kd-missing { border: 0.5pt dashed #898989; color: #898989; padding: 0.3mm 1.5mm; font-size: 7.5pt; }
+.kd-meta { background: #F2F2F2; }
+.kd-meta td { padding: 2.5mm 3mm; border-right: 0.5pt solid #fff; }
+.kd-meta td:last-child { border-right: 0; }
+.kd-meta .v { font-size: 8.5pt; font-weight: normal; margin-top: 0.5mm; }
+.kd-items { margin-top: 5mm; }
+.kd-items thead td { padding: 2mm 2mm; border-bottom: 0.5pt solid #2D2D2D; vertical-align: bottom; }
+.kd-items tbody td { padding: 2.5mm 2mm; border-bottom: 0.5pt solid #c8c6bf; }
+.kd-items tbody tr { page-break-inside: avoid; }
+.kd-items .no { width: 8mm; color: #898989; }
+.kd-items .q { width: 16mm; }
+.kd-items .m { width: 27mm; }
+.kd-items .it { font-weight: normal; }
+.kd-items .dt { color: #555; font-size: 7.8pt; margin-top: 1mm; }
+.kd-items .dt p { margin: 0 0 0.8mm; }
+.kd-items .ref { color: #898989; font-size: 7pt; margin-top: 0.8mm; }
+.kd-sum { margin-top: 4mm; page-break-inside: avoid; }
+.kd-sum > tbody > tr > td { vertical-align: top; }
+.kd-words { width: 56%; padding-right: 8mm !important; }
+.kd-words .w { font-size: 9pt; font-weight: normal; margin-top: 0.5mm; }
+.kd-words .we { color: #555; font-size: 7.8pt; margin-top: 0.5mm; }
+.kd-tot td { padding: 1.6mm 0; border-bottom: 0.5pt solid #ECECEC; }
+.kd-tot tr.g td { border-top: 0.5pt solid #2D2D2D; border-bottom: 0.5pt solid #2D2D2D; padding: 2.4mm 0; }
+.kd-tot tr.g .v { font-size: 11pt; font-weight: normal; }
+.kd-tot .vat { color: #a33; }
+.kd-note { margin-top: 4mm; padding: 2.5mm 3mm; background: #FAFAFA; border-left: 1.5pt solid #2D2D2D; font-size: 7.8pt; page-break-inside: avoid; }
+.kd-note .e { color: #898989; }
+.kd-sec { margin-top: 5mm; page-break-inside: avoid; }
+.kd-end-l .kd-sec:first-child { margin-top: 0; }
+.kd-sec .h { padding-bottom: 1.5mm; border-bottom: 0.5pt solid #c8c6bf; margin-bottom: 1.5mm; }
+.kd-sec td { padding: 1mm 0; }
+.kd-sec td.k { width: 36mm; color: #555; }
+.kd-end { margin-top: 5mm; page-break-inside: avoid; }
+.kd-end-l { width: 58%; padding-right: 8mm !important; }
+.kd-end-r { width: 42%; }
+.kd-sign { padding-top: 12mm; page-break-inside: avoid; }
+.kd-sign .who { padding-top: 1.5mm; border-top: 1px solid #ababab; font-size: 7.8pt; line-height: 1.5; }
+.kd-sign .who .k { color: #898989; }
+.kd-draft { display: inline-block; margin-top: 2mm; color: #a33; border: 0.5pt solid #a33; padding: 0.5mm 2mm; font-size: 7pt; }
+/* Frappe copies these styles into the header and footer files (body onload=subst).
+   There the page margins above must not apply, or the header slides out of view. */
+body[onload] { padding: 0 !important; margin: 0 !important; }
+body[onload] .print-format { margin: 0 !important; padding: 0 !important; max-width: none !important; width: auto !important; }
+.kd-head { font-size: 7pt; line-height: 1.4; }
+.kd-head table, .kd-foot table { width: 100%; border-collapse: collapse; }
+.kd-head td, .kd-foot td { vertical-align: top; padding: 0; border: 0; }
+.kd-foot { font-size: 6.8pt; line-height: 1.45; color: #555; }
+.kd-foot .rule td { border-top: 0.5pt solid #c8c6bf; padding-top: 2mm; }
+</style>
+
+<div id="header-html" class="visible-pdf">
+<div class="kd-head" style="padding-top: 11mm;">
+	<table><tr>
+		<td style="width: 40%;"><img src="{{ kiluth_money_logo() }}" style="width: 19mm; height: 5.7mm;"></td>
+		<td style="width: 20%;"></td>
+		<td style="width: 40%; text-align: right;">{{ m.seller.email }}<br>{{ m.seller.phone }}<br>{{ m.seller.web }}</td>
+	</tr></table>
+</div>
+</div>
+
+<div class="kd">
+	<table class="kd-title"><tr>
+		<td>
+			<div class="t1">{{ m.title_th }}</div>
+			<div class="t2">{{ m.title_en }}</div>
+			{% if m.draft %}<div class="kd-draft">ฉบับร่าง ยังไม่มีผล / Draft, not valid</div>{% endif %}
+			{% if m.cancelled %}<div class="kd-draft">ยกเลิกแล้ว / Cancelled</div>{% endif %}
+		</td>
+		<td class="r">{% if m.mark %}<table style="width: auto; float: right;"><tr><td class="kd-mark">{{ m.mark }}</td></tr></table>{% endif %}</td>
+	</tr></table>
+
+	<table class="kd-parties"><tr>
+		<td class="kd-party">
+			{{ label("ผู้ขาย", "From") }}
+			<div class="n">{{ m.seller.name_th }} ({{ m.seller.branch_th }})</div>
+			<div class="n">{{ m.seller.name_en }} ({{ m.seller.branch_en }})</div>
+			<div class="s" style="margin-top: 1.5mm;">{{ m.seller.address_th }}<br>{{ m.seller.address_en }}</div>
+			<div class="s" style="margin-top: 1.5mm;"><span class="k">เลขประจำตัวผู้เสียภาษี / Tax ID</span> {{ m.seller.tax_id }}</div>
+		</td>
+		<td class="kd-party">
+			{{ label("ลูกค้า", "Bill to") }}
+			<div class="n">{{ m.buyer.name }}</div>
+			{% if m.buyer.name_missing %}<div><span class="kd-missing">ยังไม่มีชื่อตามทะเบียนในระบบ / Legal name not in the Portal yet</span></div>{% endif %}
+			{% if m.buyer.trade_name %}<div class="s">{{ m.buyer.trade_name }}</div>{% endif %}
+			<div class="s" style="margin-top: 1.5mm;">
+			{% if m.buyer.address %}{{ m.buyer.address | join("<br>") }}
+			{% else %}<span class="kd-missing">ยังไม่มีที่อยู่ในระบบ / Address not in the Portal yet</span>{% endif %}
+			</div>
+			<div class="s" style="margin-top: 1.5mm;"><span class="k">เลขประจำตัวผู้เสียภาษี / Tax ID</span>
+			{% if m.buyer.tax_id %}{{ m.buyer.tax_id }}{% if m.buyer.branch %} · {{ m.buyer.branch }}{% endif %}
+			{% else %}<span class="kd-missing">ยังไม่มีในระบบ / Not in the Portal yet</span>{% endif %}
+			</div>
+		</td>
+	</tr></table>
+
+	<table class="kd-meta"><tr>
+		{% for th, en, value in m.meta %}
+		<td>{{ label(th, en) }}<div class="v">{{ value }}</div></td>
+		{% endfor %}
+	</tr></table>
+
+	<table class="kd-items">
+		<thead><tr>
+			<td class="no">{{ label("ลำดับ", "No.") }}</td>
+			<td>{{ label("รายการ", "Description") }}</td>
+			<td class="q r">{{ label("จำนวน", "Qty") }}</td>
+			<td class="m r">{{ label("ราคาต่อหน่วย (฿)", "Unit price") }}</td>
+			<td class="m r">{{ label("จำนวนเงิน (฿)", "Amount") }}</td>
+		</tr></thead>
+		<tbody>
+		{% for it in m.lines %}
+		<tr>
+			<td class="no">{{ loop.index }}</td>
+			<td>
+				<div class="it">{{ it.title }}</div>
+				{% if it.detail %}<div class="dt">{{ it.detail }}</div>{% endif %}
+				{% if it.invoice %}<div class="ref">ใบแจ้งหนี้ / Invoice {{ it.invoice }}</div>{% endif %}
+			</td>
+			<td class="q r">{{ it.qty }}</td>
+			<td class="m r">{{ it.rate }}</td>
+			<td class="m r">{{ it.amount }}</td>
+		</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+
+	<table class="kd-sum"><tr>
+		<td class="kd-words">
+			{{ label("จำนวนเงินเป็นตัวอักษร", "Amount in words") }}
+			<div class="w">({{ m.words_th }})</div>
+			<div class="we">{{ m.words_en }}</div>
+		</td>
+		<td>
+			<table class="kd-tot">
+			{% for th, en, value, grand in m.totals %}
+			<tr class="{{ 'g' if grand else '' }}">
+				<td>{{ label(th, en) }}</td>
+				<td class="r v{{ ' vat' if (not grand and (th == 'ภาษีมูลค่าเพิ่ม')) else '' }}">฿{{ value }}</td>
+			</tr>
+			{% endfor %}
+			</table>
+		</td>
+	</tr></table>
+
+	<div class="kd-note">
+		บริษัทฯ ไม่ได้จดทะเบียนภาษีมูลค่าเพิ่ม จึงไม่มีการเรียกเก็บภาษีมูลค่าเพิ่ม
+		<div class="e">Kiluth LTD. is not VAT-registered, so no VAT is charged.</div>
+	</div>
+
+	<table class="kd-end"><tr>
+	<td class="kd-end-l">
+	{% for sec in m.sections %}
+	<div class="kd-sec">
+		<div class="h">{{ label(sec.th, sec.en) }}</div>
+		<table>
+		{% for k, v in sec.rows %}
+		<tr>{% if k %}<td class="k">{{ k }}</td><td>{{ v }}</td>{% else %}<td colspan="2">{{ v }}</td>{% endif %}</tr>
+		{% endfor %}
+		</table>
+	</div>
+	{% endfor %}
+
+	{% if m.bank %}
+	<div class="kd-sec">
+		<div class="h">{{ label("ช่องทางการชำระเงิน", "How to pay") }}</div>
+		<table>
+		<tr><td class="k">ธนาคาร / Bank</td><td>{{ m.bank.bank_th }} · {{ m.bank.bank_en }}</td></tr>
+		<tr><td class="k">ชื่อบัญชี / Account name</td><td>{{ m.bank.holder_th }} · {{ m.bank.holder_en }}</td></tr>
+		<tr><td class="k">เลขที่บัญชี / Account no.</td><td class="kd-strong">{{ m.bank.number }}</td></tr>
+		<tr><td class="k"></td><td style="color: #898989;">กรุณาแจ้งเลขที่ใบแจ้งหนี้เมื่อโอนเงิน<br>Please quote the invoice number with your transfer.</td></tr>
+		</table>
+	</div>
+	{% endif %}
+	</td>
+	<td class="kd-end-r">
+		{% for s in m.signatures %}
+		<div class="kd-sign">
+			<div class="who">
+				{{ s.th }} / {{ s.en }}
+				{% if s.name_th %}<br><span class="kd-strong">{{ s.name_th }}</span> · {{ s.name_en }}{% else %}<br>&nbsp;{% endif %}
+				<br><span class="k">{{ s.org }}</span>
+				<br><span class="k">วันที่ / Date</span> ............................
+			</div>
+		</div>
+		{% endfor %}
+	</td>
+	</tr></table>
+</div>
+
+<div id="footer-html" class="visible-pdf">
+<div class="kd-foot" style="padding: 5mm 0 0;">
+	<table><tr class="rule">
+		<td style="width: 70%;">{{ m.seller.name_th }} · {{ m.seller.name_en }} · {{ m.seller.branch_th }} / {{ m.seller.branch_en }}<br>
+			เลขประจำตัวผู้เสียภาษี / Tax ID {{ m.seller.tax_id }}<br>
+			{{ m.seller.address_en }}</td>
+		<td style="width: 30%; text-align: right;">{{ m.title_th }} · {{ m.number }}<br>หน้า / Page <span class="page"></span> / <span class="topage"></span></td>
+	</tr></table>
+</div>
+</div>
+{% endfilter %}
+{%- endmacro %}
