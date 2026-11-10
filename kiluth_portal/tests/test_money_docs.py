@@ -44,10 +44,10 @@ WORDS_TH = {
 }
 
 WORDS_EN = {
-	9350: "Nine thousand three hundred fifty baht only",
-	72546: "Seventy-two thousand five hundred forty-six baht only",
-	48524.5: "Forty-eight thousand five hundred twenty-four baht and fifty satang only",
-	1000000: "One million baht only",
+	9350: "Nine thousand three hundred fifty baht",
+	72546: "Seventy-two thousand five hundred forty-six baht",
+	48524.5: "Forty-eight thousand five hundred twenty-four baht and fifty satang",
+	1000000: "One million baht",
 }
 
 QUILL = ('<div class="ql-editor read-mode"><p>1.Core Feature\t</p><p><strong>1.1 Role &amp; Membership</strong> Add roles</p>'
@@ -102,7 +102,7 @@ check("receipt headline", rc["headline"], "฿9,350.00 received")
 check("receipt paid by and ref", rc["sub"], ["Paid by card on 10 Nov 2026", "Ref ch_3Ua861HiyA1OUNd91zq6MP3w"])
 check("receipt items from both invoices", [i["amount"] for i in rc["lines"]], ["9,000.00", "350.00"])
 check("receipt one total", (rc["totals"], rc["total_label"]), ([], "Total received"))
-check("receipt words", rc["words"], "Nine thousand three hundred fifty baht only")
+check("receipt words", rc["words"], "Nine thousand three hundred fifty baht")
 
 wht = build({**PAY_1145, "paid_amount": 8730, "deductions": [{"account": "Withholding Tax Receivable - K", "amount": 270}]},
 	invoices=[INV_228])

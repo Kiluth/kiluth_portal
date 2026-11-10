@@ -133,12 +133,12 @@ def _en_number(n: int) -> str:
 
 
 def baht_words_en(amount) -> str:
-	"""9350 -> Nine thousand three hundred fifty baht only."""
+	"""9350 -> Nine thousand three hundred fifty baht."""
 	baht, satang = _split_satang(amount)
 	text = _en_number(baht) + " baht"
 	if satang:
 		text += " and " + _en_number(satang) + " satang"
-	return text[0].upper() + text[1:] + " only"
+	return text[0].upper() + text[1:]
 
 
 # ─── Small formatters ───────────────────────────────────────────────────────
