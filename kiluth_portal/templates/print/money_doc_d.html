@@ -1,0 +1,121 @@
+{#- Receipt style D (TASK-2026-00157, 10 Nov): Poom found A, B and C cluttered and
+    asked for one clean receipt like Stripe's or Apple's. English only; a Thai
+    version waits for a per-customer setting. The amount first, two short
+    columns, a two-column table, one footer line. Every fact prints once, and a
+    missing customer field is left out, not flagged. Mockup: delete the styles
+    Poom doesn't pick. -#}
+
+{% macro page(m) -%}
+{% filter kiluth_thai %}
+<style>
+{{ kiluth_money_fonts() }}
+.print-format { margin-top: 24mm; margin-bottom: 18mm; margin-left: 22mm; margin-right: 22mm; }
+.print-format { margin: 0 !important; padding: 0 !important; max-width: none !important; min-height: 0 !important; }
+.kd, .kd-head, .kd-foot { font-family: 'Kiluth Latin', 'Kiluth Thai', sans-serif; font-weight: normal; color: #1A1A1A; }
+.kt { font-family: 'Kiluth Thai', sans-serif; }
+.kd { font-size: 9pt; line-height: 1.55; }
+.kd table { width: 100%; border-collapse: collapse; }
+.kd td { padding: 0; vertical-align: top; text-align: left; font-weight: normal; border: 0; }
+.kd td { padding-left: 0 !important; }
+.kd td.r, .kd-sign td.s { padding-right: 0 !important; }
+.kd .r { text-align: right; }
+.kd .mute { color: #8A8A8A; }
+.kd .lbl { font-size: 7.5pt; color: #8A8A8A; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 1.5mm; }
+.kd-title td { vertical-align: bottom; }
+.kd-title .t { font-size: 18pt; line-height: 1.1; color: #000; }
+.kd-title .meta { font-size: 9pt; line-height: 1.6; }
+.kd-amount { margin-top: 16mm; }
+.kd-amount .big { font-size: 26pt; line-height: 1.15; color: #000; }
+.kd-amount .sub { font-size: 10pt; color: #6A6A6A; margin-top: 1.5mm; }
+.kd-parties { margin-top: 14mm; }
+.kd-parties td { width: 50%; padding-right: 10mm; }
+.kd-parties .n { color: #000; }
+.kd-items { margin-top: 14mm; }
+.kd-items thead td { padding-bottom: 2mm; border-bottom: 0.5pt solid #1A1A1A; }
+.kd-items tbody td { padding: 3mm 0; border-bottom: 0.5pt solid #E6E6E6; }
+.kd-items tbody tr { page-break-inside: avoid; }
+.kd-items .m { width: 32mm; }
+.kd-items .dt { color: #8A8A8A; font-size: 8pt; margin-top: 0.5mm; }
+.kd-items .dt p { margin: 0; }
+.kd-tot { page-break-inside: avoid; }
+.kd-tot td { padding-top: 3mm; }
+.kd-tot .v { font-size: 12pt; color: #000; }
+.kd-tot .w { font-size: 8pt; color: #8A8A8A; padding-top: 1mm; }
+.kd-sign { margin-top: 22mm; page-break-inside: avoid; }
+.kd-sign td.s { width: 62mm; padding-top: 1.5mm; border-top: 0.5pt solid #1A1A1A; font-size: 8pt; }
+.kd-note { margin-top: 12mm; font-size: 7.5pt; color: #8A8A8A; page-break-inside: avoid; }
+.kd-draft { display: inline-block; margin-left: 3mm; color: #a33; border: 0.5pt solid #a33; padding: 0 2mm; font-size: 7.5pt; vertical-align: middle; }
+body[onload] { padding: 0 !important; margin: 0 !important; }
+body[onload] .print-format { margin: 0 !important; padding: 0 !important; max-width: none !important; width: auto !important; }
+.kd-foot { font-size: 7pt; color: #8A8A8A; text-align: right; }
+</style>
+
+{%- set p = m.pay or {} -%}
+{%- set s = m.seller -%}
+{%- set b = m.buyer -%}
+<div id="header-html" class="visible-pdf"><div class="kd-head" style="padding-top: 12mm;"></div></div>
+
+<div class="kd">
+	<table class="kd-title"><tr>
+		<td><img src="{{ kiluth_money_logo() }}" style="width: 22mm; height: 6.6mm;"></td>
+		<td class="r meta"><span class="mute">No.</span> {{ m.number }}<br><span class="mute">Date</span> {{ p.date_en }}</td>
+	</tr></table>
+	<div class="kd-title" style="margin-top: 12mm;"><span class="t">Receipt</span>
+		{% if m.draft %}<span class="kd-draft">Draft, not valid</span>{% endif %}
+		{% if m.cancelled %}<span class="kd-draft">Cancelled</span>{% endif %}</div>
+
+	<div class="kd-amount">
+		<div class="big">฿{{ m.total }} received</div>
+		<div class="sub">Paid by {{ p.paid_by }} on {{ p.date_en }}</div>
+	</div>
+
+	<table class="kd-parties"><tr>
+		<td>
+			<div class="lbl">From</div>
+			<div class="n">{{ s.name_en }}</div>
+			<div>{{ s.address_en }}</div>
+			<div>Tax ID {{ s.tax_id }} ({{ s.branch_en }})</div>
+		</td>
+		<td style="padding-right: 0;">
+			<div class="lbl">Billed to</div>
+			<div class="n">{{ b.name }}</div>
+			{% if b.address %}<div>{{ b.address | join(", ") }}</div>{% endif %}
+			{% if b.tax_id %}<div>Tax ID {{ b.tax_id }}</div>{% endif %}
+		</td>
+	</tr></table>
+
+	<table class="kd-items">
+		<thead><tr>
+			<td class="lbl" style="margin: 0;">Description</td>
+			<td class="lbl m r" style="margin: 0;">Amount</td>
+		</tr></thead>
+		<tbody>
+		{% for it in m.lines %}
+		<tr>
+			<td style="padding-right: 8mm;"><div>{{ it.title }}</div>{% if it.detail %}<div class="dt">{{ it.detail }}</div>{% endif %}</td>
+			<td class="m r">฿{{ it.amount }}</td>
+		</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	<table class="kd-tot">
+		{% for th, en, value, g in m.totals if not g %}
+		<tr><td class="mute">{{ en }}</td><td class="r">฿{{ value }}</td></tr>
+		{% endfor %}
+		<tr><td>Total received</td><td class="r v">฿{{ m.total }}</td></tr>
+		<tr><td colspan="2" class="r w">{{ m.words_en }}</td></tr>
+	</table>
+
+	<table class="kd-sign"><tr>
+		<td></td>
+		<td class="s">Received by {{ m.signatures[0].name_en }}, {{ s.name_en }}</td>
+	</tr></table>
+
+	<div class="kd-note">{{ s.name_en }} is not VAT-registered; no VAT is charged.{% if p.reference %} Payment reference {{ p.reference }}.{% endif %}</div>
+</div>
+
+<div id="footer-html" class="visible-pdf">
+<div class="kd-foot" style="padding: 4mm 0 0;">Page <span class="page"></span> of <span class="topage"></span></div>
+</div>
+{% endfilter %}
+{%- endmacro %}
