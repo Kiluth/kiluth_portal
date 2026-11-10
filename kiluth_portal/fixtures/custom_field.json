@@ -955,5 +955,31 @@
   "insert_after": "customer_name",
   "length": 240,
   "modified": "2026-11-05 15:15:00.000000"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Customer-custom_branch",
+  "dt": "Customer",
+  "module": "Kiluth Sales",
+  "fieldname": "custom_branch",
+  "fieldtype": "Data",
+  "label": "Branch (for documents)",
+  "description": "As on the client's tax registration, e.g. Head Office or Branch 00001. Printed after the legal name on quotations, invoices and receipts; leave it blank to print no branch.",
+  "insert_after": "custom_legal_name",
+  "length": 140,
+  "modified": "2026-11-10 18:30:00.000000"
+ },
+ {
+  "doctype": "Custom Field",
+  "name": "Customer-custom_thai_documents",
+  "dt": "Customer",
+  "module": "Kiluth Sales",
+  "fieldname": "custom_thai_documents",
+  "fieldtype": "Check",
+  "label": "Thai documents",
+  "description": "Tick when this client wants Thai. Their quotations, invoices and receipts then print in Thai, same layout. Unticked, they print in English.",
+  "insert_after": "custom_branch",
+  "default": "0",
+  "modified": "2026-11-10 18:30:00.000000"
  }
 ]

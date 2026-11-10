@@ -2,19 +2,15 @@
 
 The print formats "Quotation Print", "Invoice Print" and "Receipt" are one line
 each. They call `kiluth_money_doc(doc)` (hooks.py `jinja`), which builds the
-values here, and render templates/print/money_doc.html, which holds the one
-shared header, footer, item list, totals and amount in words (TASK-2026-00157).
+values here, and render templates/print/money_doc.html (TASK-2026-00157).
 
-Thai standard, Thai first with English under each label:
-- the title in Thai and English, never "ใบกำกับภาษี" (Kiluth is not
+Style D, Poom's pick (10 Nov): clean, like a Stripe or Apple receipt.
+- English by default; a customer with "Thai documents" ticked gets Thai, same layout
+- the amount first, in one big line, with the date, method or due date under it
+- From and Billed to; each customer line prints only when the Portal has it
+- description and amount, the total, the total in words
+- no signatures and no footer; never "ใบกำกับภาษี" (Kiluth is not
   VAT-registered, so it may not issue a tax invoice: Revenue Code s.86/13)
-- Kiluth's legal name, head office, address and labelled tax ID
-- the number once, the date, one list, one total, the total in Thai words
-  (…บาทถ้วน) and in English
-- Receipt: payment date, method, reference, the invoices paid, withholding
-
-Where the Portal has no legal name, address or tax ID for the customer, the
-document says so plainly instead of leaving a gap.
 
 The helpers above `money_doc` import nothing from Frappe, so tests can run
 them alone: python3 kiluth_portal/tests/test_money_docs.py
@@ -43,17 +39,9 @@ SELLER = {
 	"web": "kiluth.com",
 }
 
-# Placeholders Poom decides later (plan 2026-11-10). The bank is settled: Hub, 10 Nov.
+# The bank account: settled by Hub, 10 Nov.
 BANK = {"bank_th": "ธนาคารกสิกรไทย", "bank_en": "Kasikornbank (KBank)", "number": "219-1-59161-8",
 	"holder_th": "บริษัท คิลุธ จำกัด", "holder_en": "Kiluth LTD.", "type_th": "ออมทรัพย์", "type_en": "Savings"}
-SIGNER = {"th": "พฤทธิพันธ์ สำราญรื่น", "en": "Phuttipan Samranruen"}
-TERMS_URL = "kiluth.com/terms"
-
-TITLES = {
-	"Quotation": ("ใบเสนอราคา", "Quotation"),
-	"Sales Invoice": ("ใบแจ้งหนี้", "Invoice"),
-	"Payment Entry": ("ใบเสร็จรับเงิน", "Receipt"),
-}
 
 METHODS = {
 	"credit card": ("บัตรเครดิต", "Credit card"),
@@ -221,14 +209,6 @@ def method(mode_of_payment) -> tuple[str, str]:
 	return METHODS.get(key, (mode_of_payment or "", mode_of_payment or ""))
 
 
-def reference(ref) -> str:
-	"""A payment reference fit for paper: Stripe IDs say Stripe, others as typed."""
-	ref = (ref or "").strip()
-	if re.match(r"^(ch|pi|py|po|txn)_", ref):
-		return f"Stripe {ref}"
-	return ref
-
-
 def is_vat(row) -> bool:
 	text = f"{row.get('account_head') or ''} {row.get('description') or ''}".lower()
 	return "vat" in text or "ภาษีมูลค่าเพิ่ม" in text
@@ -266,7 +246,9 @@ def fonts_css() -> str:
 
 
 _TAG = re.compile(r"(<[^>]*>)")
-_THAI_RUN = re.compile(r"[\u0E00-\u0E7F]+(?:[ \u00A0]+[\u0E00-\u0E7F]+)*")
+# A space right after a Thai run goes inside the span: left to the Latin font,
+# wkhtmltopdf drew it almost zero-wide ("เลขที่บัญชี219", bench 10 Nov).
+_THAI_RUN = re.compile(r"[\u0E00-\u0E7F]+(?:[ \u00A0]+[\u0E00-\u0E7F]+)*[ \u00A0]?")
 
 
 def thai_spans(html) -> str:
@@ -295,153 +277,159 @@ def esc(x) -> str:
 
 # ─── The document values ────────────────────────────────────────────────────
 
-def _items(rows, invoice=None):
+# Every printed word, English and Thai. A customer with "Thai documents" ticked
+# gets the Thai column, same layout; everyone else gets English (Poom, 10 Nov).
+WORDS = {
+	"en": {"no": "No.", "date": "Date", "from": "From", "to": "Billed to", "tax_id": "Tax ID",
+		"description": "Description", "amount": "Amount", "subtotal": "Subtotal", "discount": "Discount",
+		"vat": "VAT", "wht": "Withholding tax", "invoice_total": "Invoice total",
+		"total": {"Quotation": "Total", "Sales Invoice": "Total due", "Payment Entry": "Total received"},
+		"received": "฿{amount} received", "paid_by": "Paid by {method} on {date}", "ref": "Ref {ref}",
+		"due": "฿{amount} due", "due_on": "Due {date}", "quoted": "฿{amount}",
+		"valid": "Valid until {date}", "installment": "Installment {n} of {of}",
+		"pay_to": "Pay by bank transfer", "bank_line": "{bank}, account {number}", "holder": "Account name {holder}",
+		"terms": "Payment terms", "in_full": "In full", "as_agreed": "As agreed",
+		"draft": "Draft, not valid", "cancelled": "Cancelled", "qty": "{qty} × ฿{rate}"},
+	"th": {"no": "เลขที่", "date": "วันที่", "from": "ผู้ออกเอกสาร", "to": "ลูกค้า", "tax_id": "เลขประจำตัวผู้เสียภาษี",
+		"description": "รายการ", "amount": "จำนวนเงิน", "subtotal": "รวมเป็นเงิน", "discount": "ส่วนลด",
+		"vat": "ภาษีมูลค่าเพิ่ม", "wht": "ภาษีหัก ณ ที่จ่าย", "invoice_total": "ยอดตามใบแจ้งหนี้",
+		"total": {"Quotation": "รวมทั้งสิ้น", "Sales Invoice": "ยอดที่ต้องชำระ", "Payment Entry": "ยอดรับชำระ"},
+		"received": "รับชำระ ฿{amount}", "paid_by": "ชำระด้วย{method} วันที่ {date}", "ref": "เลขอ้างอิง {ref}",
+		"due": "ยอดชำระ ฿{amount}", "due_on": "ครบกำหนดชำระ {date}", "quoted": "฿{amount}",
+		"valid": "ยืนราคาถึง {date}", "installment": "งวดที่ {n} จาก {of}",
+		"pay_to": "ชำระโดยโอนเข้าบัญชี", "bank_line": "{bank} เลขที่บัญชี {number}", "holder": "ชื่อบัญชี {holder}",
+		"terms": "เงื่อนไขการชำระเงิน", "in_full": "ชำระเต็มจำนวน", "as_agreed": "ตามที่ตกลง",
+		"draft": "ฉบับร่าง ใช้อ้างอิงไม่ได้", "cancelled": "ยกเลิก", "qty": "{qty} × ฿{rate}"},
+}
+
+TITLES = {
+	"Quotation": {"en": "Quotation", "th": "ใบเสนอราคา"},
+	"Sales Invoice": {"en": "Invoice", "th": "ใบแจ้งหนี้"},
+	"Payment Entry": {"en": "Receipt", "th": "ใบเสร็จรับเงิน"},
+}
+
+
+def paid_by(mode_of_payment, lang) -> str:
+	"""'Credit Card' -> 'card' (en) or 'บัตรเครดิต' (th), for "Paid by card on …"."""
+	th, en = method(mode_of_payment)
+	if lang == "th":
+		return th
+	return "card" if en.endswith(" card") else en if en == "PromptPay" else en.lower()
+
+
+def _items(rows, w):
 	out = []
 	for r in rows:
 		detail = clean_description(r.get("description"))
 		if re.sub(r"<[^>]+>", "", detail).strip() == (r.get("item_name") or "").strip():
 			detail = ""
-		out.append({"title": r.get("item_name") or r.get("item_code"), "detail": detail, "invoice": invoice,
-			"qty": qty(r.get("qty")), "uom": r.get("uom") or "", "rate": money(r.get("rate")), "amount": money(r.get("amount")),
-			"so": r.get("sales_order")})
+		q = float(r.get("qty") or 0)
+		out.append({"title": r.get("item_name") or r.get("item_code"), "detail": detail, "amount": money(r.get("amount")),
+			# Services are one line, one amount; quantity shows only when there's more than one.
+			"qty": w["qty"].format(qty=qty(q), rate=money(r.get("rate"))) if q and q != 1 else ""})
 	return out
 
 
-def _taxes(rows):
-	"""Tax rows on the record, VAT included: the paper must add up to the total.
-	New documents can't carry VAT (utils/vat.py); a few older ones still do."""
-	return [{"th": "ภาษีมูลค่าเพิ่ม" if is_vat(t) else (t.get("description") or ""), "en": t.get("description") or "",
-		"value": money(t.get("tax_amount")), "vat": is_vat(t)} for t in rows or []]
-
-
-def buyer_block(customer, address, fallback_name):
-	"""The customer's legal details, with a plain placeholder for each gap."""
+def buyer_block(customer, address, fallback_name, w):
+	"""Billed to: legal name (with its branch), address, tax ID. Each line only
+	when the Portal has it; no placeholders (Poom, 10 Nov)."""
 	customer = customer or {}
-	name = (customer.get("custom_legal_name") or "").strip()
-	lines = []
+	name = (customer.get("custom_legal_name") or "").strip() or fallback_name
+	branch = (customer.get("custom_branch") or "").strip()
+	address_lines = []
 	if address:
-		lines = [x for x in (address.get("address_line1"), address.get("address_line2"),
+		address_lines = [x for x in (address.get("address_line1"), address.get("address_line2"),
 			" ".join(x for x in (address.get("city"), address.get("state"), address.get("pincode")) if x)) if x]
 	tid = tax_id(customer.get("tax_id"))
-	branch = (customer.get("custom_branch") or "").strip()
-	return {
-		"name": name or fallback_name,
-		"name_missing": not name,
-		"trade_name": fallback_name if name and name != fallback_name else "",
-		"address": lines,
-		"tax_id": tid,
-		"branch": branch or ("สำนักงานใหญ่ / Head office" if tid else ""),
-	}
+	return {"name": name, "branch": branch, "address": address_lines,
+		"tax_id": f"{w['tax_id']} {tid}" if tid else ""}
 
 
-def build(doc, customer=None, address=None, invoices=None):
+def seller_block(lang, w):
+	s = SELLER
+	return {"name": s[f"name_{lang}"], "address": [s[f"address_{lang}"]],
+		"tax_id": f"{w['tax_id']} {s['tax_id']} ({s[f'branch_{lang}']})"}
+
+
+def build(doc, customer=None, address=None, invoices=None, lang=None):
 	"""Every value the layout prints. `doc` is the Quotation, Sales Invoice or
 	Payment Entry (a dict or a Frappe document); `invoices` are a receipt's
-	Sales Invoices. No Frappe calls, so tests can feed plain dicts."""
+	Sales Invoices. `lang` is "th" when the customer has "Thai documents" ticked,
+	else English. No Frappe calls, so tests can feed plain dicts."""
 	g = doc.get
 	kind = g("doctype")
-	th, en = TITLES[kind]
-	m = {"kind": kind, "title_th": th, "title_en": en, "number": g("name"), "seller": SELLER, "bank": None,
-		"meta": [], "lines": [], "taxes": [], "totals": [], "sections": [], "signatures": [], "mark": "",
+	lang = lang or ("th" if (customer or {}).get("custom_thai_documents") else "en")
+	w = WORDS[lang]
+	day = date_th if lang == "th" else date_en
+	m = {"kind": kind, "lang": lang, "w": w, "title": TITLES[kind][lang], "number": g("name"),
+		"seller": seller_block(lang, w), "lines": [], "totals": [], "headline": "", "sub": [], "blocks": [],
 		"draft": g("docstatus") == 0, "cancelled": g("docstatus") == 2}
 	fallback = g("customer_name") or g("party_name") or g("customer") or g("party")
-	m["buyer"] = buyer_block(customer, address, fallback)
+	m["buyer"] = buyer_block(customer, address, fallback, w)
 	if not m["buyer"]["tax_id"] and g("tax_id"):
-		m["buyer"]["tax_id"] = tax_id(g("tax_id"))
+		m["buyer"]["tax_id"] = f"{w['tax_id']} {tax_id(g('tax_id'))}"
 
-	def meta(label_th, label_en, value):
-		if value:
-			m["meta"].append((label_th, label_en, value))
-
-	if kind == "Quotation":
-		meta("เลขที่", "No.", g("name"))
-		meta("วันที่", "Date", f"{date_th(g('transaction_date'))} · {date_en(g('transaction_date'))}")
-		meta("ยืนราคาถึง", "Valid until", g("valid_till") and f"{date_th(g('valid_till'))} · {date_en(g('valid_till'))}")
-		m["lines"] = _items(g("items") or [])
-		m["taxes"] = _taxes(g("taxes"))
-		total = g("grand_total")
-		schedule = g("payment_schedule") or []
-		terms = []
-		for i, p in enumerate(schedule, 1):
-			share = f"{float(p.get('invoice_portion') or 0):g}%"
-			terms.append((f"งวดที่ {i} / Installment {i} of {len(schedule)}" if len(schedule) > 1 else "ชำระเต็มจำนวน / In full",
-				f"{share} · ฿{money(p.get('payment_amount'))} · {date_th(p.get('due_date'))} · {date_en(p.get('due_date'))}"))
-		m["sections"].append({"th": "เงื่อนไขการชำระเงิน", "en": "Payment terms", "rows": terms or
-			[("—", "ตามที่ตกลง / As agreed")]})
-		m["sections"].append({"th": "เงื่อนไขการให้บริการ", "en": "Terms of service", "rows": [
-			("", f"ตามเงื่อนไขที่ {TERMS_URL} และข้อเสนอโครงการที่แนบ / As set out at {TERMS_URL} and in the attached proposal")]})
-		m["signatures"] = [
-			{"th": "ผู้เสนอราคา", "en": "Quoted by", "name_th": SIGNER["th"], "name_en": SIGNER["en"], "org": "บริษัท คิลุธ จำกัด / Kiluth LTD."},
-			{"th": "ผู้อนุมัติสั่งซื้อ", "en": "Accepted by", "name_th": "", "name_en": "", "org": m["buyer"]["name"]},
-		]
-	elif kind == "Sales Invoice":
-		m["mark"] = "ต้นฉบับ / Original"
-		meta("เลขที่", "No.", g("name"))
-		meta("วันที่", "Date", f"{date_th(g('posting_date'))} · {date_en(g('posting_date'))}")
-		meta("ครบกำหนดชำระ", "Due date", g("due_date") and f"{date_th(g('due_date'))} · {date_en(g('due_date'))}")
-		orders = sorted({r.get("sales_order") for r in g("items") or [] if r.get("sales_order")})
-		meta("อ้างอิงใบสั่งขาย", "Sales order", ", ".join(orders))
-		meta("อ้างอิงใบสั่งซื้อ", "PO number", g("po_no"))
-		inst = next((installment(r.get("description")) for r in g("items") or [] if installment(r.get("description"))), None)
-		meta("งวดที่", "Installment", inst and f"{inst[0]} จาก {inst[1]} · {inst[0]} of {inst[1]}")
-		m["lines"] = _items(g("items") or [])
-		m["taxes"] = _taxes(g("taxes"))
-		total = g("grand_total")
-		m["bank"] = BANK
-		m["signatures"] = [{"th": "ผู้ออกเอกสาร", "en": "Issued by", "name_th": SIGNER["th"], "name_en": SIGNER["en"],
-			"org": "บริษัท คิลุธ จำกัด / Kiluth LTD."}]
-	else:
-		m["mark"] = "ต้นฉบับ / Original"
+	taxes = []
+	if kind == "Payment Entry":
 		invoices = invoices or []
-		meta("เลขที่", "No.", g("name"))
-		meta("วันที่รับเงิน", "Payment date", f"{date_th(g('posting_date'))} · {date_en(g('posting_date'))}")
-		meta("ชำระตามใบแจ้งหนี้", "For invoice", ", ".join(i.get("name") for i in invoices))
-		several = len(invoices) > 1
 		for inv in invoices:
-			m["lines"] += _items(inv.get("items") or [], inv.get("name") if several else None)
-			m["taxes"] += _taxes(inv.get("taxes"))
+			m["lines"] += _items(inv.get("items") or [], w)
+			taxes += inv.get("taxes") or []
+		subtotal = sum(float(i.get("total") or 0) for i in invoices)
 		invoice_total = sum(float(i.get("grand_total") or 0) for i in invoices)
 		wht = sum(float(d.get("amount") or 0) for d in g("deductions") or [] if is_withholding(d.get("account")))
-		paid = float(g("paid_amount") or 0)
-		total = paid + wht
-		mth, men = method(g("mode_of_payment"))
-		pay_rows = [("วิธีชำระ / Method", f"{mth} / {men}" if mth != men else mth)]
+		total = float(g("paid_amount") or 0) + wht
+		m["date"] = day(g("posting_date"))
+		m["headline"] = w["received"].format(amount=money(total))
+		m["sub"].append(w["paid_by"].format(method=paid_by(g("mode_of_payment"), lang), date=m["date"]))
 		if g("reference_no"):
-			pay_rows.append(("เลขอ้างอิง / Reference", reference(g("reference_no"))))
-		if wht:
-			pay_rows.append(("รับเงิน / Received", f"฿{money(paid)}"))
-			pay_rows.append(("ภาษีหัก ณ ที่จ่าย / Withholding tax", f"฿{money(wht)} (ตามหนังสือรับรองการหักภาษี ณ ที่จ่าย / per the withholding certificate)"))
-		m["sections"].append({"th": "การชำระเงิน", "en": "Payment", "rows": pay_rows})
-		# The same facts unformatted, for the receipt styles that lay payment out
-		# their own way (A: tick boxes, C: the paid band, D: "Paid by card on …"). Mockup round, 10 Nov.
-		m["pay"] = {"method": men, "method_th": mth, "reference": reference(g("reference_no")),
-			"date_th": date_th(g("posting_date")), "date_en": date_en(g("posting_date")),
-			"invoices": [i.get("name") for i in invoices],
-			"paid_by": "card" if men.endswith(" card") else men if men == "PromptPay" else men.lower()}
-		m["receipt_invoice_total"] = invoice_total
-		m["signatures"] = [{"th": "ผู้รับเงิน", "en": "Received by", "name_th": SIGNER["th"], "name_en": SIGNER["en"],
-			"org": "บริษัท คิลุธ จำกัด / Kiluth LTD."}]
-
-	subtotal = sum(float(r.get("amount") or 0) for r in (g("items") or [])) if kind != "Payment Entry" \
-		else sum(float(i.get("total") or 0) for i in invoices or [])
-	if m["taxes"] or float(g("discount_amount") or 0):
-		m["totals"].append(("รวมเป็นเงิน", "Subtotal", money(subtotal), False))
-		if float(g("discount_amount") or 0):
-			m["totals"].append(("ส่วนลด", "Discount", "-" + money(g("discount_amount")), False))
-		for t in m["taxes"]:
-			m["totals"].append((t["th"], t["en"], t["value"], False))
-	if kind == "Payment Entry":
-		if abs(m["receipt_invoice_total"] - total) > 0.005:
-			m["totals"].append(("ยอดตามใบแจ้งหนี้", "Invoice total", money(m["receipt_invoice_total"]), False))
-		if wht:
-			m["totals"].append(("ภาษีหัก ณ ที่จ่าย", "Withholding tax", money(wht), False))
-		m["totals"].append(("จำนวนเงินที่ได้รับ", "Amount received", money(total), True))
+			m["sub"].append(w["ref"].format(ref=(g("reference_no") or "").strip()))
 	else:
-		m["totals"].append(("จำนวนเงินรวมทั้งสิ้น", "Total", money(total), True))
+		m["lines"] = _items(g("items") or [], w)
+		taxes = g("taxes") or []
+		subtotal = sum(float(r.get("amount") or 0) for r in g("items") or [])
+		total = float(g("grand_total") or 0)
+		if kind == "Quotation":
+			m["date"] = day(g("transaction_date"))
+			m["headline"] = w["quoted"].format(amount=money(total))
+			if g("valid_till"):
+				m["sub"].append(w["valid"].format(date=day(g("valid_till"))))
+			schedule = g("payment_schedule") or []
+			rows = []
+			for i, p in enumerate(schedule, 1):
+				label = w["installment"].format(n=i, of=len(schedule)) if len(schedule) > 1 else w["in_full"]
+				share = f"{float(p.get('invoice_portion') or 0):g}%"
+				rows.append((label, f"{share} · ฿{money(p.get('payment_amount'))}", w["due_on"].format(date=day(p.get("due_date")))))
+			m["blocks"].append({"label": w["terms"], "rows": rows or [(w["as_agreed"], "", "")]})
+		else:
+			m["date"] = day(g("posting_date"))
+			m["headline"] = w["due"].format(amount=money(total))
+			if g("due_date"):
+				m["sub"].append(w["due_on"].format(date=day(g("due_date"))))
+			inst = next((installment(r.get("description")) for r in g("items") or [] if installment(r.get("description"))), None)
+			if inst:
+				m["sub"].append(w["installment"].format(n=inst[0], of=inst[1]))
+			m["blocks"].append({"label": w["pay_to"], "rows": [
+				(w["bank_line"].format(bank=BANK[f"bank_{lang}"], number=BANK["number"]), "", ""),
+				(w["holder"].format(holder=BANK[f"holder_{lang}"]), "", "")]})
+
+	# Tax rows stay only where the record has them, so old documents still add up
+	# (a June quotation carries 7% VAT). New documents can't carry VAT (utils/vat.py).
+	discount = float(g("discount_amount") or 0) if kind != "Payment Entry" else 0
+	if taxes or discount:
+		m["totals"].append((w["subtotal"], money(subtotal)))
+		if discount:
+			m["totals"].append((w["discount"], "-" + money(discount)))
+		for t in taxes:
+			m["totals"].append((w["vat"] if is_vat(t) else (t.get("description") or ""), money(t.get("tax_amount"))))
+	if kind == "Payment Entry":
+		if abs(invoice_total - total) > 0.005:
+			m["totals"].append((w["invoice_total"], money(invoice_total)))
+		if wht:
+			m["totals"].append((w["wht"], money(wht)))
+	m["total_label"] = w["total"][kind]
 	m["total"] = money(total)
-	m["words_th"] = baht_words_th(total)
-	m["words_en"] = baht_words_en(total)
-	m["has_vat_row"] = any(t["vat"] for t in m["taxes"])
+	m["words"] = baht_words_th(total) if lang == "th" else baht_words_en(total)
 	return m
 
 
@@ -454,8 +442,8 @@ def money_doc(doc):
 	party = doc.get("party_name") if kind == "Quotation" else doc.get("customer") if kind == "Sales Invoice" else doc.get("party")
 	is_customer = (kind == "Quotation" and doc.get("quotation_to") == "Customer") or kind == "Sales Invoice" \
 		or (kind == "Payment Entry" and doc.get("party_type") == "Customer")
-	customer = frappe.db.get_value("Customer", party, ["custom_legal_name", "tax_id", "customer_primary_address"],
-		as_dict=True) if is_customer and party else None
+	customer = frappe.db.get_value("Customer", party, ["custom_legal_name", "custom_branch", "custom_thai_documents",
+		"tax_id", "customer_primary_address"], as_dict=True) if is_customer and party else None
 	address_name = doc.get("customer_address") or (customer or {}).get("customer_primary_address")
 	address = frappe.db.get_value("Address", address_name, ["address_line1", "address_line2", "city", "state",
 		"pincode"], as_dict=True) if address_name else None
