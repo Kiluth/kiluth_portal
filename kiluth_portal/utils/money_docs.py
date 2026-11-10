@@ -412,6 +412,11 @@ def build(doc, customer=None, address=None, invoices=None):
 			pay_rows.append(("รับเงิน / Received", f"฿{money(paid)}"))
 			pay_rows.append(("ภาษีหัก ณ ที่จ่าย / Withholding tax", f"฿{money(wht)} (ตามหนังสือรับรองการหักภาษี ณ ที่จ่าย / per the withholding certificate)"))
 		m["sections"].append({"th": "การชำระเงิน", "en": "Payment", "rows": pay_rows})
+		# The same facts unformatted, for the receipt styles that lay payment out
+		# their own way (A: tick boxes, C: the paid band). Mockup round, 10 Nov.
+		m["pay"] = {"method": men, "method_th": mth, "reference": reference(g("reference_no")),
+			"date_th": date_th(g("posting_date")), "date_en": date_en(g("posting_date")),
+			"invoices": [i.get("name") for i in invoices]}
 		m["receipt_invoice_total"] = invoice_total
 		m["signatures"] = [{"th": "ผู้รับเงิน", "en": "Received by", "name_th": SIGNER["th"], "name_en": SIGNER["en"],
 			"org": "บริษัท คิลุธ จำกัด / Kiluth LTD."}]

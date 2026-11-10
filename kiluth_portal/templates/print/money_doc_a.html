@@ -1,0 +1,186 @@
+{#- Receipt style A for Poom's pick (TASK-2026-00157, mockup round 10 Nov): close to
+    the hand-made RC-2569-0002. Boxes, a dark table header, signature boxes. Same
+    values as money_doc.html (style B); delete whichever styles Poom doesn't pick. -#}
+
+{% macro page(m) -%}
+{% filter kiluth_thai %}
+<style>
+{{ kiluth_money_fonts() }}
+.print-format { margin-top: 14mm; margin-bottom: 20mm; margin-left: 14mm; margin-right: 14mm; }
+.print-format { margin: 0 !important; padding: 0 !important; max-width: none !important; min-height: 0 !important; }
+.ka, .ka-foot { font-family: 'Kiluth Latin', 'Kiluth Thai', sans-serif; font-weight: normal; color: #2D2D2D; }
+.kt { font-family: 'Kiluth Thai', sans-serif; }
+.ka { font-size: 8.5pt; line-height: 1.5; }
+.ka table { width: 100%; border-collapse: collapse; }
+.ka td { padding: 0; vertical-align: top; text-align: left; font-weight: normal; border: 0; }
+.ka .r { text-align: right; }
+.ka .c { text-align: center; }
+.ka .mute { color: #898989; }
+.ka .sm { font-size: 7pt; }
+.ka-top td { vertical-align: top; }
+.ka-top .seller { font-size: 7.8pt; line-height: 1.45; }
+.ka-top .seller .n { font-size: 9.5pt; color: #000; margin-top: 2mm; }
+.ka-top .t1 { font-size: 20pt; line-height: 1.1; color: #000; }
+.ka-top .t2 { font-size: 8pt; color: #898989; letter-spacing: 0.3em; margin-top: 1mm; }
+.ka td.ka-mark { border: 0.5pt solid #2D2D2D; padding: 0.6mm 3mm; font-size: 7pt; }
+.ka-rule { border-bottom: 1pt solid #2D2D2D; margin: 3mm 0 3mm; }
+.ka td.ka-box { border: 0.5pt solid #ababab; }
+.ka-boxes > tbody > tr > td { padding: 0; }
+.ka-boxes .gap { width: 3mm; }
+.ka-box-in { padding: 2.5mm 3mm; font-size: 8pt; line-height: 1.5; }
+.ka-box-in .k { color: #898989; font-size: 7pt; }
+.ka-box-in .n { font-size: 9pt; color: #000; }
+.ka-box-in table td { padding: 0.6mm 0; }
+.ka-box-in td.mk { width: 24mm; color: #898989; font-size: 7pt; padding-top: 1mm; }
+.ka-missing { border: 0.5pt dashed #898989; color: #898989; padding: 0.2mm 1.5mm; font-size: 7pt; }
+.ka-items { margin-top: 4mm; border: 0.5pt solid #ababab; }
+.ka-items thead td { background: #2D2D2D; color: #fff !important; padding: 1.6mm 2mm; text-align: center; font-size: 7.5pt; line-height: 1.3; vertical-align: middle; }
+.ka-items thead .kt { color: #fff; }
+.ka-items tbody td { padding: 2.2mm 2mm; border-left: 0.5pt solid #c8c6bf; }
+.ka-items tbody td:first-child { border-left: 0; }
+.ka-items tbody tr { page-break-inside: avoid; }
+.ka-items .no { width: 11mm; text-align: center; }
+.ka-items .q { width: 14mm; text-align: center; }
+.ka-items .m { width: 26mm; text-align: right; }
+.ka-items .dt { color: #898989; font-size: 7.3pt; margin-top: 0.6mm; }
+.ka-items .dt p { margin: 0 0 0.6mm; }
+.ka-items tr.fill td { height: 30mm; }
+.ka-sum { border: 0.5pt solid #ababab; border-top: 0; page-break-inside: avoid; }
+.ka-sum td.words { padding: 2.5mm 3mm; background: #F5F5F5; vertical-align: middle; }
+.ka-sum td.words .w { font-size: 9pt; color: #000; }
+.ka-sum td.tot { width: 72mm; border-left: 0.5pt solid #ababab; }
+.ka-sum td.tot td { padding: 1.6mm 3mm; border-bottom: 0.5pt solid #ECECEC; font-size: 8pt; }
+.ka-sum td.tot tr.g td { background: #2D2D2D; color: #fff !important; font-size: 9.5pt; border-bottom: 0; vertical-align: middle; }
+.ka-sum td.tot tr.g .kt { color: #fff; }
+.ka-pay { margin-top: 4mm; page-break-inside: avoid; }
+.ka-pay .h { font-size: 8.5pt; color: #000; }
+.ka-pay td.opt { padding: 1mm 5mm 1mm 0; white-space: nowrap; width: 1%; }
+.ka-cb { display: inline-block; width: 2.6mm; height: 2.6mm; line-height: 2.6mm; font-size: 2pt; border: 0.8pt solid #2D2D2D; vertical-align: -0.4mm; margin-right: 1.2mm; }
+.ka-cb.on { background: #2D2D2D; }
+.ka-note { margin-top: 2mm; font-size: 7pt; color: #898989; }
+.ka-signs { margin-top: 6mm; page-break-inside: avoid; }
+.ka-signs .gap { width: 3mm; }
+.ka-signs .ka-box { height: 32mm; vertical-align: bottom; text-align: center; padding: 0 3mm 3mm; font-size: 8pt; line-height: 1.55; }
+.ka-signs .line { color: #ababab; letter-spacing: 0.05em; }
+.ka-draft { display: inline-block; margin-top: 1.5mm; color: #a33; border: 0.5pt solid #a33; padding: 0.3mm 2mm; font-size: 7pt; }
+body[onload] { padding: 0 !important; margin: 0 !important; }
+body[onload] .print-format { margin: 0 !important; padding: 0 !important; max-width: none !important; width: auto !important; }
+.ka-foot { font-size: 6.8pt; line-height: 1.45; color: #898989; }
+.ka-foot table { width: 100%; border-collapse: collapse; }
+.ka-foot td { vertical-align: top; padding: 2mm 0 0; border: 0; border-top: 0.5pt solid #c8c6bf; }
+</style>
+
+{%- set p = m.pay or {} -%}
+<div class="ka">
+	<table class="ka-top"><tr>
+		<td style="width: 62%;" class="seller">
+			<img src="{{ kiluth_money_logo() }}" style="width: 24mm; height: 7.2mm;">
+			<div class="n">{{ m.seller.name_th }} ({{ m.seller.branch_th }})</div>
+			<div>{{ m.seller.name_en }} ({{ m.seller.branch_en }})</div>
+			<div>{{ m.seller.address_th }}</div>
+			<div>เลขประจำตัวผู้เสียภาษี / Tax ID {{ m.seller.tax_id }}</div>
+		</td>
+		<td class="r">
+			<div class="t1">{{ m.title_th }}</div>
+			<div class="t2">{{ m.title_en | upper }}</div>
+			{% if m.mark %}<table style="width: auto; float: right; margin-top: 2mm;"><tr><td class="ka-mark">{{ m.mark }}</td></tr></table>{% endif %}
+			{% if m.draft %}<div style="clear: both;"><span class="ka-draft">ฉบับร่าง ยังไม่มีผล / Draft, not valid</span></div>{% endif %}
+			{% if m.cancelled %}<div style="clear: both;"><span class="ka-draft">ยกเลิกแล้ว / Cancelled</span></div>{% endif %}
+		</td>
+	</tr></table>
+	<div class="ka-rule"></div>
+
+	<table class="ka-boxes"><tr>
+		<td class="ka-box" style="width: 62%;"><div class="ka-box-in">
+			<div class="k">ได้รับเงินจาก / Received from</div>
+			<div class="n">{{ m.buyer.name }}</div>
+			{% if m.buyer.name_missing %}<div><span class="ka-missing">ยังไม่มีชื่อตามทะเบียนในระบบ / Legal name not in the Portal yet</span></div>{% endif %}
+			{% if m.buyer.trade_name %}<div>{{ m.buyer.trade_name }}</div>{% endif %}
+			<div>{% if m.buyer.address %}{{ m.buyer.address | join("<br>") }}{% else %}<span class="ka-missing">ยังไม่มีที่อยู่ในระบบ / Address not in the Portal yet</span>{% endif %}</div>
+			<div>เลขประจำตัวผู้เสียภาษี / Tax ID
+				{% if m.buyer.tax_id %}{{ m.buyer.tax_id }}{% if m.buyer.branch %} · {{ m.buyer.branch }}{% endif %}
+				{% else %}<span class="ka-missing">ยังไม่มีในระบบ / Not in the Portal yet</span>{% endif %}</div>
+		</div></td>
+		<td class="gap"></td>
+		<td class="ka-box"><div class="ka-box-in"><table>
+			{% for th, en, value in m.meta %}
+			<tr><td class="mk">{{ th }} / {{ en }}</td><td>{{ value }}</td></tr>
+			{% endfor %}
+		</table></div></td>
+	</tr></table>
+
+	<table class="ka-items">
+		<thead><tr>
+			<td class="no">ลำดับ<br>No.</td>
+			<td>รายการ<br>Description</td>
+			<td class="q">จำนวน<br>Qty</td>
+			<td class="m" style="text-align: center;">ราคาต่อหน่วย<br>Unit price</td>
+			<td class="m" style="text-align: center;">จำนวนเงิน (บาท)<br>Amount</td>
+		</tr></thead>
+		<tbody>
+		{% for it in m.lines %}
+		<tr>
+			<td class="no">{{ loop.index }}</td>
+			<td>
+				<div>{{ it.title }}</div>
+				{% if it.detail %}<div class="dt">{{ it.detail }}</div>{% endif %}
+				{% if it.invoice %}<div class="dt">ใบแจ้งหนี้ / Invoice {{ it.invoice }}</div>{% endif %}
+			</td>
+			<td class="q">{{ it.qty }}</td>
+			<td class="m">{{ it.rate }}</td>
+			<td class="m">{{ it.amount }}</td>
+		</tr>
+		{% endfor %}
+		{% if m.lines | length < 4 %}<tr class="fill"><td></td><td></td><td></td><td></td><td></td></tr>{% endif %}
+		</tbody>
+	</table>
+	<table class="ka-sum"><tr>
+		<td class="words">
+			<div class="mute sm">จำนวนเงินตัวอักษร / Amount in words</div>
+			<div class="w">({{ m.words_th }})</div>
+			<div class="mute">{{ m.words_en }}</div>
+		</td>
+		<td class="tot"><table>
+			{% for th, en, value, grand in m.totals %}
+			<tr class="{{ 'g' if grand else '' }}"><td>{{ th }}{{ '<br>' if grand else ' / ' }}{{ en }}</td><td class="r">{{ value }}</td></tr>
+			{% endfor %}
+		</table></td>
+	</tr></table>
+
+	<div class="ka-pay">
+		<div class="h">ชำระโดย / Payment</div>
+		<table><tr>
+			{% for th, en in (("เงินสด", "Cash"), ("เช็ค", "Cheque"), ("โอนเงินเข้าบัญชี", "Bank transfer"), ("บัตรเครดิต", "Credit card")) %}
+			<td class="opt"><span class="ka-cb{{ ' on' if p.method == en else '' }}">&nbsp;</span>{{ th }} / {{ en }}</td>
+			{% endfor %}
+			<td></td>
+		</tr></table>
+		<div>วันที่ / Date {{ p.date_th }} · {{ p.date_en }}{% if p.reference %} &nbsp;·&nbsp; เลขที่รายการ / Reference {{ p.reference }}{% endif %}</div>
+		<div class="ka-note">หมายเหตุ: บริษัทฯ ไม่ได้จดทะเบียนภาษีมูลค่าเพิ่ม จึงไม่มีการเรียกเก็บภาษีมูลค่าเพิ่ม / Kiluth LTD. is not VAT-registered, so no VAT is charged.</div>
+	</div>
+
+	<table class="ka-signs"><tr>
+		<td class="ka-box" style="width: 50%;">
+			<div class="line">..................................................</div>
+			{{ m.buyer.name }}<br>ผู้จ่ายเงิน / Payer
+		</td>
+		<td class="gap"></td>
+		{% for s in m.signatures %}
+		<td class="ka-box">
+			<div class="line">..................................................</div>
+			{{ s.org }}<br>({{ s.name_th }} · {{ s.name_en }})<br>{{ s.th }} / Collector<br>วันที่ / Date {{ p.date_th }}
+		</td>
+		{% endfor %}
+	</tr></table>
+</div>
+
+<div id="footer-html" class="visible-pdf">
+<div class="ka-foot" style="padding: 4mm 0 0;">
+	<table><tr>
+		<td style="width: 70%;">{{ m.seller.email }} · {{ m.seller.phone }} · {{ m.seller.web }}</td>
+		<td style="width: 30%; text-align: right;">{{ m.number }} · หน้า / Page <span class="page"></span> / <span class="topage"></span></td>
+	</tr></table>
+</div>
+</div>
+{% endfilter %}
+{%- endmacro %}

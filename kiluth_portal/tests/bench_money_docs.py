@@ -37,6 +37,11 @@ def run():
 
 	frappe.get_doc = get_doc
 	rows = json.load(open("/home/frappe/kiluth_portal/kiluth_portal/fixtures/print_format.json"))
+	# Receipt styles A and C for Poom's pick (10 Nov): the Receipt row over the other templates.
+	receipt = next(r for r in rows if r["name"] == "Receipt")
+	for s in ("a", "c"):
+		rows.append({**receipt, "name": f"Receipt {s.upper()}",
+			"html": receipt["html"].replace("money_doc.html", f"money_doc_{s}.html")})
 	try:
 		for r in rows:
 			r = {**r, "name": "MD " + r["name"], "module": None, "standard": "No"}
@@ -46,7 +51,9 @@ def run():
 			real_get_doc(r).insert(ignore_permissions=True)
 		for key, fmt, out in (("qtn", "MD Quotation Print", "quotation-SAL-QTN-2026-00004"),
 				("sinv", "MD Invoice Print", "invoice-ACC-SINV-2026-00228"),
-				("pay", "MD Receipt", "receipt-ACC-PAY-2026-01145")):
+				("pay", "MD Receipt", "receipt-ACC-PAY-2026-01145"),
+				("pay", "MD Receipt A", "receipt-A-ACC-PAY-2026-01145"),
+				("pay", "MD Receipt C", "receipt-C-ACC-PAY-2026-01145")):
 			data = load(key)
 			doc = real_get_doc(data)
 			html = frappe.get_print(doc.doctype, doc.name, fmt, doc=doc)
