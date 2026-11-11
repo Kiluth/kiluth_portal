@@ -285,7 +285,7 @@ WORDS = {
 		"vat": "VAT", "wht": "Withholding tax", "invoice_total": "Invoice total",
 		"total": {"Quotation": "Total", "Sales Invoice": "Total due", "Payment Entry": "Total received"},
 		"received": "฿{amount} received", "paid_by": "Paid by {method} on {date}", "ref": "Ref {ref}",
-		"due": "฿{amount} due", "due_on": "Due {date}", "quoted": "฿{amount}",
+		"due_on": "Due {date}", "headline": "฿{amount}",
 		"valid": "Valid until {date}", "installment": "Installment {n} of {of}",
 		"pay_to": "Pay by bank transfer", "bank_line": "{bank}, account {number}", "holder": "Account name {holder}",
 		"terms": "Payment terms", "in_full": "In full", "as_agreed": "As agreed",
@@ -295,7 +295,7 @@ WORDS = {
 		"vat": "ภาษีมูลค่าเพิ่ม", "wht": "ภาษีหัก ณ ที่จ่าย", "invoice_total": "ยอดตามใบแจ้งหนี้",
 		"total": {"Quotation": "รวมทั้งสิ้น", "Sales Invoice": "ยอดที่ต้องชำระ", "Payment Entry": "ยอดรับชำระ"},
 		"received": "รับชำระ ฿{amount}", "paid_by": "ชำระด้วย{method} วันที่ {date}", "ref": "เลขอ้างอิง {ref}",
-		"due": "ยอดชำระ ฿{amount}", "due_on": "ครบกำหนดชำระ {date}", "quoted": "฿{amount}",
+		"due_on": "ครบกำหนดชำระ {date}", "headline": "฿{amount}",
 		"valid": "ยืนราคาถึง {date}", "installment": "งวดที่ {n} จาก {of}",
 		"pay_to": "ชำระโดยโอนเข้าบัญชี", "bank_line": "{bank} เลขที่บัญชี {number}", "holder": "ชื่อบัญชี {holder}",
 		"terms": "เงื่อนไขการชำระเงิน", "in_full": "ชำระเต็มจำนวน", "as_agreed": "ตามที่ตกลง",
@@ -391,7 +391,7 @@ def build(doc, customer=None, address=None, invoices=None, lang=None):
 		total = float(g("grand_total") or 0)
 		if kind == "Quotation":
 			m["date"] = day(g("transaction_date"))
-			m["headline"] = w["quoted"].format(amount=money(total))
+			m["headline"] = w["headline"].format(amount=money(total))
 			if g("valid_till"):
 				m["sub"].append(w["valid"].format(date=day(g("valid_till"))))
 			schedule = g("payment_schedule") or []
@@ -403,7 +403,9 @@ def build(doc, customer=None, address=None, invoices=None, lang=None):
 			m["blocks"].append({"label": w["terms"], "rows": rows or [(w["as_agreed"], "", "")]})
 		else:
 			m["date"] = day(g("posting_date"))
-			m["headline"] = w["due"].format(amount=money(total))
+			# Only the total: a "due" headline turns wrong once the invoice is paid, and
+			# the receipt is the proof of payment (money-docs launch, Poom 11 Nov).
+			m["headline"] = w["headline"].format(amount=money(total))
 			if g("due_date"):
 				m["sub"].append(w["due_on"].format(date=day(g("due_date"))))
 			inst = next((installment(r.get("description")) for r in g("items") or [] if installment(r.get("description"))), None)

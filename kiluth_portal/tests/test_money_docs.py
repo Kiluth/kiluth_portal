@@ -88,7 +88,7 @@ check("quill", clean_description(QUILL), "<p>1.Core Feature </p><p><strong>1.1 R
 
 inv = build(INV_228)
 check("invoice english by default", (inv["lang"], inv["title"]), ("en", "Invoice"))
-check("invoice headline", inv["headline"], "฿9,000.00 due")
+check("invoice headline is the total, never due or paid", inv["headline"], "฿9,000.00")
 check("invoice due date and installment", inv["sub"], ["Due 16 Nov 2026", "Installment 2 of 3"])
 check("invoice one total, no rows", (inv["totals"], inv["total_label"], inv["total"]), ([], "Total due", "9,000.00"))
 check("invoice bank", inv["blocks"][0]["rows"][0][0], "Kasikornbank (KBank), account 219-1-59161-8")
@@ -132,6 +132,8 @@ check("full buyer", (legal["buyer"]["name"], legal["buyer"]["branch"], legal["bu
 
 th = build(PAY_1145, customer={**FULL, "custom_thai_documents": 1}, invoices=[INV_228, INV_229])
 check("thai documents switch", (th["lang"], th["title"], th["headline"]), ("th", "ใบเสร็จรับเงิน", "รับชำระ ฿9,350.00"))
+th_inv = build(INV_228, customer={**FULL, "custom_thai_documents": 1})
+check("thai invoice headline and due date", (th_inv["headline"], th_inv["sub"][0]), ("฿9,000.00", "ครบกำหนดชำระ 16 พ.ย. 2569"))
 check("thai date and method", th["sub"][0], "ชำระด้วยบัตรเครดิต วันที่ 10 พ.ย. 2569")
 check("thai words", th["words"], "เก้าพันสามร้อยห้าสิบบาทถ้วน")
 check("thai buyer tax id", th["buyer"]["tax_id"], "เลขประจำตัวผู้เสียภาษี 0105 5671 6999 9")
