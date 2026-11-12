@@ -271,7 +271,7 @@ KILUTH_CUSTOM_ROLES = [
     "Executive",
     "Observer",
     "Document User",
-    "Quotation Reader",  # read/print/export Quotation only; given to swarm@ to check its own print work (Poom, 12 Nov)
+    "Quotation Reader",  # read/print/export Quotation and Item only; given to swarm@ to check its own print work and read the price list items (Poom, 12 Nov)
 ]
 
 # Specific standard doctypes where we grant extra roles outside the concern
