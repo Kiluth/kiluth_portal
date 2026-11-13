@@ -684,7 +684,7 @@
   "length": 0,
   "link_filters": null,
   "mandatory_depends_on": null,
-  "modified": "2026-10-15 21:17:07.512127",
+  "modified": "2026-11-13 13:30:00.000000",
   "module": "Kiluth Sales",
   "name": "Task-close_bank_balance",
   "no_copy": 0,
