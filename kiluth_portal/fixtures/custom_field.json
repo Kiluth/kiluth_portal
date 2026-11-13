@@ -658,7 +658,7 @@
   "collapsible_depends_on": null,
   "columns": 0,
   "default": null,
-  "depends_on": "eval:(doc.subject||'').startsWith('Close the books for')",
+  "depends_on": "eval:(doc.subject||'').includes('Close the books for')",
   "description": "Monthly Close only: the bank's balance on the last day of the month, from the statement.",
   "docstatus": 0,
   "doctype": "Custom Field",

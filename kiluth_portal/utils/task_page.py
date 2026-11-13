@@ -14,6 +14,7 @@ import frappe
 from kiluth_portal.api.client_brief import SUBJECT as BRIEF_PREFIX
 from kiluth_portal.utils.close_report import SUBJECT_PREFIX as CLOSE_PREFIX
 from kiluth_portal.utils.lead_routing import SUBJECT_PREFIX as LEAD_PREFIX, move
+from kiluth_portal.utils.task_titles import bare
 
 FIXED_PREFIXES = (CLOSE_PREFIX, LEAD_PREFIX, BRIEF_PREFIX)
 SYSTEM_OWNERS = ("Administrator", "Guest")  # the scheduler's tax, year-end and VAT tasks
@@ -22,7 +23,8 @@ FINISHED = ("Completed", "Cancelled")
 
 
 def title_is_fixed(subject: str, owner: str) -> bool:
-	return subject.startswith(FIXED_PREFIXES) or owner in SYSTEM_OWNERS
+	# an Operations title may start with [Department]
+	return bare(subject).startswith(FIXED_PREFIXES) or owner in SYSTEM_OWNERS
 
 
 def _rows(names: list[str]) -> list[dict]:
@@ -72,7 +74,7 @@ def set_field(task: str, field: str, value: str | None = None, modified: str | N
 		value = (value or "").strip()
 		if not value:
 			frappe.throw(frappe._("A task needs a title"))
-		if title_is_fixed(doc.subject, doc.owner) or value.startswith(FIXED_PREFIXES):
+		if title_is_fixed(doc.subject, doc.owner) or bare(value).startswith(FIXED_PREFIXES):
 			frappe.throw(frappe._("Jobs find this task by its title, so it can't be renamed."))
 	doc.set(field, value or None)
 	doc.save()
