@@ -72,6 +72,8 @@
 			.kb-title:hover { color: var(--text-color); text-decoration: none; }
 			.kb-foot { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: var(--text-color); }
 			.kb-person { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; }
+			/* The avatar keeps its 20px circle: as a shrinkable flex child it was squashed into an oval when the footer was crowded. */
+			.kb-person .avatar { flex: none; }
 			.kb-person .kb-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 			.kb-person.nobody { color: var(--kb-high); font-weight: 600; }
 			.kb-note { flex: none; font-size: 12px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 3px; }
